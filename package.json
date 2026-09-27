@@ -1,0 +1,11 @@
+{
+  "name": "invite-a-gent",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "npm@11.6.0",
+  "scripts": {
+    "test": "node --test test/foundation/*.test.mjs",
+    "test:unit": "node --test test/foundation/contracts.test.mjs",
+    "test:boundaries": "node --test test/foundation/boundaries.test.mjs"
+  }
+}

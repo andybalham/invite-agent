@@ -11,7 +11,6 @@ _Generated. Do not edit by hand._
 - [E-007 · E7 — Final decision and reversible poll lifecycle](../entities/E-007-e7-final-decision-and-reversible-poll-lifecycle.md) — blocked · waiting on E-006
 - [E-008 · E8 — Production AWS platform](../entities/E-008-e8-production-aws-platform.md) — blocked · waiting on E-007
 - [E-009 · E9 — Tested production release and operations](../entities/E-009-e9-tested-production-release-and-operations.md) — blocked · waiting on E-008
-- [S-001 · Establish the TypeScript workspace and shared contracts](../entities/S-001-establish-the-typescript-workspace-and-shared-contracts.md) — blocked
 - [S-002 · Run shared services locally with DynamoDB and guarded authentication](../entities/S-002-run-shared-services-locally-with-dynamodb-and-guarded-authentication.md) — blocked · waiting on S-001
 - [S-003 · Provide one-command local startup and browser test harness](../entities/S-003-provide-one-command-local-startup-and-browser-test-harness.md) — blocked · waiting on S-002
 - [S-004 · Define draft poll lifecycle and validation rules](../entities/S-004-define-draft-poll-lifecycle-and-validation-rules.md) — blocked · waiting on S-003
@@ -42,7 +41,6 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [T-002 · Implement and verify workspace and shared contracts](../entities/T-002-implement-and-verify-workspace-and-shared-contracts.md) — blocked · waiting on T-001
 - [T-003 · Specify local DynamoDB, shared services, and guarded auth with failing automated tests](../entities/T-003-specify-local-dynamodb-shared-services-and-guarded-auth-with-failing-automated-tests.md) — blocked · waiting on T-002
 - [T-004 · Implement and verify local DynamoDB, shared services, and guarded auth](../entities/T-004-implement-and-verify-local-dynamodb-shared-services-and-guarded-auth.md) — blocked · waiting on T-003
 - [T-005 · Specify one-command local stack and browser harness with failing automated tests](../entities/T-005-specify-one-command-local-stack-and-browser-harness-with-failing-automated-tests.md) — blocked · waiting on T-004

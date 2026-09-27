@@ -24,7 +24,7 @@ graph LR
     E008 --> E009
   end
   subgraph Stories
-    S001["S-001 Establish the TypeScript workspace and shared contracts"]:::blocked
+    S001["S-001 Establish the TypeScript workspace and shared contracts"]:::inprogress
     S002["S-002 Run shared services locally with DynamoDB and guarded authentication"]:::blocked
     S003["S-003 Provide one-command local startup and browser test harness"]:::blocked
     S004["S-004 Define draft poll lifecycle and validation rules"]:::blocked
@@ -93,8 +93,8 @@ graph LR
     S030 --> S031
   end
   subgraph Tasks
-    T001["T-001 Specify workspace and shared contracts with failing automated tests"]:::todo
-    T002["T-002 Implement and verify workspace and shared contracts"]:::blocked
+    T001["T-001 Specify workspace and shared contracts with failing automated tests"]:::done
+    T002["T-002 Implement and verify workspace and shared contracts"]:::todo
     T003["T-003 Specify local DynamoDB, shared services, and guarded auth with failing automated tests"]:::blocked
     T004["T-004 Implement and verify local DynamoDB, shared services, and guarded auth"]:::blocked
     T005["T-005 Specify one-command local stack and browser harness with failing automated tests"]:::blocked

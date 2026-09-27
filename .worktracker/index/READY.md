@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-001 · Specify workspace and shared contracts with failing automated tests](../entities/T-001-specify-workspace-and-shared-contracts-with-failing-automated-tests.md) — todo
+- [ ] [T-002 · Implement and verify workspace and shared contracts](../entities/T-002-implement-and-verify-workspace-and-shared-contracts.md) — todo
