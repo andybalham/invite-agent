@@ -12,6 +12,7 @@ An organiser is an authenticated user who can:
 
 - Create and manage polls.
 - Add, edit, reorder, or remove proposed dates.
+- Set and edit optional location details throughout the poll lifecycle, including after the poll has closed.
 - Publish a poll and obtain a shareable link.
 - View and edit all participant responses.
 - Review the complete change history.
@@ -36,12 +37,15 @@ Participant rows have no ownership or edit permissions. The poll is a shared, wi
 ### Draft
 
 - The poll is visible only to the organiser.
+- The organiser can set or edit the optional location details.
 - Proposed dates can be added, edited, reordered, or removed.
 - Participant responses cannot be submitted.
 
 ### Open
 
 - The poll is accessible through the shareable link.
+- The location details, when provided, are displayed on the public poll.
+- The organiser can edit the location details.
 - Participants can view and modify the shared response table.
 - Every change is recorded in the audit history.
 - The organiser can select a final date and close the poll.
@@ -50,7 +54,8 @@ Participant rows have no ownership or edit permissions. The poll is a shared, wi
 
 - A final date has been selected.
 - The selected date is displayed prominently.
-- The poll, proposed dates, and responses are read-only.
+- Proposed dates and participant responses are read-only.
+- The organiser can still set, edit, or clear the location details without reopening the poll; updated details are immediately displayed on the public poll.
 - The shareable link remains valid.
 - The organiser can reopen the poll.
 
@@ -59,7 +64,7 @@ Participant rows have no ownership or edit permissions. The poll is a shared, wi
 The organiser must be able to:
 
 1. Create a poll with a title.
-2. Optionally add a description, location, and instructions.
+2. Optionally add a description, location details, and instructions.
 3. Configure the poll's time zone.
 4. Add at least two proposed date or date-and-time options.
 5. Preview the poll.
@@ -67,6 +72,16 @@ The organiser must be able to:
 7. Copy its unique shareable link.
 
 The application must prevent publication until all required information is valid.
+
+### Location Details
+
+- Location details are optional and may be added during poll creation or set, edited, or cleared later by the authenticated organiser.
+- The organiser can change location details while the poll is in the **Draft**, **Open**, or **Closed** state. Changing them does not reopen a closed poll.
+- Location details may be entered as plain text or Markdown. Markdown link syntax must be supported so the organiser can embed links, such as a venue website or online meeting URL.
+- Rendered Markdown must be sanitised before display and must not allow executable content or unsafe links.
+- When location details are present, they must be displayed on the public poll in every publicly accessible lifecycle state.
+- Saved location changes must be reflected immediately on the public poll.
+- Every location change, including clearing the field, must be recorded in the audit history with its previous and new values.
 
 ## 5. Recording Availability
 
@@ -163,8 +178,8 @@ After confirmation:
 - The selected date is recorded.
 - The poll moves to the **Closed** state.
 - The selected date is prominently displayed on the public page.
-- All poll data becomes read-only.
-- Modification attempts are rejected.
+- Proposed dates and participant responses become read-only.
+- Participant modification attempts are rejected, while the authenticated organiser retains permission to edit the location details.
 - The selection is added to the audit history.
 
 ## 10. Reopening a Poll
@@ -184,6 +199,7 @@ The organiser can subsequently choose the same date or a different date and clos
 ## 11. Authentication and Access
 
 - Organiser functions require authentication.
+- Setting, editing, or clearing location details is restricted to the authenticated organiser and must be authorised on the server, including when the poll is closed.
 - Participants do not require authentication.
 - Each public poll must use a unique, unguessable link.
 - Possession of the link grants permission to view and edit the open poll.
@@ -201,6 +217,8 @@ The application must:
 - Reject duplicate participant names using a case-insensitive comparison.
 - Reject invalid availability values other than **Yes** or **No**.
 - Reject a row deletion when the entered confirmation name does not match the row's current name.
+- Reject location details that exceed the supported length or contain Markdown that cannot be rendered safely.
+- Sanitise rendered location Markdown and reject unsafe link targets or executable content.
 - Prevent participant changes while a poll is closed.
 - Prevent edits using a revoked link.
 - Return clear error messages without exposing sensitive system information.
@@ -211,24 +229,27 @@ The application must:
 The MVP is complete when:
 
 1. An authenticated organiser can create a poll with multiple proposed dates.
-2. The organiser can publish it and copy an unguessable public link.
-3. Anyone with the link can view all responses.
-4. Anyone with the link can add a uniquely named participant row while the poll is open; all date cells initially default to **No**.
-5. Anyone with the link can rename a participant row to a unique name or delete a row after entering its current name.
-6. Each date supports **Yes** and **No** responses.
-7. A user can toggle a date cell by clicking it or by focusing it and pressing the Space bar.
-8. Every participant response update is sent automatically to the server without a separate save action.
-9. Concurrent updates use last-update-wins semantics without a warning, and the screen displays the latest server state.
-10. The poll displays the **Yes** total for every date.
-11. The shareable page displays no more than five ranked dates.
-12. Dates are ranked by **Yes** total descending, with ties retaining the organiser's original proposed-date order.
-13. The ranking updates after every successful response change or undo.
-14. Every change creates an immutable audit entry.
-15. The organiser can undo a change without removing its original audit entry.
-16. The organiser can select a proposed date and close the poll.
-17. A closed poll rejects all participant modifications and clearly displays the selected date.
-18. Closing the poll freezes the ranking until the poll is reopened.
-19. The organiser can reopen the poll, after which editing is enabled again and the former selection is marked provisional.
-20. The organiser can close the poll again with the same or a different date.
-21. The organiser can revoke and regenerate the public link.
-22. All organiser-only operations are protected by server-side authorisation.
+2. The organiser can optionally provide plain-text or Markdown location details during poll creation, including embedded links.
+3. The organiser can set, edit, or clear location details while the poll is in any lifecycle state, including **Closed**, without reopening it.
+4. Saved location changes are immediately visible on the public poll, safely rendered, and recorded in the audit history.
+5. The organiser can publish the poll and copy an unguessable public link.
+6. Anyone with the link can view all responses.
+7. Anyone with the link can add a uniquely named participant row while the poll is open; all date cells initially default to **No**.
+8. Anyone with the link can rename a participant row to a unique name or delete a row after entering its current name.
+9. Each date supports **Yes** and **No** responses.
+10. A user can toggle a date cell by clicking it or by focusing it and pressing the Space bar.
+11. Every participant response update is sent automatically to the server without a separate save action.
+12. Concurrent updates use last-update-wins semantics without a warning, and the screen displays the latest server state.
+13. The poll displays the **Yes** total for every date.
+14. The shareable page displays no more than five ranked dates.
+15. Dates are ranked by **Yes** total descending, with ties retaining the organiser's original proposed-date order.
+16. The ranking updates after every successful response change or undo.
+17. Every change creates an immutable audit entry.
+18. The organiser can undo a change without removing its original audit entry.
+19. The organiser can select a proposed date and close the poll.
+20. A closed poll rejects all participant modifications and clearly displays the selected date.
+21. Closing the poll freezes the ranking until the poll is reopened.
+22. The organiser can reopen the poll, after which editing is enabled again and the former selection is marked provisional.
+23. The organiser can close the poll again with the same or a different date.
+24. The organiser can revoke and regenerate the public link.
+25. All organiser-only operations are protected by server-side authorisation.
