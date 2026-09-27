@@ -24,7 +24,7 @@ The design assumes:
 The architecture prioritises:
 
 1. **Simple operation** - a fully managed serverless platform with no continuously running compute.
-2. **Safe collaborative editing** - optimistic concurrency prevents silent overwrites when several participants edit a poll.
+2. **Predictable collaborative editing** - concurrent mutations use last-update-wins semantics, and every client refreshes from the latest server state without presenting conflict warnings.
 3. **Complete traceability** - every successful mutation creates an immutable audit event.
 4. **Clear access boundaries** - organisers authenticate through Cognito; public access is granted only by an unguessable, revocable poll link.
 5. **Low deployment complexity** - one CDK application provisions the infrastructure and ZIP-based Lambda functions.
@@ -125,7 +125,7 @@ The React SPA contains two route groups:
 
 The SPA uses Cognito Authorization Code flow with PKCE for organiser sign-in. It keeps access tokens in memory where practical and does not persist credentials or public-link secrets in telemetry.
 
-Every editable representation includes the current poll `version`. Mutation requests return the new version. A `409 Conflict` response causes the client to retain the user's attempted changes, refresh the poll, and ask the user to review and retry.
+Every editable representation includes the current poll `version` so clients can recognise newer server state. Mutation requests do not submit an expected version. Each successful mutation returns the latest representation and version; the client replaces its displayed state with that server response. When a newer state is subsequently received, it replaces the older display without a conflict warning.
 
 ### 5.2 API Gateway
 
@@ -134,7 +134,7 @@ API Gateway provides an HTTP API under `/api/v1`.
 - Organiser routes use a Cognito JWT authorizer.
 - Public routes do not use Cognito; the backend validates the public-link token.
 - Payload size, route throttling, and request validation provide first-line abuse protection.
-- CloudFront forwards the `Authorization`, content, conditional version, and request-correlation headers needed by the API.
+- CloudFront forwards the `Authorization`, content, public-link token, and request-correlation headers needed by the API.
 
 ### 5.3 Lambda functions
 
@@ -187,7 +187,7 @@ Global secondary indexes:
 
 Participant `responses` are stored as a map from `dateId` to `YES`, `MAYBE`, or `NO`. Poll reads use a single partition query to obtain metadata, dates, and participants.
 
-The poll metadata `version` is a monotonically increasing integer shared by all mutable entities in the poll. This intentionally serialises successful writes to one poll, matching the collaborative-document model and making conflict detection and audit ordering straightforward.
+The poll metadata `version` is a monotonically increasing integer shared by all mutable entities in the poll. It identifies the relative freshness of returned representations and supports audit ordering; it is not a client-supplied write precondition.
 
 #### Audit table
 
@@ -264,7 +264,7 @@ All endpoints are versioned under `/api/v1`. JSON is used for requests and respo
 | `GET /organiser/polls` | List the signed-in organiser's polls |
 | `POST /organiser/polls` | Create a draft poll |
 | `GET /organiser/polls/{pollId}` | Read the full organiser view |
-| `PATCH /organiser/polls/{pollId}` | Edit poll details with expected version |
+| `PATCH /organiser/polls/{pollId}` | Edit poll details |
 | `POST /organiser/polls/{pollId}/dates` | Add a proposed date |
 | `PATCH /organiser/polls/{pollId}/dates/{dateId}` | Edit or reorder a proposed date |
 | `DELETE /organiser/polls/{pollId}/dates/{dateId}` | Remove a proposed date |
@@ -286,7 +286,7 @@ Ownership is checked on every organiser request after JWT validation.
 | `PUT /public/poll/participants/{participantId}` | Replace a participant row |
 | `DELETE /public/poll/participants/{participantId}` | Remove a participant row |
 
-Public mutations require the active link token and `expectedVersion`. A public read returns:
+Public mutations require the active link token but no expected version. A public read returns:
 
 - public poll metadata and lifecycle status;
 - ordered proposed dates;
@@ -305,15 +305,15 @@ Errors use a consistent structure:
 ```json
 {
   "error": {
-    "code": "VERSION_CONFLICT",
-    "message": "The poll changed after you loaded it.",
+    "code": "DUPLICATE_PARTICIPANT_NAME",
+    "message": "A participant with that name already exists.",
     "correlationId": "...",
     "details": {}
   }
 }
 ```
 
-Expected statuses include `400` for validation, `401` for missing or invalid organiser authentication, `403` for failed ownership checks, `404` for missing resources or invalid public links, `409` for version or duplicate-name conflicts, `410` for a revoked public link where disclosure is acceptable, `422` for invalid lifecycle transitions, and `429` for throttling.
+Expected statuses include `400` for validation, `401` for missing or invalid organiser authentication, `403` for failed ownership checks, `404` for missing resources or invalid public links, `409` for uniqueness conflicts such as a duplicate participant name, `410` for a revoked public link where disclosure is acceptable, `422` for invalid lifecycle transitions, and `429` for throttling. Concurrent edits do not produce a client-visible conflict response.
 
 Production errors do not include stack traces or internal AWS details.
 
@@ -321,7 +321,7 @@ Production errors do not include stack traces or internal AWS details.
 
 Every mutation is implemented as a DynamoDB transaction containing:
 
-1. A condition check that the poll is in an allowed state and `version` equals `expectedVersion`.
+1. Condition checks for applicable lifecycle, ownership, active-link, and uniqueness rules.
 2. The domain item insert, update, or delete.
 3. A metadata update that increments the poll version and updates its timestamp.
 4. An immutable audit item whose revision is the new version.
@@ -335,7 +335,7 @@ SK = NAME#<normalizedName>
 
 The lock points to the participant ID and is created, changed, or deleted in the same transaction as the participant. Normalisation trims surrounding whitespace and applies Unicode normalisation plus locale-independent case folding.
 
-When the condition fails, the API returns `409 VERSION_CONFLICT` and the latest version. It never retries a user mutation against newer state automatically.
+Clients never supply an expected version and never receive an edit-conflict warning. If concurrent transactions contend internally, the service re-reads the latest state and transparently retries the requested mutation with bounded retries. Of the successfully committed mutations, the last commit wins for overlapping values. Each response contains the latest server state known after that mutation, and clients replace their displayed state with it; polling or a later response may replace it again when a newer version is observed.
 
 ### 9.1 Undo
 
@@ -346,7 +346,7 @@ Undo is a new compensating mutation, never deletion of history. The backend:
 3. Detects later events affecting the same entity or field.
 4. Returns a warning preview when newer values would be overwritten.
 5. Requires an explicit confirmation flag for a destructive compensation.
-6. Applies the inverse in a transaction using the current expected version.
+6. Applies the inverse in a transaction against the latest server state.
 7. Appends an `UNDO` audit event referencing the original event.
 
 Some events can become non-reversible because a later structural change makes the original state invalid. The API reports this explicitly rather than partially applying an undo.
@@ -397,7 +397,7 @@ The architecture does not collect participant email addresses, accounts, IP addr
 - CloudFormation termination protection and resource removal policies protect production state.
 - Idempotency keys are accepted for create and lifecycle commands so a client retry after a timeout does not duplicate an action.
 
-For the MVP, synchronous transactional writes are preferred over an event-driven write model: users need immediate confirmation, poll-level traffic is modest, and the simpler consistency model directly supports undo and version conflicts.
+For the MVP, synchronous transactional writes are preferred over an event-driven write model: users need immediate confirmation, poll-level traffic is modest, and the simpler consistency model directly supports audit ordering, transparent retry, and undo.
 
 ## 13. Observability
 
@@ -548,7 +548,7 @@ Only composition-root concerns vary by environment: HTTP event parsing, verified
 
 An idempotent initialisation command creates the application and audit tables, keys, and indexes exactly as defined by the production infrastructure. A reset command deletes only the explicitly named local tables and recreates them. E2E workers receive an isolated table-name suffix or run serially so test cases cannot leak state into one another.
 
-The repository and concurrency integration tests run against DynamoDB Local rather than an in-memory substitute. This ensures that transactions, conditional expressions, index access patterns, version conflicts, and duplicate-name locks are exercised through the same AWS SDK operations as production.
+The repository and concurrency integration tests run against DynamoDB Local rather than an in-memory substitute. This ensures that transactions, conditional expressions, transparent contention retries, last-update-wins behavior, index access patterns, and duplicate-name locks are exercised through the same AWS SDK operations as production.
 
 ### 16.4 Local authentication
 
@@ -611,7 +611,7 @@ Playwright drives the SPA through `http://localhost:5173`; tests do not call app
 - draft creation, validation, date editing, publication, and public-link copying;
 - adding, editing, and removing participant rows through the public page;
 - Yes/Maybe totals and ranking tie-breaks;
-- simultaneous stale-version edits and the user-visible conflict/retry flow;
+- controlled concurrent edits that prove the later successful update wins without a conflict warning and both clients converge on the latest server state;
 - immutable history, ordinary undo, and confirmed undo over a newer value;
 - final-date selection, frozen ranking, closing, reopening, and closing again;
 - public-link regeneration and rejection of the old link;
@@ -635,9 +635,9 @@ Testing layers include:
 
 - Unit tests for validation, lifecycle transitions, ranking, normalisation, and undo inversion.
 - Property tests for ranking tie-breaks and state-machine invariants.
-- Repository integration tests against DynamoDB Local, especially transaction conflicts and name locks.
+- Repository integration tests against DynamoDB Local, especially transparent transaction retries, last-update-wins behavior, and name locks.
 - API contract tests for organiser and public routes.
-- Browser tests for poll creation, public collaboration, conflicts, close/reopen, link rotation, and undo warnings.
+- Browser tests for poll creation, public collaboration, concurrent last-update-wins behavior, close/reopen, link rotation, and undo warnings.
 - CDK snapshot/assertion tests for private S3 access, authorisers, IAM boundaries, alarms, and ZIP-based Lambda resources.
 - Production smoke tests using a disposable poll.
 
@@ -647,7 +647,7 @@ Testing layers include:
 |---|---|---|
 | CloudFront single origin with `/api/*` routing | Simple browser security model and clean vanity URL | CloudFront behavior configuration must preserve API methods and headers |
 | Lambda ZIP deployment | Fast, simple deployment for TypeScript with no ECR or Docker requirement | Unsuitable for unusually large or native-heavy dependencies |
-| DynamoDB transactions and poll-wide version | Prevent silent overwrites and pair every mutation with its audit event | Concurrent edits to different rows can still conflict and require retry |
+| DynamoDB transactions, transparent contention retry, and poll-wide version | Implement last-update-wins without user-visible conflict warnings while pairing every mutation with its audit event and letting clients identify fresher state | Overlapping edits may overwrite an earlier accepted value by design; clients must refresh from every mutation response and newer observed state |
 | Separate current-state and audit tables | Independent retention, permissions, and query patterns | Two tables participate in each transactional write |
 | Opaque bearer public link | Meets account-free collaboration requirement | Link disclosure grants access until rotation |
 | Store frozen ranking on close | Directly preserves the required closed-state result | Duplicates derived data and requires atomic close logic |
