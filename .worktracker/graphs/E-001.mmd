@@ -1,0 +1,35 @@
+graph LR
+  classDef done fill:#14532d,stroke:#86efac,color:#f0fdf4;
+  classDef blocked fill:#7f1d1d,stroke:#fca5a5,color:#fff7f7;
+  classDef inprogress fill:#78350f,stroke:#fbbf24,color:#fffbeb;
+  classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
+  classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
+  subgraph Stories
+    S001["S-001 Establish the TypeScript workspace and shared contracts"]:::blocked
+    S002["S-002 Run shared services locally with DynamoDB and guarded authentication"]:::blocked
+    S003["S-003 Provide one-command local startup and browser test harness"]:::blocked
+    S001 --> S002
+    S002 --> S003
+  end
+  subgraph Tasks
+    T001["T-001 Specify workspace and shared contracts with failing automated tests"]:::todo
+    T002["T-002 Implement and verify workspace and shared contracts"]:::blocked
+    T003["T-003 Specify local DynamoDB, shared services, and guarded auth with failing automated tests"]:::blocked
+    T004["T-004 Implement and verify local DynamoDB, shared services, and guarded auth"]:::blocked
+    T005["T-005 Specify one-command local stack and browser harness with failing automated tests"]:::blocked
+    T006["T-006 Implement and verify one-command local stack and browser harness"]:::blocked
+    T001 --> T002
+    T002 --> T003
+    T003 --> T004
+    T004 --> T005
+    T005 --> T006
+  end
+  click S001 "../entities/S-001-establish-the-typescript-workspace-and-shared-contracts.md"
+  click S002 "../entities/S-002-run-shared-services-locally-with-dynamodb-and-guarded-authentication.md"
+  click S003 "../entities/S-003-provide-one-command-local-startup-and-browser-test-harness.md"
+  click T001 "../entities/T-001-specify-workspace-and-shared-contracts-with-failing-automated-tests.md"
+  click T002 "../entities/T-002-implement-and-verify-workspace-and-shared-contracts.md"
+  click T003 "../entities/T-003-specify-local-dynamodb-shared-services-and-guarded-auth-with-failing-automated-tests.md"
+  click T004 "../entities/T-004-implement-and-verify-local-dynamodb-shared-services-and-guarded-auth.md"
+  click T005 "../entities/T-005-specify-one-command-local-stack-and-browser-harness-with-failing-automated-tests.md"
+  click T006 "../entities/T-006-implement-and-verify-one-command-local-stack-and-browser-harness.md"

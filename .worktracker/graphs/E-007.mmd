@@ -1,0 +1,46 @@
+graph LR
+  classDef done fill:#14532d,stroke:#86efac,color:#f0fdf4;
+  classDef blocked fill:#7f1d1d,stroke:#fca5a5,color:#fff7f7;
+  classDef inprogress fill:#78350f,stroke:#fbbf24,color:#fffbeb;
+  classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
+  classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
+  subgraph Stories
+    S021["S-021 Review attendance and close in one atomic action"]:::blocked
+    S022["S-022 Enforce closed read-only state and frozen ranking"]:::blocked
+    S023["S-023 Maintain safe location details in every lifecycle state"]:::blocked
+    S024["S-024 Reopen collaboration and close again with preserved history"]:::blocked
+    S021 --> S022
+    S022 --> S023
+    S022 --> S024
+    S023 --> S024
+  end
+  subgraph Tasks
+    T044["T-044 Specify close preview and atomic final selection with failing automated tests"]:::blocked
+    T045["T-045 Implement and verify close preview and atomic final selection"]:::blocked
+    T046["T-046 Specify closed-state enforcement and frozen results with failing automated tests"]:::blocked
+    T047["T-047 Implement and verify closed-state enforcement and frozen results"]:::blocked
+    T048["T-048 Specify location maintenance across lifecycle states with failing automated tests"]:::blocked
+    T049["T-049 Implement and verify location maintenance across lifecycle states"]:::blocked
+    T050["T-050 Specify reopen and close-again lifecycle with failing automated tests"]:::blocked
+    T051["T-051 Implement and verify reopen and close-again lifecycle"]:::blocked
+    T044 --> T045
+    T045 --> T046
+    T046 --> T047
+    T047 --> T048
+    T047 --> T050
+    T048 --> T049
+    T049 --> T050
+    T050 --> T051
+  end
+  click S021 "../entities/S-021-review-attendance-and-close-in-one-atomic-action.md"
+  click S022 "../entities/S-022-enforce-closed-read-only-state-and-frozen-ranking.md"
+  click S023 "../entities/S-023-maintain-safe-location-details-in-every-lifecycle-state.md"
+  click S024 "../entities/S-024-reopen-collaboration-and-close-again-with-preserved-history.md"
+  click T044 "../entities/T-044-specify-close-preview-and-atomic-final-selection-with-failing-automated-tests.md"
+  click T045 "../entities/T-045-implement-and-verify-close-preview-and-atomic-final-selection.md"
+  click T046 "../entities/T-046-specify-closed-state-enforcement-and-frozen-results-with-failing-automated-tests.md"
+  click T047 "../entities/T-047-implement-and-verify-closed-state-enforcement-and-frozen-results.md"
+  click T048 "../entities/T-048-specify-location-maintenance-across-lifecycle-states-with-failing-automated-tests.md"
+  click T049 "../entities/T-049-implement-and-verify-location-maintenance-across-lifecycle-states.md"
+  click T050 "../entities/T-050-specify-reopen-and-close-again-lifecycle-with-failing-automated-tests.md"
+  click T051 "../entities/T-051-implement-and-verify-reopen-and-close-again-lifecycle.md"

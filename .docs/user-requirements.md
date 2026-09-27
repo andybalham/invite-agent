@@ -224,6 +224,21 @@ The application must:
 - Return clear error messages without exposing sensitive system information.
 - Preserve entered data after recoverable validation errors.
 
+### Resolved Validation and Behaviour Rules
+
+- Participant names are trimmed of leading and trailing whitespace before validation and storage. Internal whitespace is preserved.
+- A participant name must contain no more than 100 Unicode code points after trimming.
+- Participant-name uniqueness uses Unicode NFKC normalisation followed by locale-independent case folding.
+- Location details must contain no more than 4,000 Unicode code points before Markdown rendering.
+- Supported location Markdown is limited to paragraphs, line breaks, emphasis, strong emphasis, ordered and unordered lists, and links. Raw HTML is rejected.
+- Location links must use `https:`. Rendered output is sanitised even after the source has passed validation.
+- A public-link token contains 192 bits of cryptographically secure randomness, is Base64URL-encoded, and is stored only as a keyed hash. Regeneration immediately invalidates the previous token.
+- Date-only options are stored separately from timed options. Timed options are stored as a UTC instant together with the poll's IANA time zone and the selected UTC offset.
+- A local date-time that does not exist because of a daylight-saving transition is rejected. When a local date-time is ambiguous, the organiser must explicitly choose one of the valid UTC offsets.
+- Undo is evaluated against current state. If the affected value has changed since the selected revision, the organiser receives a preview and must confirm that the selected revision's previous value will overwrite the newer value. An undo that would create structurally invalid state is rejected atomically.
+- Selecting a final date and closing the poll is one atomic mutation and creates exactly one audit revision. Reopening creates a separate revision.
+- API errors use stable machine-readable codes. Validation errors return `400`, missing or invalid authentication returns `401`, failed ownership returns `403`, unknown resources or unknown public links return `404`, uniqueness conflicts return `409`, recognised revoked links return `410`, invalid lifecycle transitions return `422`, and throttling returns `429`. User-facing copy must identify the field or reason without exposing internal details; automated acceptance tests assert the error code and semantic message rather than exact prose.
+
 ## 13. MVP Acceptance Criteria
 
 The MVP is complete when:

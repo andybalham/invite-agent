@@ -1,0 +1,46 @@
+graph LR
+  classDef done fill:#14532d,stroke:#86efac,color:#f0fdf4;
+  classDef blocked fill:#7f1d1d,stroke:#fca5a5,color:#fff7f7;
+  classDef inprogress fill:#78350f,stroke:#fbbf24,color:#fffbeb;
+  classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
+  classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
+  subgraph Stories
+    S004["S-004 Define draft poll lifecycle and validation rules"]:::blocked
+    S005["S-005 Create and edit draft details with safe location Markdown"]:::blocked
+    S006["S-006 Manage ordered date and date-time choices safely across DST"]:::blocked
+    S007["S-007 Preview a private draft and enforce publication readiness"]:::blocked
+    S004 --> S005
+    S004 --> S006
+    S005 --> S007
+    S006 --> S007
+  end
+  subgraph Tasks
+    T007["T-007 Specify draft lifecycle and validation with failing automated tests"]:::blocked
+    T008["T-008 Implement and verify draft lifecycle and validation"]:::blocked
+    T009["T-009 Specify draft details and safe location Markdown with failing automated tests"]:::blocked
+    T010["T-010 Implement and verify draft details and safe location Markdown"]:::blocked
+    T011["T-011 Specify ordered choices and DST-safe date handling with failing automated tests"]:::blocked
+    T012["T-012 Implement and verify ordered choices and DST-safe date handling"]:::blocked
+    T013["T-013 Specify private preview and publication readiness with failing automated tests"]:::blocked
+    T014["T-014 Implement and verify private preview and publication readiness"]:::blocked
+    T007 --> T008
+    T008 --> T009
+    T008 --> T011
+    T009 --> T010
+    T010 --> T013
+    T011 --> T012
+    T012 --> T013
+    T013 --> T014
+  end
+  click S004 "../entities/S-004-define-draft-poll-lifecycle-and-validation-rules.md"
+  click S005 "../entities/S-005-create-and-edit-draft-details-with-safe-location-markdown.md"
+  click S006 "../entities/S-006-manage-ordered-date-and-date-time-choices-safely-across-dst.md"
+  click S007 "../entities/S-007-preview-a-private-draft-and-enforce-publication-readiness.md"
+  click T007 "../entities/T-007-specify-draft-lifecycle-and-validation-with-failing-automated-tests.md"
+  click T008 "../entities/T-008-implement-and-verify-draft-lifecycle-and-validation.md"
+  click T009 "../entities/T-009-specify-draft-details-and-safe-location-markdown-with-failing-automated-tests.md"
+  click T010 "../entities/T-010-implement-and-verify-draft-details-and-safe-location-markdown.md"
+  click T011 "../entities/T-011-specify-ordered-choices-and-dst-safe-date-handling-with-failing-automated-tests.md"
+  click T012 "../entities/T-012-implement-and-verify-ordered-choices-and-dst-safe-date-handling.md"
+  click T013 "../entities/T-013-specify-private-preview-and-publication-readiness-with-failing-automated-tests.md"
+  click T014 "../entities/T-014-implement-and-verify-private-preview-and-publication-readiness.md"

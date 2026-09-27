@@ -14,6 +14,12 @@ This document translates `user-requirements.md` into observable acceptance scena
 - For every successful mutation, assert both the visible result and the corresponding audit entry unless the scenario explicitly tests an unsuccessful mutation.
 - Avoid asserting generated identifiers or exact timestamps. Assert identifier shape/uniqueness and timestamps within the test's execution window.
 - Copy-link scenarios may read the browser clipboard when available or assert the value exposed by the copy control.
+- Participant names are trimmed at their boundaries, limited to 100 Unicode code points, and compared using NFKC normalisation plus locale-independent case folding; internal whitespace is preserved.
+- Location source is limited to 4,000 Unicode code points. Supported Markdown comprises paragraphs, line breaks, emphasis, strong emphasis, ordered and unordered lists, and `https:` links. Raw HTML and other link schemes are rejected, and rendered output is sanitised.
+- Date-only options retain their local date. Timed options use the poll's IANA time zone; nonexistent local times are rejected and ambiguous local times require an explicit UTC-offset choice.
+- Public tokens are 192-bit cryptographically random Base64URL values whose raw form is never persisted.
+- Selecting the final date and closing the poll creates exactly one atomic audit revision; reopening creates another revision.
+- Assert stable API error codes and semantic visible messages rather than exact prose: `400` validation, `401` authentication, `403` ownership, `404` unknown resource or link, `409` uniqueness, `410` revoked link, `422` lifecycle, and `429` throttling.
 
 ## Baseline test data
 
@@ -757,17 +763,11 @@ Scenario Outline: Unauthorized location change is rejected
 | Authentication and public links | US-06, US-07, US-23, US-31–US-34, US-38 |
 | Errors, concurrency, and server enforcement | US-03, US-04, US-10, US-11, US-13, US-14, US-16, US-22, US-26, US-31–US-34, US-37, US-38 |
 
-## Details to resolve before implementation-specific Playwright tests
+## Resolved implementation decisions
 
-The source requirements intentionally do not define the following. These decisions should be made before selectors and exact assertions are finalized:
-
-- Maximum participant-name length and whether names are trimmed before uniqueness checks.
-- Maximum location-details length.
-- Exact validation and authorization status codes and user-facing messages.
-- The required entropy or format used to classify a public link as “unguessable.”
-- The exact undo result when an older revision affects a value that has since changed; US-22 asserts the required warning and confirmation but not an unspecified merge strategy.
-- How daylight-saving gaps or ambiguous local times are handled for configured time zones.
-- Whether final-date selection and closure are represented by one audit revision or two; the tests only require the complete action to be recorded without over-specifying storage design.
+- Participant-name and location limits, normalisation, safe Markdown, public-token format, time-zone edge cases, error-code semantics, undo overwrite behaviour, and close/reopen audit granularity are fixed by the test conventions above and the corresponding requirements and architecture sections.
+- When a confirmed undo targets a value changed by a later revision, it restores the selected revision's documented previous value. If that would create structurally invalid state, the request is rejected atomically.
+- Implementation-specific tests may choose accessible labels and selectors, but must not weaken these behavioural rules.
 
 ## Playwright implementation notes
 

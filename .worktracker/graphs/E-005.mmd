@@ -1,0 +1,26 @@
+graph LR
+  classDef done fill:#14532d,stroke:#86efac,color:#f0fdf4;
+  classDef blocked fill:#7f1d1d,stroke:#fca5a5,color:#fff7f7;
+  classDef inprogress fill:#78350f,stroke:#fbbf24,color:#fffbeb;
+  classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
+  classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
+  subgraph Stories
+    S015["S-015 Calculate deterministic top-five rankings"]:::blocked
+    S016["S-016 Display and refresh the live public ranking"]:::blocked
+    S015 --> S016
+  end
+  subgraph Tasks
+    T032["T-032 Specify deterministic ranking algorithm with failing automated tests"]:::blocked
+    T033["T-033 Implement and verify deterministic ranking algorithm"]:::blocked
+    T034["T-034 Specify live ranking presentation with failing automated tests"]:::blocked
+    T035["T-035 Implement and verify live ranking presentation"]:::blocked
+    T032 --> T033
+    T033 --> T034
+    T034 --> T035
+  end
+  click S015 "../entities/S-015-calculate-deterministic-top-five-rankings.md"
+  click S016 "../entities/S-016-display-and-refresh-the-live-public-ranking.md"
+  click T032 "../entities/T-032-specify-deterministic-ranking-algorithm-with-failing-automated-tests.md"
+  click T033 "../entities/T-033-implement-and-verify-deterministic-ranking-algorithm.md"
+  click T034 "../entities/T-034-specify-live-ranking-presentation-with-failing-automated-tests.md"
+  click T035 "../entities/T-035-implement-and-verify-live-ranking-presentation.md"

@@ -177,7 +177,7 @@ Table name pattern: `invite-agent-<environment>-app`.
 | Entity | Partition key (`PK`) | Sort key (`SK`) | Important attributes |
 |---|---|---|---|
 | Poll metadata | `POLL#<pollId>` | `META` | ownerId, title, description, location, instructions, timeZone, status, version, linkGeneration, tokenHash, selectedDateId, previousSelectedDateId, frozenRanking, createdAt, updatedAt |
-| Proposed date | `POLL#<pollId>` | `DATE#<dateId>` | startAt, displayTimeZone, order, createdAt, updatedAt |
+| Proposed date | `POLL#<pollId>` | `DATE#<dateId>` | kind (`DATE_ONLY` or `TIMED`), localDate or startAt, displayTimeZone, selectedUtcOffset, order, createdAt, updatedAt |
 | Participant | `POLL#<pollId>` | `PARTICIPANT#<participantId>` | displayName, normalizedName, responses, createdAt, updatedAt |
 
 Global secondary indexes:
@@ -185,7 +185,7 @@ Global secondary indexes:
 - `OwnerIndex`: `ownerId` plus `updatedAt#pollId`, used to list an organiser's polls.
 - `PublicTokenIndex`: `tokenHash` plus `linkGeneration`, used only to resolve an active public link to a poll. The index projection contains no participant data.
 
-Participant `responses` are stored as a map from `dateId` to `YES`, `MAYBE`, or `NO`. Poll reads use a single partition query to obtain metadata, dates, and participants.
+Participant `responses` are stored as a map from `dateId` to `YES` or `NO`. Poll reads use a single partition query to obtain metadata, dates, and participants.
 
 The poll metadata `version` is a monotonically increasing integer shared by all mutable entities in the poll. It identifies the relative freshness of returned representations and supports audit ordering; it is not a client-supplied write precondition.
 
@@ -238,6 +238,9 @@ Server-side rules are authoritative:
 - Reopening changes status to `OPEN`, retains the previous selection as provisional, and appends an audit event.
 - A newly closed poll replaces the provisional selection with the confirmed selection and captures a new frozen ranking.
 - Link regeneration increments `linkGeneration`, stores a new token hash, and immediately invalidates the previous token.
+- Participant display names are trimmed at their boundaries, limited to 100 Unicode code points, and compared for uniqueness using NFKC normalisation plus locale-independent case folding; internal whitespace is preserved.
+- Location source is limited to 4,000 Unicode code points. The Markdown parser accepts paragraphs, line breaks, emphasis, strong emphasis, ordered and unordered lists, and `https:` links; it rejects raw HTML and unsafe link schemes, and the rendered result is sanitised.
+- Date-only options retain their local ISO date independently of time-zone conversion. Timed options store a UTC instant, the poll's IANA time zone, and the organiser-selected UTC offset. Nonexistent local times are rejected; ambiguous local times require explicit offset selection.
 
 ## 7. Public-Link Design
 
@@ -247,7 +250,7 @@ The public URL has the form:
 https://invite-agent.10printiamcool.com/p/<opaque-token>
 ```
 
-The token is generated from at least 128 bits of cryptographically secure randomness and encoded using a URL-safe alphabet. Only a keyed hash or one-way hash of the token is stored. The raw token is returned once when the link is created or regenerated and is subsequently carried in the public URL.
+The token is generated from 192 bits of cryptographically secure randomness and encoded using Base64URL. Only a keyed hash of the token is stored. The raw token is returned once when the link is created or regenerated and is subsequently carried in the public URL.
 
 The API accepts the token in a dedicated header sent by the SPA, not in the API path or query string. This reduces its exposure in API access logs. The public page still necessarily receives the token in its browser URL; the application therefore sets a restrictive referrer policy and must not load third-party scripts or resources that could receive the URL.
 
@@ -291,7 +294,7 @@ Public mutations require the active link token but no expected version. A public
 - public poll metadata and lifecycle status;
 - ordered proposed dates;
 - participant names and availability values;
-- Yes and Maybe totals;
+- Yes totals;
 - live ranking when open, or the frozen ranking when closed;
 - selected or provisional date information;
 - the current version.
@@ -349,15 +352,14 @@ Undo is a new compensating mutation, never deletion of history. The backend:
 6. Applies the inverse in a transaction against the latest server state.
 7. Appends an `UNDO` audit event referencing the original event.
 
-Some events can become non-reversible because a later structural change makes the original state invalid. The API reports this explicitly rather than partially applying an undo.
+If a later revision changed the affected value, the preview identifies that newer work and confirmation restores the selected event's `before` value, overwriting the newer value. Some events can become non-reversible because a later structural change makes the original state invalid. The API rejects such an undo atomically and reports it explicitly rather than partially applying it.
 
 ## 10. Ranking
 
-The backend is the source of truth for ranking. For each proposed date it calculates Yes and Maybe totals, then sorts by:
+The backend is the source of truth for ranking. For each proposed date it calculates the Yes total, then sorts by:
 
 1. Yes total descending.
-2. Maybe total descending.
-3. Original proposed-date order ascending.
+2. Original proposed-date order ascending.
 
 It returns at most five entries. The dataset is small enough for calculation during a poll read and after a mutation; no separate analytics service is required.
 
@@ -610,7 +612,7 @@ Playwright drives the SPA through `http://localhost:5173`; tests do not call app
 - organiser sign-in behavior through the local auth adapter;
 - draft creation, validation, date editing, publication, and public-link copying;
 - adding, editing, and removing participant rows through the public page;
-- Yes/Maybe totals and ranking tie-breaks;
+- Yes totals and ranking tie-breaks;
 - controlled concurrent edits that prove the later successful update wins without a conflict warning and both clients converge on the latest server state;
 - immutable history, ordinary undo, and confirmed undo over a newer value;
 - final-date selection, frozen ranking, closing, reopening, and closing again;

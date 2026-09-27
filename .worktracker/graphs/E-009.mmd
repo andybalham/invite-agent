@@ -1,0 +1,35 @@
+graph LR
+  classDef done fill:#14532d,stroke:#86efac,color:#f0fdf4;
+  classDef blocked fill:#7f1d1d,stroke:#fca5a5,color:#fff7f7;
+  classDef inprogress fill:#78350f,stroke:#fbbf24,color:#fffbeb;
+  classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
+  classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
+  subgraph Stories
+    S029["S-029 Automate test-gated packaging and deployment"]:::blocked
+    S030["S-030 Prove the deployed critical journey with production smoke tests"]:::blocked
+    S031["S-031 Complete operational handoff and MVP traceability"]:::blocked
+    S029 --> S030
+    S030 --> S031
+  end
+  subgraph Tasks
+    T060["T-060 Specify test-gated release automation with failing tests"]:::blocked
+    T061["T-061 Implement and verify test-gated release automation"]:::blocked
+    T062["T-062 Specify the deployed production smoke journey with failing tests"]:::blocked
+    T063["T-063 Implement and execute the production smoke journey"]:::blocked
+    T064["T-064 Specify operational handoff and traceability checks"]:::blocked
+    T065["T-065 Complete and verify operational handoff and MVP traceability"]:::blocked
+    T060 --> T061
+    T061 --> T062
+    T062 --> T063
+    T063 --> T064
+    T064 --> T065
+  end
+  click S029 "../entities/S-029-automate-test-gated-packaging-and-deployment.md"
+  click S030 "../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md"
+  click S031 "../entities/S-031-complete-operational-handoff-and-mvp-traceability.md"
+  click T060 "../entities/T-060-specify-test-gated-release-automation-with-failing-tests.md"
+  click T061 "../entities/T-061-implement-and-verify-test-gated-release-automation.md"
+  click T062 "../entities/T-062-specify-the-deployed-production-smoke-journey-with-failing-tests.md"
+  click T063 "../entities/T-063-implement-and-execute-the-production-smoke-journey.md"
+  click T064 "../entities/T-064-specify-operational-handoff-and-traceability-checks.md"
+  click T065 "../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md"

@@ -1,0 +1,44 @@
+graph LR
+  classDef done fill:#14532d,stroke:#86efac,color:#f0fdf4;
+  classDef blocked fill:#7f1d1d,stroke:#fca5a5,color:#fff7f7;
+  classDef inprogress fill:#78350f,stroke:#fbbf24,color:#fffbeb;
+  classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
+  classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
+  subgraph Stories
+    S017["S-017 Persist and display complete immutable audit history"]:::blocked
+    S018["S-018 Undo an isolated change with a compensating revision"]:::blocked
+    S019["S-019 Warn, confirm, or reject complex undo safely"]:::blocked
+    S020["S-020 Protect audit and undo operations"]:::blocked
+    S017 --> S018
+    S017 --> S020
+    S018 --> S019
+  end
+  subgraph Tasks
+    T036["T-036 Specify immutable audit persistence and history view with failing automated tests"]:::blocked
+    T037["T-037 Implement and verify immutable audit persistence and history view"]:::blocked
+    T038["T-038 Specify ordinary compensating undo with failing automated tests"]:::blocked
+    T039["T-039 Implement and verify ordinary compensating undo"]:::blocked
+    T040["T-040 Specify warned and structurally invalid undo with failing automated tests"]:::blocked
+    T041["T-041 Implement and verify warned and structurally invalid undo"]:::blocked
+    T042["T-042 Specify audit and undo authorization with failing automated tests"]:::blocked
+    T043["T-043 Implement and verify audit and undo authorization"]:::blocked
+    T036 --> T037
+    T037 --> T038
+    T037 --> T042
+    T038 --> T039
+    T039 --> T040
+    T040 --> T041
+    T042 --> T043
+  end
+  click S017 "../entities/S-017-persist-and-display-complete-immutable-audit-history.md"
+  click S018 "../entities/S-018-undo-an-isolated-change-with-a-compensating-revision.md"
+  click S019 "../entities/S-019-warn-confirm-or-reject-complex-undo-safely.md"
+  click S020 "../entities/S-020-protect-audit-and-undo-operations.md"
+  click T036 "../entities/T-036-specify-immutable-audit-persistence-and-history-view-with-failing-automated-tests.md"
+  click T037 "../entities/T-037-implement-and-verify-immutable-audit-persistence-and-history-view.md"
+  click T038 "../entities/T-038-specify-ordinary-compensating-undo-with-failing-automated-tests.md"
+  click T039 "../entities/T-039-implement-and-verify-ordinary-compensating-undo.md"
+  click T040 "../entities/T-040-specify-warned-and-structurally-invalid-undo-with-failing-automated-tests.md"
+  click T041 "../entities/T-041-implement-and-verify-warned-and-structurally-invalid-undo.md"
+  click T042 "../entities/T-042-specify-audit-and-undo-authorization-with-failing-automated-tests.md"
+  click T043 "../entities/T-043-implement-and-verify-audit-and-undo-authorization.md"

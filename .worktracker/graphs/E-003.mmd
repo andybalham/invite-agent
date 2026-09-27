@@ -1,0 +1,35 @@
+graph LR
+  classDef done fill:#14532d,stroke:#86efac,color:#f0fdf4;
+  classDef blocked fill:#7f1d1d,stroke:#fca5a5,color:#fff7f7;
+  classDef inprogress fill:#78350f,stroke:#fbbf24,color:#fffbeb;
+  classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
+  classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
+  subgraph Stories
+    S008["S-008 Publish atomically and issue a secure public capability"]:::blocked
+    S009["S-009 Render the safe unauthenticated public poll view"]:::blocked
+    S010["S-010 Enforce organiser authentication and ownership on the server"]:::blocked
+    S008 --> S009
+    S008 --> S010
+  end
+  subgraph Tasks
+    T015["T-015 Specify atomic publication and public-token issuance with failing automated tests"]:::blocked
+    T016["T-016 Implement and verify atomic publication and public-token issuance"]:::blocked
+    T017["T-017 Specify safe public poll view with failing automated tests"]:::blocked
+    T018["T-018 Implement and verify safe public poll view"]:::blocked
+    T019["T-019 Specify organiser authentication and ownership with failing automated tests"]:::blocked
+    T020["T-020 Implement and verify organiser authentication and ownership"]:::blocked
+    T015 --> T016
+    T016 --> T017
+    T016 --> T019
+    T017 --> T018
+    T019 --> T020
+  end
+  click S008 "../entities/S-008-publish-atomically-and-issue-a-secure-public-capability.md"
+  click S009 "../entities/S-009-render-the-safe-unauthenticated-public-poll-view.md"
+  click S010 "../entities/S-010-enforce-organiser-authentication-and-ownership-on-the-server.md"
+  click T015 "../entities/T-015-specify-atomic-publication-and-public-token-issuance-with-failing-automated-tests.md"
+  click T016 "../entities/T-016-implement-and-verify-atomic-publication-and-public-token-issuance.md"
+  click T017 "../entities/T-017-specify-safe-public-poll-view-with-failing-automated-tests.md"
+  click T018 "../entities/T-018-implement-and-verify-safe-public-poll-view.md"
+  click T019 "../entities/T-019-specify-organiser-authentication-and-ownership-with-failing-automated-tests.md"
+  click T020 "../entities/T-020-implement-and-verify-organiser-authentication-and-ownership.md"
