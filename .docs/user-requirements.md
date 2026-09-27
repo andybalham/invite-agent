@@ -75,25 +75,31 @@ The open poll displays one row per participant and one column per proposed date.
 Each availability value must support:
 
 - **Yes** - the participant can attend.
-- **Maybe** - the participant may be able to attend.
 - **No** - the participant cannot attend.
 
-To add a row, a participant must enter a non-empty display name and select an availability value for each proposed date.
+To add a row, a participant must enter a non-empty display name. The new row is inserted only if the name is unique within the poll, and every proposed date initially defaults to **No**.
 
-Participant names should be unique within a poll using a case-insensitive comparison. The application should offer to edit the matching row when someone attempts to add a duplicate name.
+Participant names must be unique within a poll using a case-insensitive comparison. The application must reject attempts to add or rename a row using a duplicate name.
 
-The poll must show separate totals of **Yes** and **Maybe** responses for each proposed date.
+The poll must show the total number of **Yes** responses for each proposed date.
 
 ## 6. Viewing and Editing Responses
 
 While the poll is open:
 
 - All link holders can see every participant's name and availability.
-- Any link holder can add, edit, or remove any participant row.
+- An option to add a new row prompts for a participant name. If the name is valid and unique, a new row is inserted with that name and all date cells set to **No**.
+- Each participant row provides options to rename or delete it.
+- Renaming a row prompts for a new name and succeeds only if that name is valid and unique within the poll.
+- Deleting a row prompts the user to enter the row's current name and proceeds only when the entered name matches.
+- Clicking a date cell toggles its availability between **No** and **Yes**.
+- Every date cell can receive keyboard focus. Pressing the Space bar while a date cell has focus toggles its availability between **No** and **Yes**.
 - No participant account, password, or ownership token is required.
 - The interface must make it clear that the table is collaboratively editable.
-- Each successful change must create a separate audited revision.
-- Concurrent changes must not silently overwrite newer data. The user must be shown the latest version before retrying.
+- Every add, rename, delete, or availability toggle is saved automatically by sending an update request to the server; no separate save action is required.
+- Each successful update must create a separate audited revision.
+- Concurrent updates use last-update-wins semantics without a conflict warning.
+- The displayed table must always be refreshed to the latest server state after an update and whenever a newer state is received.
 
 When the poll is closed, all participant modifications must be rejected by both the interface and the server.
 
@@ -104,8 +110,7 @@ While a poll is open, the shareable page must display an ordered list of up to f
 Dates are ranked using these rules, in order:
 
 1. Highest number of **Yes** responses.
-2. If two or more dates have the same **Yes** total, highest number of **Maybe** responses.
-3. If both totals are equal, the organiser's original proposed-date order.
+2. If two or more dates have the same **Yes** total, the organiser's original proposed-date order.
 
 The ranking must update whenever a response is added, edited, removed, or undone.
 
@@ -116,7 +121,6 @@ Each ranked entry must display:
 - Its rank.
 - The proposed date and time.
 - Its **Yes** total.
-- Its **Maybe** total.
 
 When the poll is closed, the selected date remains the primary result. The final ranking is retained as read-only supporting information and remains frozen until the poll is reopened.
 
@@ -151,7 +155,6 @@ Before confirmation, the application must show:
 
 - The selected date.
 - Participants who answered **Yes**.
-- Participants who answered **Maybe**.
 - Participants who answered **No**.
 - A warning that confirming the selection will close the poll.
 
@@ -195,7 +198,9 @@ The application must:
 
 - Reject invalid or duplicate proposed dates.
 - Reject blank or excessively long participant names.
-- Reject incomplete or invalid availability values.
+- Reject duplicate participant names using a case-insensitive comparison.
+- Reject invalid availability values other than **Yes** or **No**.
+- Reject a row deletion when the entered confirmation name does not match the row's current name.
 - Prevent participant changes while a poll is closed.
 - Prevent edits using a revoked link.
 - Return clear error messages without exposing sensitive system information.
@@ -208,19 +213,22 @@ The MVP is complete when:
 1. An authenticated organiser can create a poll with multiple proposed dates.
 2. The organiser can publish it and copy an unguessable public link.
 3. Anyone with the link can view all responses.
-4. Anyone with the link can add, edit, or remove any participant row while the poll is open.
-5. Each date supports **Yes**, **Maybe**, and **No** responses.
-6. The poll displays **Yes** and **Maybe** totals for every date.
-7. The shareable page displays no more than five ranked dates.
-8. Dates are ranked by **Yes** total descending, followed by **Maybe** total descending.
-9. Dates tied on both totals retain the organiser's original proposed-date order.
-10. The ranking updates after every successful response change or undo.
-11. Every change creates an immutable audit entry.
-12. The organiser can undo a change without removing its original audit entry.
-13. The organiser can select a proposed date and close the poll.
-14. A closed poll rejects all participant modifications and clearly displays the selected date.
-15. Closing the poll freezes the ranking until the poll is reopened.
-16. The organiser can reopen the poll, after which editing is enabled again and the former selection is marked provisional.
-17. The organiser can close the poll again with the same or a different date.
-18. The organiser can revoke and regenerate the public link.
-19. All organiser-only operations are protected by server-side authorisation.
+4. Anyone with the link can add a uniquely named participant row while the poll is open; all date cells initially default to **No**.
+5. Anyone with the link can rename a participant row to a unique name or delete a row after entering its current name.
+6. Each date supports **Yes** and **No** responses.
+7. A user can toggle a date cell by clicking it or by focusing it and pressing the Space bar.
+8. Every participant response update is sent automatically to the server without a separate save action.
+9. Concurrent updates use last-update-wins semantics without a warning, and the screen displays the latest server state.
+10. The poll displays the **Yes** total for every date.
+11. The shareable page displays no more than five ranked dates.
+12. Dates are ranked by **Yes** total descending, with ties retaining the organiser's original proposed-date order.
+13. The ranking updates after every successful response change or undo.
+14. Every change creates an immutable audit entry.
+15. The organiser can undo a change without removing its original audit entry.
+16. The organiser can select a proposed date and close the poll.
+17. A closed poll rejects all participant modifications and clearly displays the selected date.
+18. Closing the poll freezes the ranking until the poll is reopened.
+19. The organiser can reopen the poll, after which editing is enabled again and the former selection is marked provisional.
+20. The organiser can close the poll again with the same or a different date.
+21. The organiser can revoke and regenerate the public link.
+22. All organiser-only operations are protected by server-side authorisation.
