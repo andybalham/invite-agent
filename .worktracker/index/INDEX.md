@@ -3,11 +3,11 @@
 _Generated. Do not edit by hand._
 
 ## [E-001 · E1 — Runnable local engineering foundation](./E-001.md) — blocked
-- [ ] **S-001 · Establish the TypeScript workspace and shared contracts** — in-progress
+- [x] **S-001 · Establish the TypeScript workspace and shared contracts** — done
   - [x] [T-001 · Specify workspace and shared contracts with failing automated tests](../entities/T-001-specify-workspace-and-shared-contracts-with-failing-automated-tests.md) — done
-  - [ ] [T-002 · Implement and verify workspace and shared contracts](../entities/T-002-implement-and-verify-workspace-and-shared-contracts.md) — todo
-- [ ] **S-002 · Run shared services locally with DynamoDB and guarded authentication** — blocked · waiting on S-001
-  - [ ] [T-003 · Specify local DynamoDB, shared services, and guarded auth with failing automated tests](../entities/T-003-specify-local-dynamodb-shared-services-and-guarded-auth-with-failing-automated-tests.md) — blocked · waiting on T-002
+  - [x] [T-002 · Implement and verify workspace and shared contracts](../entities/T-002-implement-and-verify-workspace-and-shared-contracts.md) — done
+- [ ] **S-002 · Run shared services locally with DynamoDB and guarded authentication** — blocked
+  - [ ] [T-003 · Specify local DynamoDB, shared services, and guarded auth with failing automated tests](../entities/T-003-specify-local-dynamodb-shared-services-and-guarded-auth-with-failing-automated-tests.md) — todo
   - [ ] [T-004 · Implement and verify local DynamoDB, shared services, and guarded auth](../entities/T-004-implement-and-verify-local-dynamodb-shared-services-and-guarded-auth.md) — blocked · waiting on T-003
 - [ ] **S-003 · Provide one-command local startup and browser test harness** — blocked · waiting on S-002
   - [ ] [T-005 · Specify one-command local stack and browser harness with failing automated tests](../entities/T-005-specify-one-command-local-stack-and-browser-harness-with-failing-automated-tests.md) — blocked · waiting on T-004

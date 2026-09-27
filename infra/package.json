@@ -1,0 +1,10 @@
+{
+  "name": "@invite-a-gent/infra",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b --pretty false",
+    "typecheck": "tsc -b --pretty false"
+  }
+}

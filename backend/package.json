@@ -1,0 +1,13 @@
+{
+  "name": "@invite-a-gent/backend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@invite-a-gent/contracts": "0.0.0"
+  },
+  "scripts": {
+    "build": "tsc -b --pretty false",
+    "typecheck": "tsc -b --pretty false"
+  }
+}

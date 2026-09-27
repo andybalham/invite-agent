@@ -3,9 +3,26 @@
   "version": "0.0.0",
   "private": true,
   "packageManager": "npm@11.6.0",
+  "workspaces": [
+    "frontend",
+    "backend",
+    "infra",
+    "packages/contracts",
+    "scripts",
+    "test"
+  ],
   "scripts": {
-    "test": "node --test test/foundation/*.test.mjs",
-    "test:unit": "node --test test/foundation/contracts.test.mjs",
-    "test:boundaries": "node --test test/foundation/boundaries.test.mjs"
+    "build": "tsc -b --pretty false",
+    "format:check": "node scripts/check-format.mjs",
+    "lint": "node scripts/lint.mjs",
+    "typecheck": "tsc -b --pretty false --noEmit false",
+    "test": "npm run build && node scripts/check-production-boundaries.mjs && node --test test/foundation/*.test.mjs",
+    "test:unit": "npm run build && node --test test/foundation/contracts.test.mjs test/foundation/backend-validation.test.mjs",
+    "test:boundaries": "node scripts/check-production-boundaries.mjs && node --test test/foundation/boundaries.test.mjs",
+    "security:check": "node scripts/check-security.mjs",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run security:check"
+  },
+  "devDependencies": {
+    "typescript": "5.9.2"
   }
 }
