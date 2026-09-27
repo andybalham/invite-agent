@@ -1,0 +1,67 @@
+import { randomUUID } from "node:crypto";
+import type { CreatePollRequest } from "@invite-a-gent/contracts";
+import type { DynamoPollRepository, PollRecord } from "../data/index.js";
+import { validateCreatePollRequest } from "../domain/index.js";
+import { ApplicationError } from "./errors.js";
+
+export interface PollResponse {
+  readonly id: string;
+  readonly title: string;
+  readonly status: "draft";
+  readonly version: number;
+  readonly timeZone: string;
+  readonly proposedDates: CreatePollRequest["proposedDates"];
+  readonly location?: string;
+}
+
+function publicResponse(poll: PollRecord): PollResponse {
+  const base = {
+    id: poll.id,
+    title: poll.title,
+    status: "draft" as const,
+    version: poll.version,
+    timeZone: poll.timeZone,
+    proposedDates: poll.proposedDates
+  };
+  return poll.location === undefined ? base : { ...base, location: poll.location };
+}
+
+export class PollService {
+  public constructor(private readonly repository: DynamoPollRepository) {}
+
+  public async create(input: unknown, organiserId: string): Promise<PollResponse> {
+    const parsed = validateCreatePollRequest(input);
+    if (!parsed.success) {
+      throw new ApplicationError("VALIDATION_ERROR", parsed.issues.join("; "));
+    }
+    const createdAt = new Date().toISOString();
+    const id = randomUUID();
+    const poll: PollRecord = {
+      ...parsed.data,
+      id,
+      organiserId,
+      status: "draft",
+      version: 1,
+      createdAt
+    };
+    await this.repository.createPoll(poll, {
+      pollId: id,
+      id: randomUUID(),
+      action: "POLL_CREATED",
+      actorId: organiserId,
+      occurredAt: createdAt
+    });
+    return publicResponse(poll);
+  }
+
+  public async get(id: string, organiserId: string): Promise<PollResponse> {
+    const poll = await this.repository.getPoll(id);
+    if (!poll) {
+      throw new ApplicationError("NOT_FOUND", "Poll not found");
+    }
+    if (poll.organiserId !== organiserId) {
+      throw new ApplicationError("FORBIDDEN", "The organiser does not own this poll");
+    }
+    return publicResponse(poll);
+  }
+}

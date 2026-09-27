@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-003 · Specify local DynamoDB, shared services, and guarded auth with failing automated tests](../entities/T-003-specify-local-dynamodb-shared-services-and-guarded-auth-with-failing-automated-tests.md) — todo
+- [ ] [T-005 · Specify one-command local stack and browser harness with failing automated tests](../entities/T-005-specify-one-command-local-stack-and-browser-harness-with-failing-automated-tests.md) — todo

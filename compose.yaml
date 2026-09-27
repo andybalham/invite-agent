@@ -1,0 +1,9 @@
+name: invite-a-gent
+services:
+  dynamodb:
+    image: amazon/dynamodb-local:2.6.1
+    command: -jar DynamoDBLocal.jar -sharedDb -dbPath /data
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./.dynamodb:/data
