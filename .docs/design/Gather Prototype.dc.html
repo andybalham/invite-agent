@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/modernist-8d112ebc-b82c-43b7-b1a1-4c23cdbfb11a/styles.css">
+<script src="_ds/modernist-8d112ebc-b82c-43b7-b1a1-4c23cdbfb11a/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body)}
+*{box-sizing:border-box}
+a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-800)}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;flex-direction:column">
+
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:8px 24px;background:var(--color-text);color:var(--color-bg);font:500 12px/1.3 var(--font-body)">
+<b style="font-size:10.5px;letter-spacing:.1em;text-transform:uppercase">Prototype</b>
+<span style="color:var(--color-neutral-400)">Viewing as</span>
+<div style="display:flex;border:1px solid var(--color-neutral-600)">
+<button onClick="{{ asOrg }}" style="padding:5px 10px;border:0;cursor:pointer;font:600 12px var(--font-body);background:{{ orgTabBg }};color:{{ orgTabFg }}">Organiser (Olivia)</button>
+<button onClick="{{ asHolder }}" style="padding:5px 10px;border:0;border-left:1px solid var(--color-neutral-600);cursor:pointer;font:600 12px var(--font-body);background:{{ holderTabBg }};color:{{ holderTabFg }}">Link holder (no account)</button>
+</div>
+<sc-if value="{{ canSimulate }}" hint-placeholder-val="{{ false }}"><button onClick="{{ simulate }}" style="padding:5px 10px;border:1px solid var(--color-neutral-600);background:transparent;color:var(--color-bg);cursor:pointer;font:600 12px var(--font-body)" style-hover="border-color:var(--color-bg)">Simulate an edit by someone else</button></sc-if>
+<sc-if value="{{ canDemoDates }}" hint-placeholder-val="{{ false }}"><button onClick="{{ demoDates }}" style="padding:5px 10px;border:1px solid var(--color-neutral-600);background:transparent;color:var(--color-bg);cursor:pointer;font:600 12px var(--font-body)" style-hover="border-color:var(--color-bg)">Demo: add 6 more dates</button></sc-if>
+<sc-if value="{{ holderStale }}" hint-placeholder-val="{{ false }}"><button onClick="{{ getCurrentLink }}" style="padding:5px 10px;border:1px solid var(--color-accent);background:var(--color-accent);color:var(--color-bg);cursor:pointer;font:600 12px var(--font-body)">Get the current link from the organiser</button></sc-if>
+<span style="margin-left:auto;color:var(--color-neutral-400)">{{ protoHint }}</span>
+</div>
+
+<header style="display:flex;align-items:center;gap:16px;padding:14px 24px;border-bottom:2px solid var(--color-text)">
+<button onClick="{{ goDash }}" style="font:800 20px/1 var(--font-heading);background:none;border:0;padding:0;cursor:pointer;color:var(--color-text);margin-right:auto">Gather</button>
+<sc-if value="{{ showSaved }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--color-neutral-700)">{{ savedLabel }}</span></sc-if>
+<span style="font-size:12px;color:var(--color-neutral-700)">{{ whoLabel }}</span>
+</header>
+
+<main style="width:100%;max-width:920px;margin:0 auto;padding:28px 24px 96px;display:flex;flex-direction:column;gap:20px">
+
+<sc-if value="{{ scrDash }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap">
+<div style="margin-right:auto"><div style="font:700 11px var(--font-body);letter-spacing:.09em;text-transform:uppercase;color:var(--color-neutral-700)">Organiser</div><h1 style="font-size:36px;margin:4px 0 0">My polls</h1></div>
+<button class="btn btn-primary" onClick="{{ newPoll }}">New poll</button>
+</div>
+<table class="table">
+<thead><tr><th>Title</th><th>State</th><th>Dates</th><th>Responses</th><th></th></tr></thead>
+<tbody>
+<sc-for list="{{ pollList }}" as="it" hint-placeholder-count="1">
+<tr onClick="{{ it.open }}" style="cursor:pointer"><td><b>{{ it.title }}</b></td><td><span class="tag" style="font-weight:700;background:{{ it.tagBg }};color:{{ it.tagFg }}">{{ it.state }}</span></td><td>{{ it.dates }}</td><td>{{ it.count }}</td><td style="color:var(--color-accent-700);font-weight:600">Open →</td></tr>
+</sc-for>
+</tbody>
+</table>
+</sc-if>
+
+<sc-if value="{{ scrEdit }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap">
+<div style="margin-right:auto"><span class="tag tag-accent" style="font-weight:700">Draft · only you can see this</span><h1 style="font-size:32px;margin:8px 0 0">{{ editHeading }}</h1></div>
+<button class="btn btn-secondary" onClick="{{ goPreview }}">Preview</button>
+<button class="btn btn-primary" onClick="{{ publish }}">Publish</button>
+</div>
+<sc-if value="{{ hasPublishErrs }}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="border:2px solid var(--color-accent);background:var(--color-accent-100);color:var(--color-accent-900);padding:12px 14px;display:flex;flex-direction:column;gap:4px">
+<b>Can't publish yet — fix these first:</b>
+<sc-for list="{{ publishErrs }}" as="e"><span>— {{ e }}</span></sc-for>
+</div>
+</sc-if>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
+<div class="field" style="grid-column:1/-1"><label>Title *</label><input class="input" value="{{ edTitle }}" onChange="{{ onTitle }}" onFocus="{{ focusTitle }}" onBlur="{{ blurTitle }}" placeholder="e.g. Autumn get-together"></div>
+<div class="field" style="grid-column:1/-1"><label>Description</label><input class="input" value="{{ edDesc }}" onChange="{{ onDesc }}" onFocus="{{ focusDesc }}" onBlur="{{ blurDesc }}"></div>
+<div class="field" style="grid-column:1/-1"><label>Location — plain text or Markdown, e.g. [map](https://…)</label><textarea class="input" style="min-height:64px;font-family:ui-monospace,Menlo,monospace;font-size:13px" value="{{ edLoc }}" onChange="{{ onLoc }}" onFocus="{{ focusLoc }}" onBlur="{{ blurLoc }}"></textarea>
+<sc-if value="{{ edLocErr }}" hint-placeholder-val="{{ false }}"><div style="color:var(--color-accent-700);font-weight:600;font-size:12px;margin-top:4px">{{ edLocErr }}</div></sc-if>
+<sc-if value="{{ edLocShowPreview }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px;margin-top:4px;color:var(--color-neutral-700)">Shows as: <sc-for list="{{ edLocSegs }}" as="seg"><sc-if value="{{ seg.link }}"><a href="{{ seg.href }}" target="_blank" rel="noopener noreferrer">{{ seg.text }}</a></sc-if><sc-if value="{{ seg.plain }}"><span>{{ seg.text }}</span></sc-if></sc-for></div></sc-if>
+</div>
+<div class="field"><label>Instructions</label><input class="input" value="{{ edInstr }}" onChange="{{ onInstr }}" onFocus="{{ focusInstr }}" onBlur="{{ blurInstr }}"></div>
+<div class="field"><label>Time zone *</label><select class="input" value="{{ edTz }}" onChange="{{ onTz }}"><sc-for list="{{ tzOptions }}" as="tz"><option value="{{ tz }}">{{ tz }}</option></sc-for></select></div>
+</div>
+<div style="border-top:2px solid var(--color-text);padding-top:14px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><h2 style="font-size:20px;margin:0">Proposed dates</h2><span style="font-size:12px;color:var(--color-neutral-700)">At least two. Order is kept as the tie-breaker in the ranking.</span></div>
+<sc-for list="{{ dateRows }}" as="d" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="display:grid;grid-template-columns:28px minmax(0,1fr) 120px auto;gap:8px;align-items:center">
+<b style="font:800 16px var(--font-heading)">{{ d.n }}</b>
+<input class="input" type="date" value="{{ d.date }}" onChange="{{ d.onDate }}" onFocus="{{ d.onFocus }}" onBlur="{{ d.onBlur }}" style="border-color:{{ d.bd }}">
+<input class="input" type="time" value="{{ d.time }}" onChange="{{ d.onTime }}" onFocus="{{ d.onFocus }}" onBlur="{{ d.onBlur }}" style="border-color:{{ d.bd }}">
+<div style="display:flex;gap:2px">
+<button class="btn btn-secondary btn-icon" aria-label="Move up" onClick="{{ d.up }}" disabled="{{ d.isFirst }}">↑</button>
+<button class="btn btn-secondary btn-icon" aria-label="Move down" onClick="{{ d.down }}" disabled="{{ d.isLast }}">↓</button>
+<button class="btn btn-ghost btn-icon" aria-label="Remove date" onClick="{{ d.remove }}">✕</button>
+</div>
+</div>
+<sc-if value="{{ d.err }}"><div style="margin-left:36px;color:var(--color-accent-700);font-weight:600;font-size:12px">{{ d.err }}</div></sc-if>
+</div>
+</sc-for>
+<sc-if value="{{ noDates }}" hint-placeholder-val="{{ false }}"><div style="padding:14px;border:1px dashed var(--color-neutral-500);color:var(--color-neutral-700)">No dates yet. Add at least two below.</div></sc-if>
+<div style="display:grid;grid-template-columns:28px minmax(0,1fr) 120px auto;gap:8px;align-items:center;padding-top:10px;border-top:1px solid var(--color-neutral-300)">
+<b style="color:var(--color-neutral-600)">+</b>
+<input class="input" type="date" value="{{ newDate }}" onChange="{{ onNewDate }}" aria-label="New date">
+<input class="input" type="time" value="{{ newTime }}" onChange="{{ onNewTime }}" aria-label="New time">
+<button class="btn btn-secondary" onClick="{{ addDate }}">Add date</button>
+</div>
+<sc-if value="{{ dateErr }}" hint-placeholder-val="{{ false }}"><div role="alert" style="margin-left:36px;color:var(--color-accent-700);font-weight:600;font-size:12px">{{ dateErr }}</div></sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ scrPreview }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border:2px solid var(--color-accent);background:var(--color-accent-100);color:var(--color-accent-900)"><b>Preview</b><span style="margin-right:auto">This is what participants will see. Responses are turned off until you publish.</span><button class="btn btn-secondary" onClick="{{ goEdit }}">Back to editing</button></div>
+<div><h1 style="font-size:36px;margin:0">{{ pTitle }}</h1><sc-if value="{{ pDesc }}"><p style="margin:6px 0 0">{{ pDesc }}</p></sc-if><sc-if value="{{ pInstr }}"><p style="margin:2px 0 0;color:var(--color-neutral-700)">{{ pInstr }}</p></sc-if></div>
+<div style="display:flex;gap:6px 18px;flex-wrap:wrap;font-size:14px"><sc-if value="{{ hasLoc }}"><span><b>Where</b> <sc-for list="{{ locSegs }}" as="seg"><sc-if value="{{ seg.link }}"><a href="{{ seg.href }}" target="_blank" rel="noopener noreferrer">{{ seg.text }}</a></sc-if><sc-if value="{{ seg.plain }}"><span>{{ seg.text }}</span></sc-if></sc-for></span></sc-if><span><b>Times in</b> {{ pTz }}</span></div>
+<table class="table"><thead><tr><th>Name</th><sc-for list="{{ cols }}" as="c"><th>{{ c.day }}<br><span style="text-transform:none;letter-spacing:0">{{ c.time }}</span></th></sc-for></tr></thead><tbody><tr><td colspan="99" style="color:var(--color-neutral-700);padding:20px 8px">No responses yet.</td></tr></tbody></table>
+<div><button class="btn btn-primary" disabled="{{ true }}">+ Add row</button></div>
+</sc-if>
+
+<sc-if value="{{ scrShare }}" hint-placeholder-val="{{ false }}">
+<div><span class="tag tag-accent" style="font-weight:700">Published · Open</span><h1 style="font-size:36px;margin:8px 0 0">Share this link</h1><p style="margin:6px 0 0;color:var(--color-neutral-800)">Anyone with the link can see and edit every response — no account needed.</p></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><input class="input" readonly="{{ true }}" value="{{ link }}" style="flex:1;min-width:240px;font-family:ui-monospace,Menlo,monospace;font-size:13px"><button class="btn btn-primary" onClick="{{ copyLink }}">{{ copyLabel }}</button></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-secondary" onClick="{{ goPoll }}">Go to the poll</button><button class="btn btn-secondary" onClick="{{ asHolder }}">Open as a link holder</button></div>
+<div style="border-top:2px solid var(--color-text);padding-top:14px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+<div style="flex:1;min-width:240px"><h2 style="font-size:20px;margin:0">Link security</h2><p style="margin:4px 0 0;color:var(--color-neutral-800)">If the link was shared with the wrong people, replace it. The old link stops working immediately. Dates, responses and history are kept.</p></div>
+<button class="btn btn-secondary" onClick="{{ askRegen }}">Regenerate link…</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ scrInvalid }}" hint-placeholder-val="{{ false }}">
+<div style="padding:40px 0;display:flex;flex-direction:column;gap:10px;max-width:520px">
+<div style="font:700 11px var(--font-body);letter-spacing:.09em;text-transform:uppercase;color:var(--color-accent-700)">Link not valid</div>
+<h1 style="font-size:36px;margin:0">This poll link doesn't work</h1>
+<p style="margin:0;color:var(--color-neutral-800)">The organiser may have replaced it, or the poll isn't published yet. Ask them for the current link. Nothing you do here can change the poll.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ scrHistory }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap">
+<div style="margin-right:auto"><button class="btn btn-ghost" onClick="{{ goPoll }}" style="padding-left:0">← Back to poll</button><h1 style="font-size:32px;margin:4px 0 0">History</h1><p style="margin:4px 0 0;color:var(--color-neutral-700);font-size:13px">{{ histSummary }}</p></div>
+</div>
+<div style="overflow-x:auto"><table class="table" style="font-size:13px">
+<thead><tr><th>#</th><th>When</th><th>Who</th><th>Change</th><th>Before</th><th>After</th><th></th></tr></thead>
+<tbody>
+<sc-for list="{{ entries }}" as="e" hint-placeholder-count="6">
+<tr style="background:{{ e.bg }}"><td style="color:var(--color-neutral-700)">{{ e.num }}</td><td style="white-space:nowrap">{{ e.time }}</td><td>{{ e.actor }}</td><td><b>{{ e.what }}</b></td><td style="max-width:180px;overflow-wrap:anywhere">{{ e.before }}</td><td style="max-width:180px;overflow-wrap:anywhere">{{ e.after }}</td><td><sc-if value="{{ e.canUndo }}"><button class="btn btn-ghost" style="font-size:13px" onClick="{{ e.undo }}">Undo</button></sc-if></td></tr>
+</sc-for>
+</tbody></table></div>
+</sc-if>
+
+<sc-if value="{{ scrPoll }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ isOrg }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:var(--color-neutral-100);border:2px solid var(--color-text)">
+<span style="font:700 11px var(--font-body);letter-spacing:.09em;text-transform:uppercase;margin-right:6px">Organiser</span>
+<button class="btn btn-secondary" onClick="{{ goHistory }}">{{ historyLabel }}</button>
+<button class="btn btn-secondary" onClick="{{ askLoc }}">Edit location</button>
+<button class="btn btn-secondary" onClick="{{ goShare }}">Share link</button>
+<sc-if value="{{ isClosed }}"><button class="btn btn-primary" onClick="{{ askReopen }}">Reopen poll…</button></sc-if>
+<sc-if value="{{ isOpen }}"><span style="font-size:12px;color:var(--color-neutral-700);margin-left:auto">Pick a date below to close the poll</span></sc-if>
+</div>
+</sc-if>
+
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;gap:8px;align-items:center"><span class="tag" style="font-weight:700;background:{{ stateTagBg }};color:{{ stateTagFg }}">{{ stateLabel }}</span></div>
+<h1 style="font-size:40px;margin:0">{{ pTitle }}</h1>
+<sc-if value="{{ pDesc }}"><p style="margin:0">{{ pDesc }}</p></sc-if>
+<sc-if value="{{ pInstr }}"><p style="margin:0;color:var(--color-neutral-700)">{{ pInstr }}</p></sc-if>
+<div style="display:flex;gap:6px 18px;flex-wrap:wrap;font-size:14px;margin-top:4px"><sc-if value="{{ hasLoc }}"><span><b>Where</b> <sc-for list="{{ locSegs }}" as="seg"><sc-if value="{{ seg.link }}"><a href="{{ seg.href }}" target="_blank" rel="noopener noreferrer">{{ seg.text }}</a></sc-if><sc-if value="{{ seg.plain }}"><span>{{ seg.text }}</span></sc-if></sc-for></span></sc-if><span><b>Times in</b> {{ pTz }}</span></div>
+</div>
+
+<sc-if value="{{ isClosed }}" hint-placeholder-val="{{ false }}">
+<div style="background:var(--color-accent);color:var(--color-bg);padding:24px 22px;display:flex;flex-direction:column;gap:6px">
+<div style="font:700 11px var(--font-body);letter-spacing:.1em;text-transform:uppercase">It's decided</div>
+<div style="font:800 44px/1.02 var(--font-heading)">{{ finalLong }}</div>
+<div style="font-size:14px">{{ finalYesLine }}</div>
+</div>
+</sc-if>
+<sc-if value="{{ showProvisional }}" hint-placeholder-val="{{ false }}">
+<div style="border:2px dashed var(--color-accent);padding:14px 16px;display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="tag tag-accent" style="font-weight:700">Provisional</span><span style="font-size:13px;color:var(--color-neutral-800)">The poll was reopened — this date may change.</span></div>
+<div style="font:800 24px/1.1 var(--font-heading)">{{ finalLong }}</div>
+</div>
+</sc-if>
+
+<div style="border-top:2px solid var(--color-text);padding-top:14px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><h2 style="font-size:20px;margin:0;margin-right:auto">{{ rankHeading }}</h2><span style="font-size:12px;color:var(--color-neutral-700)">{{ rankNote }}</span></div>
+<ol aria-label="Most popular dates" style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column">
+<sc-for list="{{ rankItems }}" as="r" hint-placeholder-count="3">
+<li style="display:grid;grid-template-columns:28px minmax(120px,190px) minmax(0,1fr) 64px auto;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--color-neutral-300)">
+<b style="font:800 20px var(--font-heading)">{{ r.rank }}</b>
+<span style="font-weight:600">{{ r.label }}<sc-if value="{{ r.isFinal }}"><span style="color:var(--color-accent-700)"> ★</span></sc-if></span>
+<div style="height:10px;background:var(--color-neutral-200)"><div style="height:100%;width:{{ r.width }};background:{{ r.bar }};transition:width .35s ease"></div></div>
+<span style="font-weight:700">{{ r.yesLabel }}</span>
+<span><sc-if value="{{ r.canPick }}"><button class="btn btn-secondary" style="font-size:13px;padding:6px 12px" onClick="{{ r.pick }}">Pick…</button></sc-if></span>
+</li>
+</sc-for>
+</ol>
+</div>
+
+<div style="border-top:2px solid var(--color-text);padding-top:14px;display:flex;flex-direction:column;gap:12px">
+<sc-if value="{{ canEdit }}" hint-placeholder-val="{{ false }}">
+<div style="padding:10px 12px;background:var(--color-accent-100);border:1px solid var(--color-accent-300);color:var(--color-accent-900);font-size:14px"><b>This is a shared table.</b> Anyone with the link can add, rename, delete or change any row. Every change saves automatically.</div>
+</sc-if>
+<sc-if value="{{ isClosed }}" hint-placeholder-val="{{ false }}">
+<div style="padding:10px 12px;background:var(--color-neutral-100);border:1px solid var(--color-neutral-400);font-size:14px"><b>This poll is closed.</b> Responses are read-only.</div>
+</sc-if>
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="font-size:20px;margin:0;margin-right:auto">Everyone's answers</h2>
+<sc-if value="{{ hasOverflow }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:6px">
+<span style="font-size:12px;font-weight:600;color:var(--color-neutral-800)">{{ overflowLabel }}</span>
+<button class="btn btn-secondary btn-icon" aria-label="Show earlier dates" onClick="{{ scrollLeft }}" disabled="{{ noLeft }}">←</button>
+<button class="btn btn-secondary btn-icon" aria-label="Show later dates" onClick="{{ scrollRight }}" disabled="{{ noRight }}">→</button>
+</div></sc-if>
+<sc-if value="{{ canEdit }}"><button class="btn btn-primary" onClick="{{ askAdd }}">+ Add a row</button></sc-if></div>
+<div style="position:relative">
+<sc-if value="{{ moreLeft }}" hint-placeholder-val="{{ false }}"><button onClick="{{ scrollLeft }}" aria-label="{{ leftLabel }}" style="position:absolute;z-index:3;top:0;bottom:0;left:{{ nameColW }};width:56px;border:0;padding:0 0 0 8px;cursor:pointer;text-align:left;background:linear-gradient(to right,var(--color-bg) 30%,transparent);font:800 16px var(--font-heading);color:var(--color-text)">←<span style="display:block;font:700 10px var(--font-body);color:var(--color-accent-700)">{{ leftCount }}</span></button></sc-if>
+<sc-if value="{{ moreRight }}" hint-placeholder-val="{{ false }}"><button onClick="{{ scrollRight }}" aria-label="{{ rightLabel }}" style="position:absolute;z-index:3;top:0;bottom:0;right:0;width:72px;border:0;border-right:2px solid var(--color-accent);padding:0 8px 0 0;cursor:pointer;text-align:right;background:linear-gradient(to left,var(--color-bg) 40%,transparent);font:800 16px var(--font-heading);color:var(--color-text)">→<span style="display:block;font:700 10px var(--font-body);color:var(--color-accent-700)">{{ rightCount }}</span></button></sc-if>
+<div ref="{{ scRef }}" onScroll="{{ onTableScroll }}" style="overflow-x:auto;scrollbar-width:thin">
+<table class="table">
+<thead><tr><th data-namecol="1" style="position:sticky;left:0;z-index:2;background:var(--color-bg);border-right:{{ nameBorder }}">Name</th>
+<sc-for list="{{ cols }}" as="c"><th data-col="1" style="background:{{ c.bg }};vertical-align:bottom;min-width:92px;white-space:nowrap">{{ c.day }}<br><span style="text-transform:none;letter-spacing:0">{{ c.time }}</span></th></sc-for>
+<sc-if value="{{ canEdit }}"><th></th></sc-if></tr></thead>
+<tbody>
+<sc-for list="{{ rows }}" as="row" hint-placeholder-count="3">
+<tr>
+<td style="font-weight:700;white-space:nowrap;position:sticky;left:0;z-index:2;background:var(--color-bg);border-right:{{ nameBorder }}">{{ row.name }}</td>
+<sc-for list="{{ row.cells }}" as="cell">
+<td style="background:{{ cell.colBg }};padding:4px 6px">
+<sc-if value="{{ cell.editable }}"><button aria-label="{{ cell.aria }}" aria-pressed="{{ cell.pressed }}" onClick="{{ cell.toggle }}" style="display:block;width:100%;min-width:72px;min-height:38px;padding:6px 10px;text-align:left;cursor:pointer;font:{{ cell.fw }} 13px var(--font-body);background:{{ cell.bg }};color:{{ cell.fg }};border:1px solid {{ cell.bd }};transition:background .15s" style-hover="border-color:var(--color-text)">{{ cell.label }}</button></sc-if>
+<sc-if value="{{ cell.readonly }}"><span style="display:block;padding:6px 10px;font:{{ cell.fw }} 13px var(--font-body);color:{{ cell.fg }}">{{ cell.label }}</span></sc-if>
+</td>
+</sc-for>
+<sc-if value="{{ canEdit }}"><td style="position:relative;width:44px">
+<button class="btn btn-ghost btn-icon" aria-label="{{ row.menuAria }}" onClick="{{ row.toggleMenu }}" style="color:var(--color-text)">⋯</button>
+<sc-if value="{{ row.menuOpen }}"><div style="position:absolute;right:4px;top:44px;z-index:5;min-width:130px;background:var(--color-bg);border:2px solid var(--color-text);box-shadow:var(--shadow-md);display:flex;flex-direction:column">
+<button onClick="{{ row.rename }}" style="text-align:left;padding:9px 12px;border:0;border-bottom:1px solid var(--color-neutral-300);background:transparent;cursor:pointer;font:600 13px var(--font-body);color:var(--color-text)" style-hover="background:var(--color-accent-100)">Rename…</button>
+<button onClick="{{ row.del }}" style="text-align:left;padding:9px 12px;border:0;background:transparent;cursor:pointer;font:600 13px var(--font-body);color:var(--color-accent-700)" style-hover="background:var(--color-accent-100)">Delete…</button>
+</div></sc-if>
+</td></sc-if>
+</tr>
+</sc-for>
+<sc-if value="{{ noRows }}"><tr><td colspan="99" style="color:var(--color-neutral-700);padding:20px 8px">No one has answered yet.</td></tr></sc-if>
+</tbody>
+<tfoot><tr><td style="font-weight:800;border-top:2px solid var(--color-text);border-bottom:0;position:sticky;left:0;z-index:2;background:var(--color-bg);border-right:{{ nameBorder }};white-space:nowrap">Yes total</td><sc-for list="{{ cols }}" as="c"><td style="font:800 18px var(--font-heading);border-top:2px solid var(--color-text);border-bottom:0;background:{{ c.bg }}">{{ c.yes }}</td></sc-for><sc-if value="{{ canEdit }}"><td style="border-top:2px solid var(--color-text);border-bottom:0"></td></sc-if></tr></tfoot>
+</table>
+</div>
+</div>
+<sc-if value="{{ canEdit }}"><div style="font-size:12px;color:var(--color-neutral-700)">Click a cell to switch between Yes and No, or Tab to it and press Space.</div></sc-if>
+</div>
+</sc-if>
+</main>
+
+<sc-if value="{{ hasDlg }}" hint-placeholder-val="{{ false }}">
+<div class="dialog-backdrop" onClick="{{ backdropClick }}" style="z-index:50">
+<div class="dialog" role="dialog" aria-modal="true" onClick="{{ stop }}" style="background:var(--color-bg);border:2px solid var(--color-text)">
+
+<sc-if value="{{ dAdd }}"><div class="dialog-title">Add a row</div>
+<div class="field"><label>Display name</label><input class="input" autoFocus="{{ true }}" value="{{ dlgVal }}" onChange="{{ onDlgVal }}" onKeyDown="{{ onDlgKey }}" style="border-color:{{ dlgBd }}"></div>
+<div class="dialog-body">Every date starts as No. The row saves as soon as you add it.</div></sc-if>
+
+<sc-if value="{{ dRename }}"><div class="dialog-title">Rename “{{ dlgName }}”</div>
+<div class="field"><label>New name</label><input class="input" autoFocus="{{ true }}" value="{{ dlgVal }}" onChange="{{ onDlgVal }}" onKeyDown="{{ onDlgKey }}" style="border-color:{{ dlgBd }}"></div>
+<div class="dialog-body">Answers stay the same.</div></sc-if>
+
+<sc-if value="{{ dDel }}"><div class="dialog-title">Delete {{ dlgName }}'s row?</div>
+<div class="dialog-body">Type <b>{{ dlgName }}</b> to confirm. The organiser can undo this from the history.</div>
+<input class="input" autoFocus="{{ true }}" value="{{ dlgVal }}" onChange="{{ onDlgVal }}" onKeyDown="{{ onDlgKey }}" aria-label="Type the row name to confirm" style="border-color:{{ dlgBd }}"></sc-if>
+
+<sc-if value="{{ dPick }}"><div style="font:700 11px var(--font-body);letter-spacing:.09em;text-transform:uppercase;color:var(--color-neutral-700)">Final date</div>
+<div class="dialog-title" style="font-size:26px;line-height:1.1">{{ pickLabel }}</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;border-top:2px solid var(--color-text);padding-top:10px">
+<div><div style="font:700 11px var(--font-body);letter-spacing:.09em;text-transform:uppercase;margin-bottom:4px">{{ pickYesHead }}</div><sc-for list="{{ pickYes }}" as="n"><div>{{ n }}</div></sc-for></div>
+<div><div style="font:700 11px var(--font-body);letter-spacing:.09em;text-transform:uppercase;margin-bottom:4px">{{ pickNoHead }}</div><sc-for list="{{ pickNo }}" as="n"><div>{{ n }}</div></sc-for></div>
+</div>
+<div style="padding:10px 12px;background:var(--color-accent-100);border:1px solid var(--color-accent-300);color:var(--color-accent-900);font-size:14px">Confirming <b>closes the poll</b>. Dates and responses become read-only until you reopen it.</div></sc-if>
+
+<sc-if value="{{ dReopen }}"><div class="dialog-title">Reopen this poll?</div>
+<div class="dialog-body">People with the link can change responses again. {{ reopenNote }}</div></sc-if>
+
+<sc-if value="{{ dLoc }}"><div class="dialog-title">Location</div>
+<div class="field"><label>Plain text or Markdown links — {{ locStateNote }}</label><textarea class="input" autoFocus="{{ true }}" value="{{ dlgVal }}" onChange="{{ onDlgVal }}" style="min-height:80px;font-family:ui-monospace,Menlo,monospace;font-size:13px;border-color:{{ dlgBd }}"></textarea></div>
+<sc-if value="{{ dlgLocShow }}"><div style="font-size:13px;color:var(--color-neutral-800)">Shows as: <sc-for list="{{ dlgLocSegs }}" as="seg"><sc-if value="{{ seg.link }}"><a href="{{ seg.href }}" target="_blank" rel="noopener noreferrer">{{ seg.text }}</a></sc-if><sc-if value="{{ seg.plain }}"><span>{{ seg.text }}</span></sc-if></sc-for></div></sc-if></sc-if>
+
+<sc-if value="{{ dRegen }}"><div class="dialog-title">Regenerate the link?</div>
+<div class="dialog-body">The current link stops working straight away — anyone using it will see an error. Share the new link with everyone who should still have access.</div></sc-if>
+
+<sc-if value="{{ dUndo }}"><div class="dialog-title">Undo {{ undoNum }}?</div>
+<div style="padding:10px 12px;border:2px solid var(--color-accent);font-size:14px">{{ undoMsg }}</div>
+<div class="dialog-body">The original entries stay in the history. A new “Undo” entry is added.</div></sc-if>
+
+<sc-if value="{{ dlgErr }}"><div role="alert" style="color:var(--color-accent-700);font-weight:600;font-size:13px">{{ dlgErr }}</div></sc-if>
+<div class="dialog-actions" style="justify-content:flex-start;flex-wrap:wrap">
+<button class="btn btn-primary" onClick="{{ submit }}">{{ dlgOk }}</button>
+<sc-if value="{{ dLoc }}"><button class="btn btn-secondary" onClick="{{ clearLoc }}">Clear location</button></sc-if>
+<button class="btn btn-ghost" onClick="{{ closeDlg }}">Cancel</button>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+<div role="status" style="position:fixed;left:24px;bottom:24px;z-index:60;max-width:440px;padding:12px 16px;background:var(--color-text);color:var(--color-bg);font-size:14px;box-shadow:var(--shadow-lg)">{{ toast }}</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = this.init();
+  scRef = React.createRef();
+  componentDidMount() { this._rs = () => this.measure(); window.addEventListener('resize', this._rs); this.measure(); }
+  componentWillUnmount() { window.removeEventListener('resize', this._rs); }
+  componentDidUpdate() { this.measure(); }
+  measure() {
+    const el = this.scRef.current;
+    const o = this.state.ov || { l: 0, r: 0, n: 0, w: 0, total: 0 };
+    let next = { l: 0, r: 0, n: 0, w: 0, total: 0 };
+    if (el && el.isConnected) {
+      const cr = el.getBoundingClientRect();
+      const nameTh = el.querySelector('[data-namecol]');
+      const w = nameTh ? nameTh.offsetWidth : 0;
+      const ths = [...el.querySelectorAll('[data-col]')];
+      const canL = el.scrollLeft > 2, canR = el.scrollWidth - el.clientWidth - el.scrollLeft > 2;
+      let l = ths.filter(t => t.getBoundingClientRect().left < cr.left + w - 6).length;
+      let r = ths.filter(t => t.getBoundingClientRect().right > cr.right + 6).length;
+      l = canL ? Math.max(1, l) : 0; r = canR ? Math.max(1, r) : 0;
+      next = { l, r, n: ths.length - l - r, w, total: ths.length };
+    }
+    if (next.l !== o.l || next.r !== o.r || next.n !== o.n || next.w !== o.w || next.total !== o.total) this.setState({ ov: next });
+  }
+  scrollTable(dir) {
+    const el = this.scRef.current; if (!el) return;
+    const w = (this.state.ov && this.state.ov.w) || 0;
+    el.scrollBy({ left: dir * Math.max(120, (el.clientWidth - w) * 0.8), behavior: 'smooth' });
+  }
+  demoDates() {
+    const p = this.cur(); if (p.dates.length >= 9) return;
+    const base = new Date('2026-10-31T12:00:00Z');
+    const add = [];
+    for (let k = 0; add.length < 6; k++) {
+      const dt = new Date(base.getTime() + k * 7 * 864e5).toISOString().slice(0, 10);
+      if (!p.dates.some(d => d.date === dt)) add.push({ id: 'dx' + k + Date.now(), date: dt, time: '18:00' });
+    }
+    this.mutate(q => {
+      add.forEach(d => { q.dates.push(d); q.rows.forEach(r => { r.ans[d.id] = Math.random() < 0.45; }); this.log(q, 'Date added (demo data)', '', this.fd(d)); });
+    });
+    this.say('Added 6 more dates — the table now scrolls sideways.');
+  }
+
+  init() {
+    const t0 = Date.now() - 3 * 3600e3; const audit = []; let n = 0;
+    const O = 'Olivia (organiser)', H = 'Anonymous link holder';
+    const A = (m, actor, what, b, a, kind, data) => audit.push({ id: ++n, ts: t0 + m * 60e3, actor, what, before: b, after: a, kind: kind || 'info', data: data || null });
+    const dates = [{ id: 'd1', date: '2026-10-10', time: '18:00' }, { id: 'd2', date: '2026-10-17', time: '18:00' }, { id: 'd3', date: '2026-10-24', time: '18:00' }];
+    const loc = 'Community Hall — [map](https://example.test/map)';
+    A(0, O, 'Poll created (draft)', '—', 'Autumn get-together');
+    dates.forEach((d, i) => A(1 + i, O, 'Date added', '—', this.fd(d)));
+    A(4, O, 'Location set', '—', loc, 'loc', { b: '', a: loc });
+    A(5, O, 'Poll published', 'Draft', 'Open');
+    const mk = (id, name) => ({ id, name, ans: { d1: false, d2: false, d3: false } });
+    const seed = [['r1', 'Alice', ['d1', 'd2'], 20], ['r2', 'Bob', ['d2', 'd3'], 45], ['r3', 'Charlie', ['d1', 'd2'], 80]];
+    const rows = [];
+    seed.forEach(([id, name, yes, m]) => {
+      A(m, H, 'Row added: ' + name, '—', name, 'addRow', { row: mk(id, name) });
+      const r = mk(id, name);
+      yes.forEach((dId, k) => { r.ans[dId] = true; A(m + 1 + k, H, name + ' · ' + this.fd(dates.find(d => d.id === dId)), 'No', 'Yes', 'cell', { rowId: id, dateId: dId, b: false, a: true }); });
+      rows.push(r);
+    });
+    const token = this.tok();
+    const autumn = { id: 'p1', title: 'Autumn get-together', desc: 'Choose every date you could attend.', loc, instr: 'Please respond by Friday.', tz: 'Europe/London', dates, state: 'open', finalId: null, provisional: false, frozen: null, token, holderToken: token, rows, audit, seq: n };
+    return { screen: 'dash', role: 'org', polls: { p1: autumn }, order: ['p1'], cur: 'p1', dlg: null, dlgVal: '', dlgErr: '', menuRow: null, newDate: '', newTime: '18:00', dateErr: '', tried: false, toast: null, savedAt: null, copied: false, flash: null };
+  }
+
+  tok() { const c = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'; let s = ''; for (let i = 0; i < 22; i++) s += c[Math.floor(Math.random() * c.length)]; return s; }
+  validDate(s) { return !!s && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(new Date(s + 'T12:00:00Z')); }
+  fd(d, long) {
+    if (!d) return '';
+    if (!this.validDate(d.date)) return 'Invalid date';
+    const dt = new Date(d.date + 'T12:00:00Z');
+    const o = long ? { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' } : { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' };
+    return dt.toLocaleDateString('en-GB', o) + (d.time ? (long ? ', ' : ' ') + d.time : '');
+  }
+  yn(b) { return b ? 'Yes' : 'No'; }
+  parseLoc(s) {
+    const segs = []; const re = /\[([^\]]+)\]\(([^)\s]+)\)/g; let last = 0, m;
+    while ((m = re.exec(s))) {
+      if (m.index > last) segs.push({ text: s.slice(last, m.index), plain: true });
+      if (/^https?:\/\//i.test(m[2])) segs.push({ text: m[1], href: m[2], link: true }); else segs.push({ text: m[0], plain: true });
+      last = re.lastIndex;
+    }
+    if (last < s.length) segs.push({ text: s.slice(last), plain: true });
+    return segs;
+  }
+  locErr(s) {
+    if (s.length > 500) return 'Too long — location can be up to 500 characters (now ' + s.length + ').';
+    if (/<\s*\/?\s*[a-z!]/i.test(s)) return 'HTML and scripts aren’t allowed. Use plain text or Markdown links like [map](https://…).';
+    const re = /\[([^\]]*)\]\(([^)]*)\)/g; let m;
+    while ((m = re.exec(s))) {
+      if (!m[1].trim()) return 'A link is missing its text — write it as [text](https://…).';
+      if (!/^https?:\/\/\S+$/i.test(m[2].trim())) return 'Unsafe link “' + m[2] + '” — only http:// and https:// links are allowed.';
+    }
+    return '';
+  }
+  cur() { return this.state.polls[this.state.cur]; }
+  actor() { return this.state.role === 'org' ? 'Olivia (organiser)' : 'Anonymous link holder'; }
+  mutate(fn, extra) {
+    this.setState(s => {
+      const p = structuredClone(s.polls[s.cur]);
+      if (fn(p, s) === false) return null;
+      return { polls: { ...s.polls, [s.cur]: p }, savedAt: Date.now(), ...(extra || {}) };
+    });
+  }
+  log(p, what, b, a, kind, data, actor) {
+    const f = v => (v === '' || v == null ? '—' : String(v));
+    p.seq++; p.audit.push({ id: p.seq, ts: Date.now(), actor: actor || this.actor(), what, before: f(b), after: f(a), kind: kind || 'info', data: data || null });
+  }
+  say(msg) { this.setState({ toast: msg }); clearTimeout(this._t); this._t = setTimeout(() => this.setState({ toast: null }), 3600); }
+  guardOpen() {
+    const p = this.cur();
+    if (this.state.role === 'holder' && p.holderToken !== p.token) { this.say('This link is no longer valid. Nothing was changed.'); return false; }
+    if (p.state !== 'open') { this.say('Rejected — the poll is closed, so responses are read-only.'); return false; }
+    return true;
+  }
+  rank(p) { return p.dates.map((d, i) => ({ d, i, yes: p.rows.filter(r => r.ans[d.id]).length })).sort((a, b) => b.yes - a.yes || a.i - b.i).slice(0, 5); }
+  nameErr(name, exceptId) {
+    const n = name.trim();
+    if (!n) return 'Enter a name.';
+    if (n.length > 40) return 'Names can be up to 40 characters (now ' + n.length + ').';
+    const dup = this.cur().rows.find(r => r.id !== exceptId && r.name.toLowerCase() === n.toLowerCase());
+    if (dup) return '“' + dup.name + '” is already in this poll. Names must be unique (capitals don’t count).';
+    return '';
+  }
+  validate(p) {
+    const e = [];
+    if (!p.title.trim()) e.push('Add a title.');
+    if (p.dates.length < 2) e.push(p.dates.length ? 'Add at least one more proposed date (minimum two).' : 'Add at least two proposed dates.');
+    p.dates.forEach((d, i) => {
+      if (!this.validDate(d.date)) e.push('Date ' + (i + 1) + ' isn’t a valid date.');
+      const j = p.dates.findIndex(x => x.date === d.date && (x.time || '') === (d.time || ''));
+      if (j < i && this.validDate(d.date)) e.push('Date ' + (i + 1) + ' is the same as date ' + (j + 1) + '.');
+    });
+    const le = this.locErr(p.loc); if (le) e.push('Location: ' + le);
+    return e;
+  }
+  toggle(rowId, dateId) {
+    if (!this.guardOpen()) return;
+    this.mutate(p => {
+      const r = p.rows.find(x => x.id === rowId); if (!r) return false;
+      const b = !!r.ans[dateId]; r.ans[dateId] = !b;
+      this.log(p, r.name + ' · ' + this.fd(p.dates.find(x => x.id === dateId)), this.yn(b), this.yn(!b), 'cell', { rowId, dateId, b, a: !b });
+    });
+  }
+  openDlg(kind, extra) { this.setState({ dlg: { kind, ...(extra || {}) }, dlgVal: (extra && extra.val) || '', dlgErr: '', menuRow: null }); }
+  closeDlg() { this.setState({ dlg: null, dlgErr: '' }); }
+  submit() {
+    const { dlg, dlgVal } = this.state; if (!dlg) return;
+    const p = this.cur(), k = dlg.kind;
+    if (k === 'add') {
+      if (!this.guardOpen()) return;
+      const e = this.nameErr(dlgVal); if (e) return this.setState({ dlgErr: e });
+      const name = dlgVal.trim();
+      const row = { id: 'r' + Date.now(), name, ans: Object.fromEntries(p.dates.map(d => [d.id, false])) };
+      this.mutate(q => { q.rows.push(row); this.log(q, 'Row added: ' + name, '', name, 'addRow', { row: structuredClone(row) }); }, { dlg: null });
+      this.say('Added ' + name + ' — every date starts as No.');
+    } else if (k === 'rename') {
+      if (!this.guardOpen()) return;
+      const e = this.nameErr(dlgVal, dlg.rowId); if (e) return this.setState({ dlgErr: e });
+      const name = dlgVal.trim();
+      this.mutate(q => { const r = q.rows.find(x => x.id === dlg.rowId); if (!r) return false; const old = r.name; if (old === name) return false; r.name = name; this.log(q, 'Row renamed', old, name, 'rename', { rowId: r.id, b: old, a: name }); }, { dlg: null });
+    } else if (k === 'del') {
+      if (!this.guardOpen()) return;
+      const r = p.rows.find(x => x.id === dlg.rowId); if (!r) return this.closeDlg();
+      if (dlgVal !== r.name) return this.setState({ dlgErr: 'That doesn’t match “' + r.name + '”. The row was not deleted.' });
+      const summary = p.dates.map(d => this.yn(r.ans[d.id])).join(' / ');
+      this.mutate(q => { const i = q.rows.findIndex(x => x.id === r.id); q.rows.splice(i, 1); this.log(q, 'Row deleted: ' + r.name, r.name + ' (' + summary + ')', '', 'delRow', { row: structuredClone(r), index: i }); }, { dlg: null });
+      this.say('Deleted ' + r.name + '’s row.');
+    } else if (k === 'pick') {
+      const d = p.dates.find(x => x.id === dlg.dateId);
+      this.mutate(q => {
+        q.frozen = this.rank(q).map(x => ({ dateId: x.d.id, yes: x.yes }));
+        q.finalId = d.id; q.provisional = false; q.state = 'closed';
+        this.log(q, 'Final date selected · poll closed', 'Open', 'Closed · ' + this.fd(d));
+      }, { dlg: null });
+      this.say('Poll closed. Final date: ' + this.fd(d) + '.');
+    } else if (k === 'reopen') {
+      const d = p.dates.find(x => x.id === p.finalId);
+      this.mutate(q => { q.state = 'open'; q.provisional = true; q.frozen = null; this.log(q, 'Poll reopened', 'Closed · ' + this.fd(d), 'Open · ' + this.fd(d) + ' provisional'); }, { dlg: null });
+      this.say('Poll reopened. ' + this.fd(d) + ' is now provisional.');
+    } else if (k === 'loc') {
+      this.saveLoc(dlgVal);
+    } else if (k === 'regen') {
+      this.mutate(q => { q.token = this.tok(); this.log(q, 'Public link regenerated', 'Previous link (now revoked)', 'New link issued'); }, { dlg: null, copied: false });
+      this.say('New link issued. The old link no longer works.');
+    } else if (k === 'undo') {
+      this.undo(dlg.entryId, true);
+    }
+  }
+  saveLoc(v) {
+    const p = this.cur(); const err = this.locErr(v);
+    if (err) return this.setState({ dlgErr: err });
+    if (v === p.loc) return this.closeDlg();
+    this.mutate(q => { const b = q.loc; q.loc = v; this.log(q, !v ? 'Location cleared' : b ? 'Location edited' : 'Location set', b, v, 'loc', { b, a: v }); }, { dlg: null });
+    this.say(v ? 'Location saved — showing on the public poll now.' : 'Location cleared from the public poll.');
+  }
+  undo(id, confirmed) {
+    const p = this.cur(); const e = p.audit.find(x => x.id === id); if (!e || !e.data) return;
+    const D = e.data; let conflict = '', fail = '', apply = null, b, a;
+    if (['cell', 'rename', 'addRow', 'delRow'].includes(e.kind) && p.state !== 'open') return this.say('Reopen the poll to undo response changes — they’re read-only while it’s closed.');
+    if (e.kind === 'cell') {
+      const r = p.rows.find(x => x.id === D.rowId); const d = p.dates.find(x => x.id === D.dateId);
+      if (!r || !d) fail = 'Can’t undo — that row or date no longer exists.';
+      else {
+        const curV = !!r.ans[D.dateId];
+        if (curV !== D.a) conflict = 'A later change already set ' + r.name + ' · ' + this.fd(d) + ' to ' + this.yn(curV) + '. Undoing sets it to ' + this.yn(D.b) + ' and overwrites that newer value.';
+        else if (curV === D.b) fail = 'Nothing to undo — the value is already ' + this.yn(D.b) + '.';
+        b = this.yn(curV); a = this.yn(D.b); apply = q => { q.rows.find(x => x.id === D.rowId).ans[D.dateId] = D.b; };
+      }
+    } else if (e.kind === 'rename') {
+      const r = p.rows.find(x => x.id === D.rowId);
+      if (!r) fail = 'Can’t undo — that row has been deleted.';
+      else if (this.nameErr(D.b, r.id)) fail = 'Can’t undo — another row is now called “' + D.b + '”.';
+      else { if (r.name !== D.a) conflict = 'The row has since been renamed to “' + r.name + '”. Undoing renames it to “' + D.b + '”.'; b = r.name; a = D.b; apply = q => { q.rows.find(x => x.id === D.rowId).name = D.b; }; }
+    } else if (e.kind === 'addRow') {
+      const r = p.rows.find(x => x.id === D.row.id);
+      if (!r) fail = 'Nothing to undo — that row has already been removed.';
+      else { if (r.name !== D.row.name || JSON.stringify(r.ans) !== JSON.stringify(D.row.ans)) conflict = '“' + r.name + '” has been changed since it was added. Undoing removes the row and all of its answers.'; b = r.name; a = ''; apply = q => { q.rows = q.rows.filter(x => x.id !== D.row.id); }; }
+    } else if (e.kind === 'delRow') {
+      if (p.rows.find(x => x.id === D.row.id)) fail = 'Nothing to undo — that row is already back.';
+      else if (this.nameErr(D.row.name)) fail = 'Can’t undo — another row is now called “' + D.row.name + '”.';
+      else { b = ''; a = D.row.name; apply = q => { q.rows.splice(Math.min(D.index, q.rows.length), 0, structuredClone(D.row)); }; }
+    } else if (e.kind === 'loc') {
+      if (p.loc === D.b) fail = 'Nothing to undo — the location already has that value.';
+      else { if (p.loc !== D.a) conflict = 'The location has changed since. Undoing restores “' + (D.b || '(empty)') + '” and overwrites the current value.'; b = p.loc; a = D.b; apply = q => { q.loc = D.b; }; }
+    }
+    if (fail) return this.say(fail);
+    if (conflict && !confirmed) return this.openDlg('undo', { entryId: id, msg: conflict });
+    this.mutate(q => { apply(q); this.log(q, 'Undo #' + id + ': ' + e.what, b, a, 'undo'); }, { dlg: null });
+    this.say('Undone. Entry #' + id + ' stays in the history.');
+  }
+  simulate() {
+    const p = this.cur();
+    if (p.state !== 'open' || !p.rows.length) return this.say('Needs an open poll with at least one row.');
+    const r = p.rows[Math.floor(Math.random() * p.rows.length)], d = p.dates[Math.floor(Math.random() * p.dates.length)], b = !!r.ans[d.id];
+    this.mutate(q => { q.rows.find(x => x.id === r.id).ans[d.id] = !b; this.log(q, r.name + ' · ' + this.fd(d), this.yn(b), this.yn(!b), 'cell', { rowId: r.id, dateId: d.id, b, a: !b }, 'Anonymous link holder'); }, { flash: r.id + '|' + d.id });
+    this.say('Live update from someone else: ' + r.name + ' · ' + this.fd(d) + ' → ' + this.yn(!b));
+    clearTimeout(this._f); this._f = setTimeout(() => this.setState({ flash: null }), 1600);
+  }
+  newPoll() {
+    const id = 'p' + Date.now();
+    const p = { id, title: '', desc: '', loc: '', instr: '', tz: 'Europe/London', dates: [], state: 'draft', finalId: null, provisional: false, frozen: null, token: null, holderToken: null, rows: [], audit: [], seq: 0 };
+    p.seq = 1; p.audit.push({ id: 1, ts: Date.now(), actor: 'Olivia (organiser)', what: 'Poll created (draft)', before: '—', after: 'Draft', kind: 'info', data: null });
+    this.setState(s => ({ polls: { ...s.polls, [id]: p }, order: [id, ...s.order], cur: id, screen: 'edit', tried: false, newDate: '', newTime: '18:00', dateErr: '' }));
+  }
+  fieldHandlers(f, label) {
+    return {
+      on: e => { const v = e.target.value; this.mutate(p => { p[f] = v; }); },
+      focus: () => { this._fv = this.cur()[f]; },
+      blur: () => {
+        const before = this._fv, v = this.cur()[f];
+        if (before === undefined || v === before) return;
+        if (f === 'loc' && this.locErr(v)) return;
+        this.mutate(p => this.log(p, label + (v ? (before ? ' edited' : ' set') : ' cleared'), before, v, f === 'loc' ? 'loc' : 'info', f === 'loc' ? { b: before, a: v } : null));
+      }
+    };
+  }
+  addDate() {
+    const { newDate, newTime } = this.state, p = this.cur();
+    if (!this.validDate(newDate)) return this.setState({ dateErr: 'Enter a valid date before adding it.' });
+    if (p.dates.some(d => d.date === newDate && (d.time || '') === (newTime || ''))) return this.setState({ dateErr: this.fd({ date: newDate, time: newTime }) + ' is already proposed — duplicate dates aren’t added.' });
+    const d = { id: 'd' + Date.now(), date: newDate, time: newTime };
+    this.mutate(q => { q.dates.push(d); this.log(q, 'Date added', '', this.fd(d)); }, { dateErr: '', newDate: '' });
+  }
+  publish() {
+    const p = this.cur();
+    if (this.validate(p).length) return this.setState({ tried: true });
+    const t = this.tok();
+    this.mutate(q => { q.state = 'open'; q.token = t; q.holderToken = t; this.log(q, 'Poll published', 'Draft', 'Open'); }, { screen: 'share', tried: false, copied: false });
+  }
+
+  renderVals() {
+    const s = this.state, p = s.polls[s.cur], org = s.role === 'org';
+    const stale = !org && p.state !== 'draft' && p.holderToken !== p.token;
+    const invalid = !org && (p.state === 'draft' || stale);
+    const scr = org ? s.screen : invalid ? 'invalid' : 'poll';
+    const isOpen = p.state === 'open', isClosed = p.state === 'closed';
+    const canEdit = isOpen && !invalid && scr === 'poll';
+    const fin = p.dates.find(d => d.id === p.finalId);
+    const rk = isClosed && p.frozen ? p.frozen.map(f => ({ d: p.dates.find(d => d.id === f.dateId), yes: f.yes })).filter(x => x.d) : this.rank(p);
+    const max = Math.max(1, ...rk.map(x => x.yes));
+    const totals = Object.fromEntries(p.dates.map(d => [d.id, p.rows.filter(r => r.ans[d.id]).length]));
+    const finCol = id => isClosed && id === p.finalId;
+    const tagFor = st => st === 'open' ? ['var(--color-text)', 'var(--color-bg)'] : st === 'closed' ? ['var(--color-accent)', 'var(--color-bg)'] : ['var(--color-accent-100)', 'var(--color-accent-800)'];
+    const stLabel = st => st === 'open' ? 'Open' : st === 'closed' ? 'Closed' : 'Draft';
+    const fh = { title: this.fieldHandlers('title', 'Title'), desc: this.fieldHandlers('desc', 'Description'), loc: this.fieldHandlers('loc', 'Location'), instr: this.fieldHandlers('instr', 'Instructions') };
+    const dlg = s.dlg, dk = dlg && dlg.kind;
+    const pickDate = dk === 'pick' ? p.dates.find(d => d.id === dlg.dateId) : null;
+    const yesN = pickDate ? p.rows.filter(r => r.ans[pickDate.id]).map(r => r.name) : [];
+    const noN = pickDate ? p.rows.filter(r => !r.ans[pickDate.id]).map(r => r.name) : [];
+    const edLocErr = this.locErr(p.loc);
+    const dlgLocErr = dk === 'loc' ? this.locErr(s.dlgVal) : '';
+    const tab = on => [on ? 'var(--color-bg)' : 'transparent', on ? 'var(--color-text)' : 'var(--color-bg)'];
+    const [oBg, oFg] = tab(org), [hBg, hFg] = tab(!org);
+    const [stBg, stFg] = tagFor(p.state);
+    return {
+      asOrg: () => this.setState({ role: 'org', dlg: null, menuRow: null, screen: p.state === 'draft' ? (s.screen === 'preview' ? 'preview' : 'edit') : (['poll', 'history', 'share'].includes(s.screen) ? s.screen : 'poll') }),
+      asHolder: () => this.setState({ role: 'holder', dlg: null, menuRow: null }),
+      orgTabBg: oBg, orgTabFg: oFg, holderTabBg: hBg, holderTabFg: hFg,
+      canSimulate: p.state === 'open' && (scr === 'poll' || scr === 'history'),
+      simulate: () => this.simulate(),
+      holderStale: stale,
+      getCurrentLink: () => this.mutate(q => { q.holderToken = q.token; }),
+      protoHint: org ? 'Signed in as the poll owner' : stale ? 'Using an old, revoked link' : 'Opened the public link — no sign-in',
+      goDash: () => { if (org) this.setState({ screen: 'dash', dlg: null }); },
+      showSaved: !!s.savedAt && scr !== 'dash',
+      savedLabel: s.savedAt ? 'All changes saved · ' + new Date(s.savedAt).toLocaleTimeString('en-GB') : '',
+      whoLabel: org ? 'olivia@example.test' : 'No account needed',
+      scrDash: scr === 'dash', scrEdit: scr === 'edit', scrPreview: scr === 'preview', scrShare: scr === 'share', scrInvalid: scr === 'invalid', scrHistory: scr === 'history', scrPoll: scr === 'poll',
+      pollList: s.order.map(id => { const q = s.polls[id]; const [bg, fg] = tagFor(q.state); return { title: q.title || 'Untitled poll', state: stLabel(q.state), tagBg: bg, tagFg: fg, dates: q.dates.length, count: q.rows.length, open: () => this.setState({ cur: id, screen: q.state === 'draft' ? 'edit' : 'poll', tried: false, dateErr: '', copied: false }) }; }),
+      newPoll: () => this.newPoll(),
+      editHeading: p.title || 'New poll',
+      goPreview: () => this.setState({ screen: 'preview' }), goEdit: () => this.setState({ screen: 'edit' }),
+      publish: () => this.publish(),
+      publishErrs: s.tried ? this.validate(p) : [], hasPublishErrs: s.tried && this.validate(p).length > 0,
+      edTitle: p.title, edDesc: p.desc, edLoc: p.loc, edInstr: p.instr, edTz: p.tz,
+      onTitle: fh.title.on, focusTitle: fh.title.focus, blurTitle: fh.title.blur,
+      onDesc: fh.desc.on, focusDesc: fh.desc.focus, blurDesc: fh.desc.blur,
+      onLoc: fh.loc.on, focusLoc: fh.loc.focus, blurLoc: fh.loc.blur,
+      onInstr: fh.instr.on, focusInstr: fh.instr.focus, blurInstr: fh.instr.blur,
+      onTz: e => { const v = e.target.value, b = p.tz; this.mutate(q => { q.tz = v; this.log(q, 'Time zone changed', b, v); }); },
+      edLocErr, edLocShowPreview: !!p.loc && !edLocErr, edLocSegs: this.parseLoc(p.loc),
+      tzOptions: ['Europe/London', 'Europe/Dublin', 'Europe/Paris', 'Europe/Berlin', 'America/New_York', 'America/Chicago', 'America/Los_Angeles', 'Asia/Tokyo', 'Australia/Sydney', 'UTC'],
+      dateRows: p.dates.map((d, i) => {
+        const j = p.dates.findIndex(x => x.date === d.date && (x.time || '') === (d.time || ''));
+        const err = !this.validDate(d.date) ? 'Enter a valid date.' : j < i ? 'Same as date ' + (j + 1) + ' — duplicates can’t be published.' : '';
+        const set = (f) => e => { const v = e.target.value; this.mutate(q => { q.dates[i][f] = v; }); };
+        return {
+          n: i + 1, date: d.date, time: d.time, err, bd: err ? 'var(--color-accent)' : 'var(--color-divider)', isFirst: i === 0, isLast: i === p.dates.length - 1,
+          onDate: set('date'), onTime: set('time'),
+          onFocus: () => { this._dv = this.fd(this.cur().dates[i]); },
+          onBlur: () => { const b = this._dv, now = this.fd(this.cur().dates[i]); if (b && now !== b) this.mutate(q => this.log(q, 'Date ' + (i + 1) + ' edited', b, now)); this._dv = null; },
+          up: () => this.mutate(q => { if (i < 1) return false; [q.dates[i - 1], q.dates[i]] = [q.dates[i], q.dates[i - 1]]; this.log(q, 'Date moved', this.fd(q.dates[i - 1]) + ' at #' + (i + 1), '#' + i); }),
+          down: () => this.mutate(q => { if (i >= q.dates.length - 1) return false; [q.dates[i + 1], q.dates[i]] = [q.dates[i], q.dates[i + 1]]; this.log(q, 'Date moved', this.fd(q.dates[i + 1]) + ' at #' + (i + 1), '#' + (i + 2)); }),
+          remove: () => this.mutate(q => { const [x] = q.dates.splice(i, 1); this.log(q, 'Date removed', this.fd(x), ''); })
+        };
+      }),
+      noDates: p.dates.length === 0,
+      newDate: s.newDate, newTime: s.newTime,
+      onNewDate: e => this.setState({ newDate: e.target.value, dateErr: '' }), onNewTime: e => this.setState({ newTime: e.target.value, dateErr: '' }),
+      addDate: () => this.addDate(), dateErr: s.dateErr,
+      link: p.token ? 'https://gather.app/p/' + p.token : '',
+      copyLabel: s.copied ? 'Copied ✓' : 'Copy link',
+      copyLink: () => { const l = 'https://gather.app/p/' + p.token; try { navigator.clipboard && navigator.clipboard.writeText(l).catch(() => {}); } catch (e) {} this.setState({ copied: true }); },
+      goPoll: () => this.setState({ screen: 'poll' }), goShare: () => this.setState({ screen: 'share', copied: false }), goHistory: () => this.setState({ screen: 'history' }),
+      askRegen: () => this.openDlg('regen'), askLoc: () => this.openDlg('loc', { val: p.loc }), askReopen: () => this.openDlg('reopen'), askAdd: () => this.openDlg('add'),
+      historyLabel: 'History (' + p.audit.length + ')',
+      histSummary: p.audit.length + ' changes, newest first. Undo adds a new entry — nothing is ever removed.',
+      entries: [...p.audit].reverse().map(e => ({
+        num: '#' + e.id, time: new Date(e.ts).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        actor: e.actor, what: e.what, before: e.before, after: e.after, canUndo: org && !!e.data, undo: () => this.undo(e.id, false),
+        bg: e.kind === 'undo' ? 'var(--color-accent-100)' : 'transparent'
+      })),
+      isOrg: org, isOpen, isClosed, canEdit,
+      stateLabel: stLabel(p.state), stateTagBg: stBg, stateTagFg: stFg,
+      pTitle: p.title || 'Untitled poll', pDesc: p.desc, pInstr: p.instr, pTz: p.tz,
+      hasLoc: !!p.loc, locSegs: this.parseLoc(p.loc),
+      finalLong: fin ? this.fd(fin, true) : '',
+      finalYesLine: fin ? totals[fin.id] + ' of ' + p.rows.length + ' can make it' : '',
+      showProvisional: isOpen && !!fin && p.provisional,
+      rankHeading: isClosed ? 'Final ranking' : 'Most popular dates',
+      rankNote: isClosed ? 'Frozen when the poll closed · read-only' : 'Top ' + Math.min(5, p.dates.length) + ' by Yes · ties keep the original order · updates live',
+      rankItems: rk.map((x, i) => ({ rank: i + 1, label: this.fd(x.d), yesLabel: x.yes + ' yes', width: (x.yes / max * 100) + '%', bar: isClosed ? 'var(--color-neutral-600)' : 'var(--color-accent)', isFinal: isClosed && x.d.id === p.finalId, canPick: org && isOpen, pick: () => this.openDlg('pick', { dateId: x.d.id }) })),
+      cols: p.dates.map(d => ({ day: this.fd({ date: d.date }), time: d.time, yes: totals[d.id], bg: finCol(d.id) ? 'var(--color-accent-100)' : 'transparent' })),
+      noRows: p.rows.length === 0,
+      rows: p.rows.map(r => ({
+        name: r.name, menuOpen: s.menuRow === r.id, menuAria: 'Actions for ' + r.name,
+        toggleMenu: () => this.setState({ menuRow: s.menuRow === r.id ? null : r.id }),
+        rename: () => this.openDlg('rename', { rowId: r.id, name: r.name, val: r.name }),
+        del: () => this.openDlg('del', { rowId: r.id, name: r.name }),
+        cells: p.dates.map(d => {
+          const y = !!r.ans[d.id], fl = s.flash === r.id + '|' + d.id;
+          return { label: y ? 'Yes' : 'No', pressed: y ? 'true' : 'false', editable: canEdit, readonly: !canEdit, toggle: () => this.toggle(r.id, d.id),
+            aria: r.name + ', ' + this.fd(d) + ': ' + (y ? 'Yes' : 'No'),
+            bg: y ? 'var(--color-accent-100)' : 'var(--color-surface)', fg: y ? 'var(--color-accent-800)' : 'var(--color-neutral-700)',
+            bd: fl ? 'var(--color-accent)' : y ? 'var(--color-accent-300)' : 'var(--color-neutral-300)', fw: y ? '700' : '500', colBg: finCol(d.id) ? 'var(--color-accent-100)' : 'transparent' };
+        })
+      })),
+      hasDlg: !!dlg, dAdd: dk === 'add', dRename: dk === 'rename', dDel: dk === 'del', dPick: dk === 'pick', dReopen: dk === 'reopen', dLoc: dk === 'loc', dRegen: dk === 'regen', dUndo: dk === 'undo',
+      dlgName: dlg && dlg.name, dlgVal: s.dlgVal, dlgErr: s.dlgErr, dlgBd: s.dlgErr ? 'var(--color-accent)' : 'var(--color-divider)',
+      onDlgVal: e => this.setState({ dlgVal: e.target.value, dlgErr: '' }),
+      onDlgKey: e => { if (e.key === 'Enter') { e.preventDefault(); this.submit(); } if (e.key === 'Escape') this.closeDlg(); },
+      submit: () => this.submit(), closeDlg: () => this.closeDlg(), clearLoc: () => this.saveLoc(''),
+      backdropClick: () => this.closeDlg(), stop: e => e.stopPropagation(),
+      dlgOk: { add: 'Add row', rename: 'Rename', del: 'Delete row', pick: 'Confirm & close poll', reopen: 'Reopen poll', loc: 'Save location', regen: 'Regenerate link', undo: 'Overwrite & undo' }[dk] || 'OK',
+      pickLabel: pickDate ? this.fd(pickDate, true) : '',
+      pickYes: yesN.length ? yesN : ['Nobody'], pickNo: noN.length ? noN : ['Nobody'],
+      pickYesHead: 'Yes · ' + yesN.length, pickNoHead: 'No · ' + noN.length,
+      reopenNote: fin ? this.fd(fin) + ' will stay as a provisional pick until you close the poll again.' : '',
+      locStateNote: 'the poll stays ' + stLabel(p.state),
+      dlgLocShow: dk === 'loc' && !!s.dlgVal && !dlgLocErr, dlgLocSegs: dk === 'loc' ? this.parseLoc(s.dlgVal) : [],
+      undoNum: dlg && dlg.entryId ? '#' + dlg.entryId : '', undoMsg: dlg && dlg.msg,
+      hasToast: !!s.toast, toast: s.toast,
+      scRef: this.scRef, onTableScroll: () => { this.measure(); clearTimeout(this._sm); this._sm = setTimeout(() => this.measure(), 120); },
+      scrollLeft: () => this.scrollTable(-1), scrollRight: () => this.scrollTable(1),
+      canDemoDates: org && isOpen && scr === 'poll' && p.dates.length < 9,
+      demoDates: () => this.demoDates(),
+      ...(() => {
+        const ov = s.ov || { l: 0, r: 0, n: 0, w: 0, total: 0 };
+        const pl = n => n + (n === 1 ? ' date' : ' dates');
+        const from = ov.l + 1, to = ov.l + ov.n;
+        return {
+          hasOverflow: ov.l + ov.r > 0,
+          overflowLabel: 'Dates ' + from + '–' + to + ' of ' + ov.total,
+          noLeft: ov.l === 0, noRight: ov.r === 0,
+          moreLeft: ov.l > 0, moreRight: ov.r > 0,
+          leftCount: ov.l + ' earlier', rightCount: ov.r + ' more',
+          leftLabel: 'Show ' + pl(ov.l) + ' earlier', rightLabel: 'Show ' + pl(ov.r) + ' more',
+          nameColW: ov.w + 'px',
+          nameBorder: ov.l > 0 ? '2px solid var(--color-text)' : '0'
+        };
+      })()
+    };
+  }
+}
+</script>
+</body>
+</html>

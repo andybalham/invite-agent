@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/modernist-8d112ebc-b82c-43b7-b1a1-4c23cdbfb11a/styles.css">
+<script src="_ds/modernist-8d112ebc-b82c-43b7-b1a1-4c23cdbfb11a/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:var(--color-neutral-200);font-family:var(--font-body)}
+a{color:var(--color-accent-700)}a:hover{color:var(--color-accent-800)}
+.dv-turn{padding:40px 44px 32px;border-bottom:2px solid var(--color-text);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 8px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-text);color:#fff;text-decoration:none}
+.dv-tname{font:800 22px/1.2 var(--font-heading);color:var(--color-text)}
+.dv-sub{font:13px/1.5 var(--font-body);color:var(--color-neutral-800);margin:0 0 28px;max-width:760px}
+.dv-grp{flex:0 0 100%;display:flex;align-items:baseline;gap:12px;border-top:2px solid var(--color-text);padding-top:10px;margin-top:8px}
+.dv-grp b{font:800 15px var(--font-heading)}.dv-grp span{font-size:12px;color:var(--color-neutral-700)}
+.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-text);color:#fff;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:600 12px/1.3 var(--font-body);color:var(--color-text)}
+.dv-card{max-width:100%;background:var(--color-bg);border:2px solid var(--color-text);overflow:hidden}
+.dv-opt:target .dv-oid{background:var(--color-accent)}
+.dv-next{margin:28px 0 0;font:12px/1.5 var(--font-body);color:var(--color-neutral-700)}
+.wf{font:12px/1.4 var(--font-body);color:var(--color-text);position:relative}
+.wf-nav{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:2px solid var(--color-text)}
+.wf-brand{font:800 14px var(--font-heading);margin-right:auto}
+.wf-body{padding:16px;display:flex;flex-direction:column;gap:12px}
+.wf-h{font:800 20px/1.1 var(--font-heading);margin:0}
+.wf-h2{font:800 14px/1.2 var(--font-heading);margin:0}
+.wf-k{font:700 9.5px/1 var(--font-body);letter-spacing:.09em;text-transform:uppercase;color:var(--color-neutral-700)}
+.wf-mut{color:var(--color-neutral-700)}
+.wf-rule{border-top:2px solid var(--color-text)}
+.wf-hair{border-top:1px solid var(--color-neutral-300)}
+.wf-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wf-b{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:2px solid var(--color-text);font:700 11.5px var(--font-heading);background:transparent;color:var(--color-text);text-align:left;white-space:nowrap}
+.wf-b.p{background:var(--color-accent);border-color:var(--color-accent);color:#fff}
+.wf-b.g{border-color:transparent;padding-left:0;padding-right:0;text-decoration:underline}
+.wf-b.x{opacity:.4}
+.wf-in{border:2px solid var(--color-neutral-500);padding:6px 8px;background:#fff;min-height:14px}
+.wf-in.err{border-color:var(--color-accent)}
+.wf-err{color:var(--color-accent-700);font-weight:600;font-size:11px}
+.wf-tag{display:inline-block;padding:2px 6px;font:700 9.5px var(--font-body);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--color-text)}
+.wf-tag.a{background:var(--color-accent);border-color:var(--color-accent);color:#fff}
+.wf-tag.t{background:var(--color-accent-100);border-color:var(--color-accent-300);color:var(--color-accent-800)}
+.wf-t{width:100%;border-collapse:collapse}
+.wf-t th{font:700 10.5px/1.2 var(--font-body);text-align:left;padding:6px;border-bottom:2px solid var(--color-text);vertical-align:bottom}
+.wf-t td{padding:4px 6px;border-bottom:1px solid var(--color-neutral-300)}
+.wf-t tfoot td{border-top:2px solid var(--color-text);border-bottom:0;font-weight:800}
+.c{display:block;padding:5px 7px;font-weight:600;border:1px solid var(--color-neutral-300);background:#fff;color:var(--color-neutral-700)}
+.c.y{background:var(--color-accent-100);border-color:var(--color-accent-300);color:var(--color-accent-800)}
+.c.f{outline:2px solid var(--color-accent);outline-offset:2px}
+.c.ro{background:transparent;border-color:transparent}
+.wf-ban{padding:8px 10px;background:var(--color-neutral-100);border-left:0;border:1px solid var(--color-neutral-400);display:flex;gap:8px;align-items:center}
+.wf-ban.a{background:var(--color-accent-100);border-color:var(--color-accent-300);color:var(--color-accent-900)}
+.wf-note{font:600 10.5px/1.35 var(--font-body);color:var(--color-accent-700)}
+.wf-dim{position:absolute;inset:0;background:color-mix(in srgb,var(--color-text) 45%,transparent);display:flex;align-items:center;justify-content:center;padding:20px}
+.wf-dlg{background:var(--color-bg);border:2px solid var(--color-text);box-shadow:var(--shadow-lg);padding:16px;display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px}
+.wf-bar{height:7px;background:var(--color-accent)}
+.wf-ph{height:8px;background:var(--color-neutral-300)}
+.wf-md{font-family:ui-monospace,Menlo,monospace;font-size:11px}
+</style>
+</helmet>
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Screens rebuilt on <a class="dv-oid" href="#1b">1b</a> — ranking-first</span></div>
+<p class="dv-sub">These replace the screens from turn 1 that assumed <a class="dv-oid" href="#1a">1a</a> (<a class="dv-oid" href="#1l">1l</a>, <a class="dv-oid" href="#1o">1o</a>, <a class="dv-oid" href="#1q">1q</a>). The ranking bars stay at the top in every state: live while the poll is open, frozen when closed, live again after reopening.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="2a"><div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Open — link holder (refined <a class="dv-oid" href="#1b">1b</a>)</div>
+<div class="dv-card" style="width:540px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-tag">Open</span><span class="wf-mut">Saved · live</span></div>
+<div class="wf-body">
+<div><h1 class="wf-h">Autumn get-together</h1><div class="wf-mut">Choose every date you could attend. · Please respond by Friday.</div></div>
+<div class="wf-mut">Community Hall — <a href="#2a">map</a> · Times in Europe/London</div>
+<div class="wf-rule"></div>
+<div class="wf-row"><span class="wf-k" style="margin-right:auto">Leading dates · live</span><span class="wf-mut">Top 5</span></div>
+<div style="display:grid;grid-template-columns:18px 130px minmax(0,1fr) 20px;gap:6px 8px;align-items:center">
+<b>1</b><span>Sat 17 Oct 18:00</span><div class="wf-bar" style="width:100%"></div><b>3</b>
+<b>2</b><span>Sat 10 Oct 18:00</span><div class="wf-bar" style="width:66%"></div><b>2</b>
+<b>3</b><span>Sat 24 Oct 18:00</span><div class="wf-bar" style="width:33%"></div><b>1</b>
+</div>
+<div class="wf-rule"></div>
+<div class="wf-ban a"><b>Shared table.</b><span>Anyone with this link can edit any row. Changes save automatically.</span></div>
+<div class="wf-row"><span class="wf-k" style="margin-right:auto">Everyone's answers</span><span class="wf-b p">+ Add row</span></div>
+<table class="wf-t"><thead><tr><th>Name</th><th>10 Oct</th><th>17 Oct</th><th>24 Oct</th><th></th></tr></thead>
+<tbody>
+<tr><td>Alice</td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td><span class="c">No</span></td><td>⋯</td></tr>
+<tr><td>Bob</td><td><span class="c f">No</span></td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td style="position:relative">⋯<div style="position:absolute;right:0;top:22px;z-index:1;background:var(--color-bg);border:2px solid var(--color-text);box-shadow:var(--shadow-md);display:flex;flex-direction:column;min-width:90px"><span style="padding:6px 8px;border-bottom:1px solid var(--color-neutral-300)">Rename</span><span style="padding:6px 8px">Delete…</span></div></td></tr>
+<tr><td>Charlie</td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td><span class="c">No</span></td><td>⋯</td></tr>
+</tbody><tfoot><tr><td>Yes</td><td>2</td><td>3</td><td>1</td><td></td></tr></tfoot></table>
+<div class="wf-note">Focused cell: Space toggles (US-12) · ⋯ opens Rename / Delete (<a href="#1i">1i</a>, <a href="#1j">1j</a>)</div>
+</div></div></div></div>
+
+<div class="dv-opt" id="2b"><div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Open — organiser view</div>
+<div class="dv-card" style="width:540px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-tag">Open</span><span class="wf-mut">Organiser</span></div>
+<div class="wf-row" style="padding:8px 14px;border-bottom:2px solid var(--color-text);background:var(--color-neutral-100)"><span class="wf-b">History (14)</span><span class="wf-b">Edit location</span><span class="wf-b">Share link</span></div>
+<div class="wf-body">
+<h1 class="wf-h">Autumn get-together</h1>
+<div class="wf-rule"></div>
+<div class="wf-k">Leading dates · pick one to close</div>
+<div style="display:grid;grid-template-columns:18px 120px minmax(0,1fr) 20px auto;gap:6px 8px;align-items:center">
+<b>1</b><span>Sat 17 Oct 18:00</span><div class="wf-bar" style="width:100%"></div><b>3</b><span class="wf-b p">Pick…</span>
+<b>2</b><span>Sat 10 Oct 18:00</span><div class="wf-bar" style="width:66%"></div><b>2</b><span class="wf-b">Pick…</span>
+<b>3</b><span>Sat 24 Oct 18:00</span><div class="wf-bar" style="width:33%"></div><b>1</b><span class="wf-b">Pick…</span>
+</div>
+<div class="wf-note">Pick opens confirm dialog <a href="#1m">1m</a>. Any date can be picked, including ones outside the top 5 (from the table header).</div>
+<div class="wf-rule"></div>
+<table class="wf-t"><thead><tr><th>Name</th><th>10 Oct</th><th>17 Oct</th><th>24 Oct</th><th></th></tr></thead>
+<tbody>
+<tr><td>Alice</td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td><span class="c">No</span></td><td>⋯</td></tr>
+<tr><td>Bob</td><td><span class="c">No</span></td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td>⋯</td></tr>
+<tr><td>Charlie</td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td><span class="c">No</span></td><td>⋯</td></tr>
+</tbody><tfoot><tr><td>Yes</td><td>2</td><td>3</td><td>1</td><td></td></tr></tfoot></table>
+</div></div></div></div>
+
+<div class="dv-opt" id="2c"><div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>Closed — public page, ranking frozen</div>
+<div class="dv-card" style="width:480px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-tag a">Closed</span></div>
+<div style="background:var(--color-accent);color:#fff;padding:18px 16px;display:flex;flex-direction:column;gap:4px">
+<div style="font:700 10px var(--font-body);letter-spacing:.09em;text-transform:uppercase">It's decided</div>
+<div style="font:800 26px/1.05 var(--font-heading)">Sat 17 Oct 2026<br>18:00</div>
+<div>Riverside Room — map · Europe/London</div>
+</div>
+<div class="wf-body">
+<h1 class="wf-h2">Autumn get-together</h1>
+<div class="wf-row"><span class="wf-k" style="margin-right:auto">Final ranking · frozen at close</span><span class="wf-tag">Read-only</span></div>
+<div style="display:grid;grid-template-columns:18px 130px minmax(0,1fr) 20px;gap:6px 8px;align-items:center;opacity:.75">
+<b>1</b><span>Sat 17 Oct ★</span><div class="wf-bar" style="width:100%;background:var(--color-neutral-600)"></div><b>3</b>
+<b>2</b><span>Sat 10 Oct</span><div class="wf-bar" style="width:66%;background:var(--color-neutral-600)"></div><b>2</b>
+<b>3</b><span>Sat 24 Oct</span><div class="wf-bar" style="width:33%;background:var(--color-neutral-600)"></div><b>1</b>
+</div>
+<div class="wf-rule"></div>
+<table class="wf-t"><thead><tr><th>Name</th><th>10 Oct</th><th style="background:var(--color-accent-100)">17 Oct ★</th><th>24 Oct</th></tr></thead>
+<tbody>
+<tr><td>Alice</td><td><span class="c ro">Yes</span></td><td style="background:var(--color-accent-100)"><span class="c ro">Yes</span></td><td><span class="c ro">No</span></td></tr>
+<tr><td>Bob</td><td><span class="c ro">No</span></td><td style="background:var(--color-accent-100)"><span class="c ro">Yes</span></td><td><span class="c ro">Yes</span></td></tr>
+<tr><td>Charlie</td><td><span class="c ro">Yes</span></td><td style="background:var(--color-accent-100)"><span class="c ro">Yes</span></td><td><span class="c ro">No</span></td></tr>
+</tbody><tfoot><tr><td>Yes</td><td>2</td><td>3</td><td>1</td></tr></tfoot></table>
+<div class="wf-note">Grey bars show the ranking is frozen. The red banner stays the main result even if the chosen date isn't #1 (US-27).</div>
+</div></div></div></div>
+
+<div class="dv-opt" id="2d"><div class="dv-olabel"><a class="dv-oid" href="#2d">2d</a>Reopened — provisional date, ranking live</div>
+<div class="dv-card" style="width:480px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-tag">Open</span></div>
+<div class="wf-body">
+<div style="border:2px dashed var(--color-accent);padding:10px;display:flex;flex-direction:column;gap:4px"><div class="wf-row"><span class="wf-tag t">Provisional</span><span class="wf-mut">Poll reopened · may change</span></div><div style="font:800 18px var(--font-heading)">Sat 17 Oct 2026, 18:00</div></div>
+<h1 class="wf-h2">Autumn get-together</h1>
+<div class="wf-rule"></div>
+<div class="wf-k">Leading dates · live again</div>
+<div style="display:grid;grid-template-columns:18px 130px minmax(0,1fr) 20px;gap:6px 8px;align-items:center">
+<b>1</b><span>Sat 10 Oct 18:00</span><div class="wf-bar" style="width:100%"></div><b>3</b>
+<b>2</b><span>Sat 17 Oct 18:00</span><div class="wf-bar" style="width:100%"></div><b>3</b>
+<b>3</b><span>Sat 24 Oct 18:00</span><div class="wf-bar" style="width:33%"></div><b>1</b>
+</div>
+<div class="wf-note">Tie at 3: 10 Oct ranks above 17 Oct because it was proposed first (US-17). The provisional pick doesn't affect the ranking.</div>
+<div class="wf-rule"></div>
+<div class="wf-row"><span class="wf-k" style="margin-right:auto">Everyone's answers</span><span class="wf-b p">+ Add row</span></div>
+<div class="wf-ph"></div><div class="wf-ph" style="width:80%"></div><div class="wf-ph" style="width:60%"></div>
+<div class="wf-note">Reopen confirm as in <a href="#1q">1q</a> step 1 · close again via <a href="#1m">1m</a></div>
+</div></div></div></div>
+
+</div>
+<p class="dv-next">Try next: "apply <a class="dv-oid" href="#2a">2a</a> to mobile like <a class="dv-oid" href="#1c">1c</a>" · "show the closed result 3 other ways" · "rebuild <a class="dv-oid" href="#1n">1n</a> history in this style"</p>
+</section>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Get-together poll — screen wireframes</span></div>
+<p class="dv-sub">Every screen implied by the requirements, annotated with the acceptance stories it satisfies. The core shared-poll page is explored three ways (<a class="dv-oid" href="#1a">1a</a>–<a class="dv-oid" href="#1c">1c</a>); the remaining screens use the <a class="dv-oid" href="#1a">1a</a> layout. Baseline data: Autumn get-together, Europe/London, Alice · Bob · Charlie.</p>
+<div class="dv-opts">
+
+<div class="dv-grp"><b>A · Shared poll page</b><span>Open state, link holder — three layout approaches</span></div>
+
+<div class="dv-opt" id="1a"><div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Table-first, ranking in sidebar</div>
+<div class="dv-card" style="width:640px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-tag">Open</span><span class="wf-mut">Saved · live</span></div>
+<div class="wf-body">
+<div><div class="wf-k">Poll</div><h1 class="wf-h">Autumn get-together</h1><div class="wf-mut">Choose every date you could attend. · Please respond by Friday.</div></div>
+<div class="wf-row"><span class="wf-k">Where</span><span>Community Hall — <a href="#1a">map</a></span><span class="wf-k" style="margin-left:12px">Times in</span><span>Europe/London</span></div>
+<div class="wf-ban a"><b>Shared table.</b><span>Anyone with this link can add, edit or remove any row. Changes save automatically.</span></div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:16px;align-items:start">
+<div>
+<table class="wf-t"><thead><tr><th>Participant</th><th>Sat 10 Oct<br><span class="wf-mut">18:00</span></th><th>Sat 17 Oct<br><span class="wf-mut">18:00</span></th><th>Sat 24 Oct<br><span class="wf-mut">18:00</span></th><th></th></tr></thead>
+<tbody>
+<tr><td><b>Alice</b></td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td><span class="c">No</span></td><td class="wf-mut">Rename · Delete</td></tr>
+<tr><td><b>Bob</b></td><td><span class="c f">No</span></td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td class="wf-mut">Rename · Delete</td></tr>
+<tr><td><b>Charlie</b></td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td><span class="c">No</span></td><td class="wf-mut">Rename · Delete</td></tr>
+</tbody>
+<tfoot><tr><td>Yes total</td><td>2</td><td>3</td><td>1</td><td></td></tr></tfoot></table>
+<div class="wf-row" style="margin-top:10px"><span class="wf-b">+ Add a row</span><span class="wf-note">Click a cell or focus + Space toggles Yes/No (US-12)</span></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;border-top:2px solid var(--color-text);padding-top:6px">
+<div class="wf-k">Most popular</div>
+<div class="wf-row"><b style="width:14px">1</b><span style="flex:1">Sat 17 Oct 18:00</span><b>3</b></div>
+<div class="wf-hair"></div>
+<div class="wf-row"><b style="width:14px">2</b><span style="flex:1">Sat 10 Oct 18:00</span><b>2</b></div>
+<div class="wf-hair"></div>
+<div class="wf-row"><b style="width:14px">3</b><span style="flex:1">Sat 24 Oct 18:00</span><b>1</b></div>
+<div class="wf-note">Top 5 max · ties keep original order (US-17/18)</div>
+</div>
+</div>
+</div></div></div></div>
+
+<div class="dv-opt" id="1b"><div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Ranking-first, bar leaderboard above the table</div>
+<div class="dv-card" style="width:520px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-tag">Open</span></div>
+<div class="wf-body">
+<h1 class="wf-h">Autumn get-together</h1>
+<div class="wf-mut">Community Hall — <a href="#1b">map</a> · Europe/London</div>
+<div class="wf-rule"></div>
+<div class="wf-k">Leading dates</div>
+<div style="display:grid;grid-template-columns:18px 130px minmax(0,1fr) 20px;gap:6px 8px;align-items:center">
+<b>1</b><span>Sat 17 Oct 18:00</span><div class="wf-bar" style="width:100%"></div><b>3</b>
+<b>2</b><span>Sat 10 Oct 18:00</span><div class="wf-bar" style="width:66%"></div><b>2</b>
+<b>3</b><span>Sat 24 Oct 18:00</span><div class="wf-bar" style="width:33%"></div><b>1</b>
+</div>
+<div class="wf-rule"></div>
+<div class="wf-row"><span class="wf-k" style="margin-right:auto">Everyone's answers · editable by anyone with the link</span><span class="wf-b p">+ Add row</span></div>
+<table class="wf-t"><thead><tr><th>Name</th><th>10 Oct</th><th>17 Oct</th><th>24 Oct</th><th></th></tr></thead>
+<tbody>
+<tr><td>Alice</td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td><span class="c">No</span></td><td>⋯</td></tr>
+<tr><td>Bob</td><td><span class="c">No</span></td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td>⋯</td></tr>
+<tr><td>Charlie</td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td><span class="c">No</span></td><td>⋯</td></tr>
+</tbody><tfoot><tr><td>Yes</td><td>2</td><td>3</td><td>1</td><td></td></tr></tfoot></table>
+<div class="wf-note">Row actions tucked in ⋯ menu (Rename / Delete)</div>
+</div></div></div></div>
+
+<div class="dv-opt" id="1c"><div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Mobile — one card per person, dates as chips</div>
+<div class="dv-card" style="width:320px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-tag">Open</span></div>
+<div class="wf-body">
+<h1 class="wf-h" style="font-size:18px">Autumn get-together</h1>
+<div class="wf-mut">Community Hall — <a href="#1c">map</a><br>Times in Europe/London</div>
+<div class="wf-ban a" style="font-size:11px">Shared table — anyone with the link can edit any row.</div>
+<div style="display:flex;gap:6px;overflow:hidden">
+<div style="flex:1;border:2px solid var(--color-text);padding:6px"><div class="wf-k">#1</div><b>17 Oct</b><div>3 yes</div></div>
+<div style="flex:1;border:1px solid var(--color-neutral-400);padding:6px"><div class="wf-k">#2</div><b>10 Oct</b><div>2 yes</div></div>
+<div style="flex:1;border:1px solid var(--color-neutral-400);padding:6px"><div class="wf-k">#3</div><b>24 Oct</b><div>1 yes</div></div>
+</div>
+<div class="wf-rule"></div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="border-bottom:1px solid var(--color-neutral-300);padding-bottom:8px"><div class="wf-row"><b style="margin-right:auto">Alice</b><span class="wf-mut">Rename · Delete</span></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px"><span class="c y" style="padding:10px 6px">10 Oct · Yes</span><span class="c y" style="padding:10px 6px">17 Oct · Yes</span><span class="c" style="padding:10px 6px">24 Oct · No</span></div></div>
+<div style="border-bottom:1px solid var(--color-neutral-300);padding-bottom:8px"><div class="wf-row"><b style="margin-right:auto">Bob</b><span class="wf-mut">Rename · Delete</span></div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:6px"><span class="c" style="padding:10px 6px">10 Oct · No</span><span class="c y" style="padding:10px 6px">17 Oct · Yes</span><span class="c y" style="padding:10px 6px">24 Oct · Yes</span></div></div>
+</div>
+<span class="wf-b p" style="padding:12px 10px">+ Add my row</span>
+<div class="wf-note">44px tap targets; totals live on ranking chips</div>
+</div></div></div></div>
+
+<div class="dv-grp"><b>B · Organiser: create &amp; publish</b><span>UC-01, UC-02, US-35</span></div>
+
+<div class="dv-opt" id="1d"><div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>My polls</div>
+<div class="dv-card" style="width:420px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-mut">olivia@example.test</span></div>
+<div class="wf-body">
+<div class="wf-row"><h1 class="wf-h" style="margin-right:auto">My polls</h1><span class="wf-b p">+ New poll</span></div>
+<table class="wf-t"><thead><tr><th>Title</th><th>State</th><th>Responses</th></tr></thead><tbody>
+<tr><td><b>Autumn get-together</b></td><td><span class="wf-tag">Open</span></td><td>3</td></tr>
+<tr><td><b>Board games night</b></td><td><span class="wf-tag t">Draft</span></td><td>—</td></tr>
+<tr><td><b>Summer picnic</b></td><td><span class="wf-tag a">Closed</span></td><td>8</td></tr>
+</tbody></table>
+</div></div></div></div>
+
+<div class="dv-opt" id="1e"><div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Draft editor — with validation blocking publish</div>
+<div class="dv-card" style="width:520px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-tag t">Draft · private</span><span class="wf-b">Preview</span><span class="wf-b p x">Publish</span></div>
+<div class="wf-body">
+<div class="wf-ban a"><b>Can't publish yet:</b><span>fix 1 issue below (US-04)</span></div>
+<div><div class="wf-k">Title *</div><div class="wf-in">Autumn get-together</div></div>
+<div><div class="wf-k">Description</div><div class="wf-in">Choose every date you could attend.</div></div>
+<div><div class="wf-k">Location · plain text or Markdown</div><div class="wf-in wf-md" style="min-height:30px">Community Hall — [map](https://example.test/map)</div><div class="wf-mut" style="font-size:10.5px;margin-top:3px">Preview: Community Hall — <a href="#1e">map</a> · Links only, scripts removed</div></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><div class="wf-k">Instructions</div><div class="wf-in">Please respond by Friday.</div></div><div><div class="wf-k">Time zone *</div><div class="wf-in">Europe/London ▾</div></div></div>
+<div class="wf-rule"></div>
+<div class="wf-row"><span class="wf-h2" style="margin-right:auto">Proposed dates · min 2</span><span class="wf-b">+ Add date</span></div>
+<div style="display:grid;grid-template-columns:14px 20px minmax(0,1fr) auto;gap:6px 8px;align-items:center">
+<span class="wf-mut">⠿</span><b>1</b><div class="wf-in">2026-10-10 · 18:00</div><span class="wf-mut">↑↓ ✕</span>
+<span class="wf-mut">⠿</span><b>2</b><div class="wf-in">2026-10-17 · 18:00</div><span class="wf-mut">↑↓ ✕</span>
+<span class="wf-mut">⠿</span><b>3</b><div class="wf-in">2026-10-24 · 18:00</div><span class="wf-mut">↑↓ ✕</span>
+<span class="wf-mut">⠿</span><b>4</b><div class="wf-in err">2026-10-17 · 18:00</div><span class="wf-mut">↑↓ ✕</span>
+<span></span><span></span><span class="wf-err">Duplicate of date 2 — not added (US-03)</span><span></span>
+</div>
+<div class="wf-note">Drag or ↑↓ to reorder — order is the ranking tie-breaker</div>
+</div></div></div></div>
+
+<div class="dv-opt" id="1f"><div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Preview (draft, read-only)</div>
+<div class="dv-card" style="width:420px"><div class="wf">
+<div class="wf-ban a" style="border-width:0 0 2px;border-color:var(--color-accent)"><b>Preview</b><span>Participants will see this. Responses are disabled.</span><span class="wf-b" style="margin-left:auto">Back to edit</span></div>
+<div class="wf-body">
+<h1 class="wf-h">Autumn get-together</h1>
+<div class="wf-mut">Choose every date you could attend.<br>Community Hall — <a href="#1f">map</a> · Europe/London</div>
+<table class="wf-t"><thead><tr><th>Participant</th><th>10 Oct 18:00</th><th>17 Oct 18:00</th><th>24 Oct 18:00</th></tr></thead>
+<tbody><tr><td colspan="4" class="wf-mut" style="padding:14px 6px">No responses yet</td></tr></tbody></table>
+<span class="wf-b x">+ Add a row</span>
+</div></div></div></div>
+
+<div class="dv-opt" id="1g"><div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Published — share &amp; manage link</div>
+<div class="dv-card" style="width:420px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-tag">Open</span></div>
+<div class="wf-body">
+<div class="wf-k">Published</div><h1 class="wf-h">Share this link</h1>
+<div class="wf-row" style="flex-wrap:nowrap"><div class="wf-in wf-md" style="flex:1;overflow:hidden">gather.app/p/k7Qx9-mZ2aR…</div><span class="wf-b p">Copy link</span></div>
+<div class="wf-mut">Anyone with the link can view and edit responses — no account needed.</div>
+<div class="wf-rule"></div>
+<div class="wf-h2">Link security</div>
+<div class="wf-row"><span style="flex:1" class="wf-mut">If the link leaked, replace it. The old link stops working; poll &amp; history stay.</span><span class="wf-b">Regenerate link</span></div>
+<div class="wf-note">US-06 · US-33 — confirm dialog before regenerate</div>
+</div></div></div></div>
+
+<div class="dv-grp"><b>C · Shared-table dialogs</b><span>US-09 – US-14, anyone with the link</span></div>
+
+<div class="dv-opt" id="1h"><div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Add row — duplicate name rejected</div>
+<div class="dv-card" style="width:360px;height:260px"><div class="wf" style="height:100%"><div class="wf-dim"><div class="wf-dlg">
+<div class="wf-h2">Add a row</div>
+<div><div class="wf-k">Display name</div><div class="wf-in err">alice</div><div class="wf-err" style="margin-top:4px">"Alice" is already in this poll. Names must be unique.</div></div>
+<div class="wf-mut">All dates start as No. Saves instantly.</div>
+<div class="wf-row"><span class="wf-b p">Add row</span><span class="wf-b g">Cancel</span></div>
+</div></div></div></div></div>
+
+<div class="dv-opt" id="1i"><div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>Rename row</div>
+<div class="dv-card" style="width:360px;height:260px"><div class="wf" style="height:100%"><div class="wf-dim"><div class="wf-dlg">
+<div class="wf-h2">Rename "Bob"</div>
+<div><div class="wf-k">New name</div><div class="wf-in">Robert</div></div>
+<div class="wf-mut">Answers stay unchanged.</div>
+<div class="wf-row"><span class="wf-b p">Rename</span><span class="wf-b g">Cancel</span></div>
+</div></div></div></div></div>
+
+<div class="dv-opt" id="1j"><div class="dv-olabel"><a class="dv-oid" href="#1j">1j</a>Delete row — type name to confirm</div>
+<div class="dv-card" style="width:360px;height:260px"><div class="wf" style="height:100%"><div class="wf-dim"><div class="wf-dlg">
+<div class="wf-h2">Delete Charlie's row?</div>
+<div class="wf-mut">Type <b>Charlie</b> to confirm. The organiser can undo this.</div>
+<div><div class="wf-in err">Charles</div><div class="wf-err" style="margin-top:4px">Name doesn't match — row not deleted.</div></div>
+<div class="wf-row"><span class="wf-b p x">Delete row</span><span class="wf-b g">Cancel</span></div>
+</div></div></div></div></div>
+
+<div class="dv-opt" id="1k"><div class="dv-olabel"><a class="dv-oid" href="#1k">1k</a>Revoked / unavailable link</div>
+<div class="dv-card" style="width:360px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span></div>
+<div class="wf-body" style="padding:28px 16px">
+<div class="wf-k">Link not valid</div>
+<h1 class="wf-h">This poll link no longer works</h1>
+<div class="wf-mut">It may have been replaced by the organiser, or the poll isn't published yet. Ask the organiser for the current link.</div>
+<div class="wf-note">US-07 · US-34 — same message for drafts &amp; revoked links; also shown inline if a stale page tries to save</div>
+</div></div></div></div>
+
+<div class="dv-grp"><b>D · Organiser: manage open poll</b><span>UC-05, UC-06</span></div>
+
+<div class="dv-opt" id="1l"><div class="dv-olabel"><a class="dv-oid" href="#1l">1l</a>Organiser view of open poll</div>
+<div class="dv-card" style="width:600px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-tag">Open</span><span class="wf-mut">Organiser</span></div>
+<div class="wf-row" style="padding:8px 14px;border-bottom:2px solid var(--color-text);background:var(--color-neutral-100)"><span class="wf-b p">Pick final date…</span><span class="wf-b">History (14)</span><span class="wf-b">Edit location</span><span class="wf-b">Share link</span></div>
+<div class="wf-body">
+<h1 class="wf-h">Autumn get-together</h1>
+<table class="wf-t"><thead><tr><th>Participant</th><th>10 Oct</th><th>17 Oct</th><th>24 Oct</th></tr></thead>
+<tbody>
+<tr><td>Alice</td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td><span class="c">No</span></td></tr>
+<tr><td>Bob</td><td><span class="c">No</span></td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td></tr>
+<tr><td>Charlie</td><td><span class="c y">Yes</span></td><td><span class="c y">Yes</span></td><td><span class="c">No</span></td></tr>
+</tbody><tfoot><tr><td>Yes</td><td>2</td><td>3</td><td>1</td></tr><tr><td></td><td><span class="wf-b g">Pick</span></td><td><span class="wf-b g">Pick</span></td><td><span class="wf-b g">Pick</span></td></tr></tfoot></table>
+<div class="wf-note">Organiser can toggle cells too — logged as Olivia (US-12)</div>
+</div></div></div></div>
+
+<div class="dv-opt" id="1m"><div class="dv-olabel"><a class="dv-oid" href="#1m">1m</a>Confirm final date — closes poll</div>
+<div class="dv-card" style="width:400px;height:360px"><div class="wf" style="height:100%"><div class="wf-dim"><div class="wf-dlg">
+<div class="wf-k">Final date</div>
+<div class="wf-h" style="font-size:18px">Sat 17 Oct 2026, 18:00</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<div><div class="wf-k">Yes · 3</div>Alice<br>Bob<br>Charlie</div>
+<div><div class="wf-k">No · 0</div><span class="wf-mut">—</span></div>
+</div>
+<div class="wf-ban a">Confirming closes the poll. Responses and dates become read-only.</div>
+<div class="wf-row"><span class="wf-b p">Confirm &amp; close</span><span class="wf-b g">Cancel</span></div>
+</div></div></div></div></div>
+
+<div class="dv-opt" id="1n"><div class="dv-olabel"><a class="dv-oid" href="#1n">1n</a>History &amp; undo — with overwrite warning</div>
+<div class="dv-card" style="width:560px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-mut">History · newest first</span></div>
+<div class="wf-body">
+<div class="wf-row"><span class="wf-b">All</span><span class="wf-b g">Responses</span><span class="wf-b g">Dates</span><span class="wf-b g">Poll</span></div>
+<table class="wf-t"><thead><tr><th>When</th><th>Who</th><th>Change</th><th>Before → After</th><th></th></tr></thead><tbody>
+<tr><td>14:32</td><td>Anonymous</td><td>Alice · 10 Oct</td><td>No → Yes</td><td><span class="wf-b g">Undo</span></td></tr>
+<tr><td>14:20</td><td>Olivia</td><td>Location</td><td>Community Hall → Riverside Room</td><td><span class="wf-b g">Undo</span></td></tr>
+<tr style="background:var(--color-accent-100)"><td>14:05</td><td>Anonymous</td><td>Alice · 10 Oct</td><td>Yes → No</td><td><span class="wf-b g">Undo</span></td></tr>
+<tr><td>13:51</td><td>Anonymous</td><td>Row added</td><td>— → Charlie</td><td><span class="wf-b g">Undo</span></td></tr>
+<tr><td>13:40</td><td>Olivia</td><td>Poll published</td><td>Draft → Open</td><td></td></tr>
+</tbody></table>
+<div style="border:2px solid var(--color-accent);padding:10px;display:flex;flex-direction:column;gap:8px">
+<b>Undo 14:05 change?</b>
+<div>A later change (14:32) set this cell to <b>Yes</b>. Undoing restores <b>Yes</b> and overwrites the newer value. History is kept; a new "Undo" entry is added.</div>
+<div class="wf-row"><span class="wf-b p">Overwrite &amp; undo</span><span class="wf-b g">Cancel</span></div>
+</div>
+<div class="wf-note">US-20 – US-22 · no tokens or session data shown</div>
+</div></div></div></div>
+
+<div class="dv-grp"><b>E · Closed &amp; reopened</b><span>UC-06, UC-07, US-36</span></div>
+
+<div class="dv-opt" id="1o"><div class="dv-olabel"><a class="dv-oid" href="#1o">1o</a>Closed — public page</div>
+<div class="dv-card" style="width:480px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-tag a">Closed</span></div>
+<div style="background:var(--color-accent);color:#fff;padding:18px 16px;display:flex;flex-direction:column;gap:4px">
+<div style="font:700 10px var(--font-body);letter-spacing:.09em;text-transform:uppercase">It's decided</div>
+<div style="font:800 26px/1.05 var(--font-heading)">Sat 17 Oct 2026<br>18:00</div>
+<div>Riverside Room — map · Europe/London</div>
+</div>
+<div class="wf-body">
+<h1 class="wf-h2">Autumn get-together</h1>
+<table class="wf-t"><thead><tr><th>Participant</th><th>10 Oct</th><th style="background:var(--color-accent-100)">17 Oct ★</th><th>24 Oct</th></tr></thead>
+<tbody>
+<tr><td>Alice</td><td><span class="c ro">Yes</span></td><td style="background:var(--color-accent-100)"><span class="c ro">Yes</span></td><td><span class="c ro">No</span></td></tr>
+<tr><td>Bob</td><td><span class="c ro">No</span></td><td style="background:var(--color-accent-100)"><span class="c ro">Yes</span></td><td><span class="c ro">Yes</span></td></tr>
+</tbody><tfoot><tr><td>Yes</td><td>2</td><td>3</td><td>1</td></tr></tfoot></table>
+<div class="wf-k">Final ranking · frozen at close</div>
+<div class="wf-mut">1. 17 Oct (3) · 2. 10 Oct (2) · 3. 24 Oct (1)</div>
+<div class="wf-note">No add / rename / delete / toggle controls (US-26/27)</div>
+</div></div></div></div>
+
+<div class="dv-opt" id="1p"><div class="dv-olabel"><a class="dv-oid" href="#1p">1p</a>Closed — organiser edits location</div>
+<div class="dv-card" style="width:420px"><div class="wf">
+<div class="wf-nav"><span class="wf-brand">Gather</span><span class="wf-tag a">Closed</span><span class="wf-b">Reopen poll…</span></div>
+<div class="wf-body">
+<div class="wf-row"><span class="wf-k" style="margin-right:auto">Final: Sat 17 Oct 18:00</span><span class="wf-mut">Dates &amp; responses locked</span></div>
+<div class="wf-rule"></div>
+<div class="wf-h2">Location</div>
+<div class="wf-in err wf-md" style="min-height:30px">Riverside Room — [map](javascript:alert(1))</div>
+<div class="wf-err">Unsafe link target — only http(s) links allowed. Nothing saved; current location still shown.</div>
+<div class="wf-row"><span class="wf-b p">Save location</span><span class="wf-b">Clear</span><span class="wf-mut" style="margin-left:auto">Still Closed after saving</span></div>
+<div class="wf-note">US-36 / US-37 — entered text preserved for correction</div>
+</div></div></div></div>
+
+<div class="dv-opt" id="1q"><div class="dv-olabel"><a class="dv-oid" href="#1q">1q</a>Reopen confirm → provisional date</div>
+<div class="dv-card" style="width:480px"><div class="wf">
+<div style="display:grid;grid-template-columns:1fr 1fr">
+<div style="padding:14px;border-right:2px solid var(--color-text);display:flex;flex-direction:column;gap:8px">
+<div class="wf-k">Step 1 · dialog</div>
+<div class="wf-h2">Reopen this poll?</div>
+<div class="wf-mut">Participants can edit again. 17 Oct stays as a provisional pick until you close again.</div>
+<div class="wf-row"><span class="wf-b p">Reopen</span><span class="wf-b g">Cancel</span></div>
+</div>
+<div style="padding:14px;display:flex;flex-direction:column;gap:8px">
+<div class="wf-k">Step 2 · public page</div>
+<div class="wf-row"><span class="wf-tag">Open</span></div>
+<div style="border:2px dashed var(--color-accent);padding:8px"><span class="wf-tag t">Provisional</span><div style="font:800 15px var(--font-heading);margin-top:4px">Sat 17 Oct 18:00</div><div class="wf-mut">May change — poll reopened</div></div>
+<div class="wf-ph"></div><div class="wf-ph" style="width:70%"></div>
+<div class="wf-mut">Table &amp; ranking live again</div>
+</div>
+</div>
+<div style="padding:8px 14px;border-top:2px solid var(--color-text)" class="wf-note">US-28 – US-30 · close again via <a href="#1m">1m</a> with same or different date</div>
+</div></div></div>
+
+</div>
+<p class="dv-next">Try next: "go with <a class="dv-oid" href="#1b">1b</a>'s leaderboard in <a class="dv-oid" href="#1a">1a</a>'s layout" · "explore 3 more ways to show the closed result in <a class="dv-oid" href="#1o">1o</a>" · "make <a class="dv-oid" href="#1n">1n</a> undo inline per row"</p>
+</section>
+</x-dc>
+</body>
+</html>
