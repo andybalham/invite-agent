@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-005 · Specify one-command local stack and browser harness with failing automated tests](../entities/T-005-specify-one-command-local-stack-and-browser-harness-with-failing-automated-tests.md) — todo
+- [ ] [T-007 · Specify draft lifecycle and validation with failing automated tests](../entities/T-007-specify-draft-lifecycle-and-validation-with-failing-automated-tests.md) — todo

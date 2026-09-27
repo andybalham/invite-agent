@@ -2,8 +2,7 @@
 
 _Generated. Do not edit by hand._
 
-- [E-001 · E1 — Runnable local engineering foundation](../entities/E-001-e1-runnable-local-engineering-foundation.md) — blocked
-- [E-002 · E2 — Organiser draft builder and preview](../entities/E-002-e2-organiser-draft-builder-and-preview.md) — blocked · waiting on E-001
+- [E-002 · E2 — Organiser draft builder and preview](../entities/E-002-e2-organiser-draft-builder-and-preview.md) — blocked
 - [E-003 · E3 — Publish and securely share a public poll](../entities/E-003-e3-publish-and-securely-share-a-public-poll.md) — blocked · waiting on E-002
 - [E-004 · E4 — Collaborative availability table](../entities/E-004-e4-collaborative-availability-table.md) — blocked · waiting on E-003
 - [E-005 · E5 — Live popular-date ranking](../entities/E-005-e5-live-popular-date-ranking.md) — blocked · waiting on E-004
@@ -11,8 +10,7 @@ _Generated. Do not edit by hand._
 - [E-007 · E7 — Final decision and reversible poll lifecycle](../entities/E-007-e7-final-decision-and-reversible-poll-lifecycle.md) — blocked · waiting on E-006
 - [E-008 · E8 — Production AWS platform](../entities/E-008-e8-production-aws-platform.md) — blocked · waiting on E-007
 - [E-009 · E9 — Tested production release and operations](../entities/E-009-e9-tested-production-release-and-operations.md) — blocked · waiting on E-008
-- [S-003 · Provide one-command local startup and browser test harness](../entities/S-003-provide-one-command-local-startup-and-browser-test-harness.md) — blocked
-- [S-004 · Define draft poll lifecycle and validation rules](../entities/S-004-define-draft-poll-lifecycle-and-validation-rules.md) — blocked · waiting on S-003
+- [S-004 · Define draft poll lifecycle and validation rules](../entities/S-004-define-draft-poll-lifecycle-and-validation-rules.md) — blocked
 - [S-005 · Create and edit draft details with safe location Markdown](../entities/S-005-create-and-edit-draft-details-with-safe-location-markdown.md) — blocked · waiting on S-004
 - [S-006 · Manage ordered date and date-time choices safely across DST](../entities/S-006-manage-ordered-date-and-date-time-choices-safely-across-dst.md) — blocked · waiting on S-004
 - [S-007 · Preview a private draft and enforce publication readiness](../entities/S-007-preview-a-private-draft-and-enforce-publication-readiness.md) — blocked · waiting on S-005, S-006
@@ -40,8 +38,6 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [T-006 · Implement and verify one-command local stack and browser harness](../entities/T-006-implement-and-verify-one-command-local-stack-and-browser-harness.md) — blocked · waiting on T-005
-- [T-007 · Specify draft lifecycle and validation with failing automated tests](../entities/T-007-specify-draft-lifecycle-and-validation-with-failing-automated-tests.md) — blocked · waiting on T-006
 - [T-008 · Implement and verify draft lifecycle and validation](../entities/T-008-implement-and-verify-draft-lifecycle-and-validation.md) — blocked · waiting on T-007
 - [T-009 · Specify draft details and safe location Markdown with failing automated tests](../entities/T-009-specify-draft-details-and-safe-location-markdown-with-failing-automated-tests.md) — blocked · waiting on T-008
 - [T-010 · Implement and verify draft details and safe location Markdown](../entities/T-010-implement-and-verify-draft-details-and-safe-location-markdown.md) — blocked · waiting on T-009

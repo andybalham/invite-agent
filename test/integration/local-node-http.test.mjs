@@ -15,10 +15,12 @@ test("the Node HTTP adapter translates requests through the shared handler", asy
     appEnv: "test",
     authMode: "local",
     awsRegion: "eu-west-2",
-    dynamodbEndpoint: process.env.DYNAMODB_ENDPOINT ?? "http://127.0.0.1:8000",
+    dynamodbEndpoint:
+      process.env.DYNAMODB_ENDPOINT ??
+      `http://127.0.0.1:${process.env.DYNAMODB_PORT ?? "18000"}`,
     appTableName: `invite-agent-test-app-${suffix}`,
     auditTableName: `invite-agent-test-audit-${suffix}`,
-    publicBaseUrl: "http://localhost:5173"
+    publicBaseUrl: `http://127.0.0.1:${process.env.WEB_PORT ?? "15173"}`
   });
   await app.initializeTables();
 

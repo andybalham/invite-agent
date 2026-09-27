@@ -4,6 +4,6 @@ services:
     image: amazon/dynamodb-local:2.6.1
     command: -jar DynamoDBLocal.jar -sharedDb -dbPath /data
     ports:
-      - "8000:8000"
+      - "${DYNAMODB_PORT:-18000}:8000"
     volumes:
       - ./.dynamodb:/data

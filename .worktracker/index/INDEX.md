@@ -2,20 +2,20 @@
 
 _Generated. Do not edit by hand._
 
-## [E-001 · E1 — Runnable local engineering foundation](./E-001.md) — blocked
+## [E-001 · E1 — Runnable local engineering foundation](./E-001.md) — done
 - [x] **S-001 · Establish the TypeScript workspace and shared contracts** — done
   - [x] [T-001 · Specify workspace and shared contracts with failing automated tests](../entities/T-001-specify-workspace-and-shared-contracts-with-failing-automated-tests.md) — done
   - [x] [T-002 · Implement and verify workspace and shared contracts](../entities/T-002-implement-and-verify-workspace-and-shared-contracts.md) — done
 - [x] **S-002 · Run shared services locally with DynamoDB and guarded authentication** — done
   - [x] [T-003 · Specify local DynamoDB, shared services, and guarded auth with failing automated tests](../entities/T-003-specify-local-dynamodb-shared-services-and-guarded-auth-with-failing-automated-tests.md) — done
   - [x] [T-004 · Implement and verify local DynamoDB, shared services, and guarded auth](../entities/T-004-implement-and-verify-local-dynamodb-shared-services-and-guarded-auth.md) — done
-- [ ] **S-003 · Provide one-command local startup and browser test harness** — blocked
-  - [ ] [T-005 · Specify one-command local stack and browser harness with failing automated tests](../entities/T-005-specify-one-command-local-stack-and-browser-harness-with-failing-automated-tests.md) — todo
-  - [ ] [T-006 · Implement and verify one-command local stack and browser harness](../entities/T-006-implement-and-verify-one-command-local-stack-and-browser-harness.md) — blocked · waiting on T-005
+- [x] **S-003 · Provide one-command local startup and browser test harness** — done
+  - [x] [T-005 · Specify one-command local stack and browser harness with failing automated tests](../entities/T-005-specify-one-command-local-stack-and-browser-harness-with-failing-automated-tests.md) — done
+  - [x] [T-006 · Implement and verify one-command local stack and browser harness](../entities/T-006-implement-and-verify-one-command-local-stack-and-browser-harness.md) — done
 
 ## [E-002 · E2 — Organiser draft builder and preview](./E-002.md) — blocked
-- [ ] **S-004 · Define draft poll lifecycle and validation rules** — blocked · waiting on S-003
-  - [ ] [T-007 · Specify draft lifecycle and validation with failing automated tests](../entities/T-007-specify-draft-lifecycle-and-validation-with-failing-automated-tests.md) — blocked · waiting on T-006
+- [ ] **S-004 · Define draft poll lifecycle and validation rules** — blocked
+  - [ ] [T-007 · Specify draft lifecycle and validation with failing automated tests](../entities/T-007-specify-draft-lifecycle-and-validation-with-failing-automated-tests.md) — todo
   - [ ] [T-008 · Implement and verify draft lifecycle and validation](../entities/T-008-implement-and-verify-draft-lifecycle-and-validation.md) — blocked · waiting on T-007
 - [ ] **S-005 · Create and edit draft details with safe location Markdown** — blocked · waiting on S-004
   - [ ] [T-009 · Specify draft details and safe location Markdown with failing automated tests](../entities/T-009-specify-draft-details-and-safe-location-markdown-with-failing-automated-tests.md) — blocked · waiting on T-008

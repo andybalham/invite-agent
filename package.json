@@ -13,19 +13,25 @@
   ],
   "scripts": {
     "build": "tsc -b --pretty false",
+    "dev": "pwsh -NoProfile -File scripts/Start-DevStack.ps1",
+    "dev:stop": "pwsh -NoProfile -File scripts/Stop-DevStack.ps1",
     "format:check": "node scripts/check-format.mjs",
     "lint": "node scripts/lint.mjs",
     "typecheck": "tsc -b --pretty false --noEmit false",
     "test": "npm run build && node scripts/check-production-boundaries.mjs && node --test test/foundation/*.test.mjs",
     "test:unit": "npm run build && node --test test/foundation/contracts.test.mjs test/foundation/backend-validation.test.mjs",
     "test:integration": "npm run build && node --test test/integration/*.test.mjs",
+    "test:e2e": "playwright test",
+    "test:foundation": "pwsh -NoProfile -File scripts/Run-FoundationTests.ps1",
     "tables:init": "npm run build && node scripts/initialize-local-tables.mjs",
     "test:boundaries": "node scripts/check-production-boundaries.mjs && node --test test/foundation/boundaries.test.mjs",
     "security:check": "node scripts/check-security.mjs",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run security:check"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.1",
     "@types/node": "^26.6.3",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vite": "^7.1.7"
   }
 }

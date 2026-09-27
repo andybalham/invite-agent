@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsc -b --pretty false",
+    "dev": "vite --host 127.0.0.1",
     "typecheck": "tsc -b --pretty false"
   }
 }
