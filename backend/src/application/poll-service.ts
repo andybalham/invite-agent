@@ -1,11 +1,20 @@
 import { randomUUID } from "node:crypto";
-import type { CreatePollRequest, PublicPollResponse } from "@invite-a-gent/contracts";
-import type { DynamoPollRepository, PollRecord } from "../data/index.js";
+import type {
+  Availability,
+  CreatePollRequest,
+  PublicPollResponse
+} from "@invite-a-gent/contracts";
+import type {
+  DynamoPollRepository,
+  ParticipantRecord,
+  PollRecord
+} from "../data/index.js";
 import {
   renderSafeLocationMarkdown,
   resolveProposedDate,
   validateCreatePollRequest,
-  validateDraftPublication
+  validateDraftPublication,
+  validateParticipantName
 } from "../domain/index.js";
 import { ApplicationError } from "./errors.js";
 import { createPublicToken, hashPublicToken, isPublicToken } from "../security/index.js";
@@ -82,6 +91,25 @@ function withoutClaimedIdentity(input: unknown): unknown {
   >;
   return pollInput;
 }
+
+function isRecord(input: unknown): input is Record<string, unknown> {
+  return typeof input === "object" && input !== null && !Array.isArray(input);
+}
+
+function hasExactlyKeys(input: Record<string, unknown>, keys: readonly string[]): boolean {
+  const actual = Object.keys(input).sort();
+  return actual.length === keys.length && actual.every((key, index) => key === [...keys].sort()[index]);
+}
+
+function dateIds(poll: PollRecord): string[] {
+  return poll.proposedDates.map((_choice, index) => `${poll.id}-date-${index + 1}`);
+}
+
+function isTransactionContention(error: unknown): boolean {
+  return error instanceof Error && error.name === "TransactionCanceledException";
+}
+
+const PUBLIC_MUTATION_ATTEMPTS = 6;
 
 export class PollService {
   public constructor(
@@ -227,6 +255,207 @@ export class PollService {
   }
 
   public async getPublic(token: string): Promise<PublicPollResponse> {
+    const poll = await this.resolvePublicPoll(token);
+    return this.publicView(poll);
+  }
+
+  public async addParticipant(token: string, input: unknown): Promise<PublicPollResponse> {
+    if (!isRecord(input) || !hasExactlyKeys(input, ["displayName"])) {
+      throw new ApplicationError("VALIDATION_ERROR", "Provide only a display name.");
+    }
+    const name = validateParticipantName(input.displayName);
+    if (!name.success) throw new ApplicationError("VALIDATION_ERROR", name.message);
+
+    for (let attempt = 0; attempt < PUBLIC_MUTATION_ATTEMPTS; attempt += 1) {
+      const poll = await this.resolvePublicPoll(token);
+      this.assertOpen(poll);
+      const now = new Date().toISOString();
+      const participant: ParticipantRecord = {
+        id: randomUUID(),
+        pollId: poll.id,
+        displayName: name.displayName,
+        normalizedName: name.normalizedName,
+        availability: Object.fromEntries(dateIds(poll).map((dateId) => [dateId, "no" as const])),
+        createdAt: now,
+        updatedAt: now
+      };
+      const updated = { ...poll, version: poll.version + 1 };
+      try {
+        await this.repository.createParticipant(updated, participant, {
+          pollId: poll.id,
+          id: randomUUID(),
+          action: "PARTICIPANT_ADDED",
+          actorId: "anonymous",
+          actorCategory: "anonymous-link-holder",
+          occurredAt: now,
+          revision: updated.version,
+          entityType: "participant",
+          entityId: participant.id,
+          after: { displayName: participant.displayName, availability: participant.availability }
+        });
+        return this.getPublic(token);
+      } catch (error) {
+        if (!isTransactionContention(error)) throw error;
+      }
+    }
+    throw new ApplicationError(
+      "CONFLICT",
+      `"${name.displayName}" is already in this poll. Names must be unique (capitals don't count).`
+    );
+  }
+
+  public async updateParticipant(
+    token: string,
+    participantId: string,
+    input: unknown
+  ): Promise<PublicPollResponse> {
+    if (!isRecord(input)) {
+      throw new ApplicationError("VALIDATION_ERROR", "Invalid participant update.");
+    }
+    if (hasExactlyKeys(input, ["displayName"])) {
+      return this.renameParticipant(token, participantId, input.displayName);
+    }
+    if (hasExactlyKeys(input, ["availability", "dateId"])) {
+      return this.setAvailability(token, participantId, input.dateId, input.availability);
+    }
+    throw new ApplicationError("VALIDATION_ERROR", "Invalid participant update.");
+  }
+
+  public async removeParticipant(
+    token: string,
+    participantId: string,
+    input: unknown
+  ): Promise<PublicPollResponse> {
+    if (!isRecord(input) || !hasExactlyKeys(input, ["confirmation"]) || typeof input.confirmation !== "string") {
+      throw new ApplicationError("VALIDATION_ERROR", "Type the current display name to confirm deletion.");
+    }
+    for (let attempt = 0; attempt < PUBLIC_MUTATION_ATTEMPTS; attempt += 1) {
+      const poll = await this.resolvePublicPoll(token);
+      this.assertOpen(poll);
+      const participant = await this.findParticipant(poll.id, participantId);
+      if (input.confirmation !== participant.displayName) {
+        throw new ApplicationError(
+          "VALIDATION_ERROR",
+          `That doesn't match "${participant.displayName}". The row was not deleted.`
+        );
+      }
+      const now = new Date().toISOString();
+      const updated = { ...poll, version: poll.version + 1 };
+      try {
+        await this.repository.deleteParticipant(updated, participant, {
+          pollId: poll.id,
+          id: randomUUID(),
+          action: "PARTICIPANT_DELETED",
+          actorId: "anonymous",
+          actorCategory: "anonymous-link-holder",
+          occurredAt: now,
+          revision: updated.version,
+          entityType: "participant",
+          entityId: participant.id,
+          before: { displayName: participant.displayName, availability: participant.availability }
+        });
+        return this.getPublic(token);
+      } catch (error) {
+        if (!isTransactionContention(error)) throw error;
+      }
+    }
+    throw new ApplicationError("RATE_LIMITED", "The table is busy. Try again.");
+  }
+
+  private async renameParticipant(
+    token: string,
+    participantId: string,
+    displayName: unknown
+  ): Promise<PublicPollResponse> {
+    const name = validateParticipantName(displayName);
+    if (!name.success) throw new ApplicationError("VALIDATION_ERROR", name.message);
+    for (let attempt = 0; attempt < PUBLIC_MUTATION_ATTEMPTS; attempt += 1) {
+      const poll = await this.resolvePublicPoll(token);
+      this.assertOpen(poll);
+      const participant = await this.findParticipant(poll.id, participantId);
+      const now = new Date().toISOString();
+      const replacement: ParticipantRecord = {
+        ...participant,
+        displayName: name.displayName,
+        normalizedName: name.normalizedName,
+        updatedAt: now
+      };
+      const updated = { ...poll, version: poll.version + 1 };
+      try {
+        await this.repository.replaceParticipant(updated, participant, replacement, {
+          pollId: poll.id,
+          id: randomUUID(),
+          action: "PARTICIPANT_RENAMED",
+          actorId: "anonymous",
+          actorCategory: "anonymous-link-holder",
+          occurredAt: now,
+          revision: updated.version,
+          entityType: "participant",
+          entityId: participant.id,
+          before: { displayName: participant.displayName },
+          after: { displayName: replacement.displayName }
+        });
+        return this.getPublic(token);
+      } catch (error) {
+        if (!isTransactionContention(error)) throw error;
+      }
+    }
+    throw new ApplicationError(
+      "CONFLICT",
+      `"${name.displayName}" is already in this poll. Names must be unique (capitals don't count).`
+    );
+  }
+
+  private async setAvailability(
+    token: string,
+    participantId: string,
+    dateId: unknown,
+    availability: unknown
+  ): Promise<PublicPollResponse> {
+    if (typeof dateId !== "string" || (availability !== "yes" && availability !== "no")) {
+      throw new ApplicationError("VALIDATION_ERROR", "Availability must be Yes or No for a current date.");
+    }
+    for (let attempt = 0; attempt < PUBLIC_MUTATION_ATTEMPTS; attempt += 1) {
+      const poll = await this.resolvePublicPoll(token);
+      this.assertOpen(poll);
+      if (!dateIds(poll).includes(dateId)) {
+        throw new ApplicationError("VALIDATION_ERROR", "Availability must be Yes or No for a current date.");
+      }
+      const participant = await this.findParticipant(poll.id, participantId);
+      const before = participant.availability[dateId];
+      if (before === undefined) {
+        throw new ApplicationError("VALIDATION_ERROR", "Availability must be Yes or No for a current date.");
+      }
+      const now = new Date().toISOString();
+      const replacement: ParticipantRecord = {
+        ...participant,
+        availability: { ...participant.availability, [dateId]: availability as Availability },
+        updatedAt: now
+      };
+      const updated = { ...poll, version: poll.version + 1 };
+      try {
+        await this.repository.replaceParticipant(updated, participant, replacement, {
+          pollId: poll.id,
+          id: randomUUID(),
+          action: "AVAILABILITY_CHANGED",
+          actorId: "anonymous",
+          actorCategory: "anonymous-link-holder",
+          occurredAt: now,
+          revision: updated.version,
+          entityType: "availability",
+          entityId: `${participant.id}:${dateId}`,
+          before: { value: before },
+          after: { value: availability }
+        });
+        return this.getPublic(token);
+      } catch (error) {
+        if (!isTransactionContention(error)) throw error;
+      }
+    }
+    throw new ApplicationError("RATE_LIMITED", "The table is busy. Try again.");
+  }
+
+  private async resolvePublicPoll(token: string): Promise<PollRecord> {
     if (!isPublicToken(token)) throw new ApplicationError("NOT_FOUND", "Poll link not found");
     const capability = await this.repository.getPublicToken(
       hashPublicToken(token, this.publicConfig.tokenHashKey)
@@ -239,6 +468,25 @@ export class PollService {
     if (!poll || poll.status === "draft") {
       throw new ApplicationError("NOT_FOUND", "Poll link not found");
     }
+    return poll;
+  }
+
+  private assertOpen(poll: PollRecord): void {
+    if (poll.status !== "open") {
+      throw new ApplicationError("INVALID_LIFECYCLE", "This poll is closed. Responses are read-only.");
+    }
+  }
+
+  private async findParticipant(pollId: string, participantId: string): Promise<ParticipantRecord> {
+    const participant = (await this.repository.listParticipants(pollId)).find(
+      ({ id }) => id === participantId
+    );
+    if (!participant) throw new ApplicationError("NOT_FOUND", "Participant not found");
+    return participant;
+  }
+
+  private async publicView(poll: PollRecord): Promise<PublicPollResponse> {
+    const participants = await this.repository.listParticipants(poll.id);
     return {
       id: poll.id,
       title: poll.title,
@@ -255,7 +503,11 @@ export class PollService {
               utcOffset: choice.utcOffset
             })
       })),
-      participants: [],
+      participants: participants.map(({ id, displayName, availability }) => ({
+        id,
+        displayName,
+        availability: { ...availability }
+      })),
       ...(poll.description === undefined ? {} : { description: poll.description }),
       ...(poll.instructions === undefined ? {} : { instructions: poll.instructions }),
       ...(poll.location === undefined

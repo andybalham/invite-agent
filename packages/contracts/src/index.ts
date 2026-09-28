@@ -57,6 +57,23 @@ export interface PublicParticipant {
   availability: Record<string, Availability>;
 }
 
+export interface CreateParticipantRequest {
+  displayName: string;
+}
+
+export interface RenameParticipantRequest {
+  displayName: string;
+}
+
+export interface SetAvailabilityRequest {
+  dateId: string;
+  availability: Availability;
+}
+
+export interface DeleteParticipantRequest {
+  confirmation: string;
+}
+
 export interface PublicPollResponse {
   id: string;
   title: string;

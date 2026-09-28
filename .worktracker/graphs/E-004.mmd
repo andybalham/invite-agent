@@ -5,26 +5,26 @@ graph LR
   classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
   classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
   subgraph Stories
-    S011["S-011 View responses and add a validated participant row"]:::blocked
-    S012["S-012 Rename and delete any participant row collaboratively"]:::blocked
-    S013["S-013 Toggle Yes/No cells accessibly with autosave and totals"]:::blocked
-    S014["S-014 Apply concurrent edits with last-update-wins convergence"]:::blocked
+    S011["S-011 View responses and add a validated participant row"]:::done
+    S012["S-012 Rename and delete any participant row collaboratively"]:::done
+    S013["S-013 Toggle Yes/No cells accessibly with autosave and totals"]:::done
+    S014["S-014 Apply concurrent edits with last-update-wins convergence"]:::done
     S011 --> S012
     S011 --> S013
     S013 --> S014
   end
   subgraph Tasks
-    T021["T-021 Specify participant viewing, creation, and name validation with failing automated tests"]:::todo
-    T022["T-022 Implement participant domain, DynamoDB uniqueness, and public API"]:::blocked
-    T023["T-023 Build participant table UI and prove end-to-end validation"]:::blocked
-    T024["T-024 Specify collaborative participant rename and deletion with failing automated tests"]:::blocked
-    T025["T-025 Implement and verify collaborative participant rename and deletion"]:::blocked
-    T026["T-026 Specify accessible availability toggles and Yes totals with failing automated tests"]:::blocked
-    T027["T-027 Implement toggle transactions, totals, latest-state response, and audit"]:::blocked
-    T028["T-028 Build accessible autosaving cells and prove mouse/keyboard behavior"]:::blocked
-    T029["T-029 Specify last-update-wins service and client convergence with failing automated tests"]:::blocked
-    T030["T-030 Implement transparent contention retry and last-commit persistence"]:::blocked
-    T031["T-031 Implement client freshness handling and prove two-context convergence"]:::blocked
+    T021["T-021 Specify participant viewing, creation, and name validation with failing automated tests"]:::done
+    T022["T-022 Implement participant domain, DynamoDB uniqueness, and public API"]:::done
+    T023["T-023 Build participant table UI and prove end-to-end validation"]:::done
+    T024["T-024 Specify collaborative participant rename and deletion with failing automated tests"]:::done
+    T025["T-025 Implement and verify collaborative participant rename and deletion"]:::done
+    T026["T-026 Specify accessible availability toggles and Yes totals with failing automated tests"]:::done
+    T027["T-027 Implement toggle transactions, totals, latest-state response, and audit"]:::done
+    T028["T-028 Build accessible autosaving cells and prove mouse/keyboard behavior"]:::done
+    T029["T-029 Specify last-update-wins service and client convergence with failing automated tests"]:::done
+    T030["T-030 Implement transparent contention retry and last-commit persistence"]:::done
+    T031["T-031 Implement client freshness handling and prove two-context convergence"]:::done
     T021 --> T022
     T022 --> T023
     T023 --> T024

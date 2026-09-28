@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-021 · Specify participant viewing, creation, and name validation with failing automated tests](../entities/T-021-specify-participant-viewing-creation-and-name-validation-with-failing-automated-tests.md) — todo
+- [ ] [T-032 · Specify deterministic ranking algorithm with failing automated tests](../entities/T-032-specify-deterministic-ranking-algorithm-with-failing-automated-tests.md) — todo

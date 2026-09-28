@@ -18,6 +18,12 @@ export {
   renderSafeLocationMarkdown,
   validateLocationMarkdown
 } from "./location-markdown.js";
+export {
+  normalizeParticipantName,
+  PARTICIPANT_NAME_MAX_CODE_POINTS,
+  validateParticipantName
+} from "./participant-name.js";
+export type { ParticipantNameValidation } from "./participant-name.js";
 export { proposedDateKey, resolveProposedDate } from "./date-choice.js";
 export type {
   DateChoiceResolution,

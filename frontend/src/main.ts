@@ -23,7 +23,11 @@ interface PollDetails {
 }
 
 interface PublicPollDetails extends PollDetails {
-  participants: Array<{ id: string; displayName: string }>;
+  participants: Array<{
+    id: string;
+    displayName: string;
+    availability: Record<string, "yes" | "no">;
+  }>;
   proposedDates: Array<ProposedDate & { id: string }>;
 }
 
@@ -117,15 +121,26 @@ app.innerHTML = `
     </section>
     <section class="answers" aria-labelledby="answers-heading">
       <div class="collaboration-notice"><strong>This is a shared table.</strong> Anyone with the link can add, rename, delete or change any row. Every change saves automatically.</div>
-      <div class="section-rule"><h2 id="answers-heading">Everyone's answers</h2><button class="btn btn-primary" type="button" disabled>+ Add a row</button></div>
+      <div class="section-rule"><h2 id="answers-heading">Everyone's answers</h2><button class="btn btn-primary add-participant" type="button">+ Add a row</button></div>
       <div class="public-table-wrap"><table class="table public-table"><thead><tr><th>Name</th></tr></thead><tbody><tr><td>No one has answered yet.</td></tr></tbody><tfoot><tr><th>Yes total</th></tr></tfoot></table></div>
+      <p class="table-help">Click a cell to switch between Yes and No, or Tab to it and press Space.</p>
     </section>
   </main>
+  <dialog class="dialog participant-dialog" aria-labelledby="participant-dialog-heading">
+    <form method="dialog" class="dialog-form" novalidate>
+      <h2 id="participant-dialog-heading">Add a row</h2>
+      <p class="participant-dialog-copy">Every date starts as No. The row saves as soon as you add it.</p>
+      <div class="field"><label class="participant-input-label" for="participant-name">Display name</label><input class="input" id="participant-name" autocomplete="off" maxlength="100"></div>
+      <p class="dialog-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button class="btn btn-primary participant-submit" type="submit">Add row</button><button class="btn btn-ghost participant-cancel" type="button">Cancel</button></div>
+    </form>
+  </dialog>
   <main class="invalid-link" hidden aria-labelledby="invalid-link-heading">
     <p class="invalid-kicker">LINK NOT VALID</p>
     <h1 id="invalid-link-heading" tabindex="-1">This poll link doesn't work</h1>
     <p>The organiser may have replaced it, or the poll isn't published yet. Ask them for the current link. Nothing you do here can change the poll.</p>
-  </main>`;
+  </main>
+  <div class="toast public-toast" role="status" aria-live="polite" hidden></div>`;
 
 function requireElement<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -184,6 +199,17 @@ const publicTimeZone = requireElement<HTMLElement>(".public-time-zone");
 const publicTableHead = requireElement<HTMLTableRowElement>(".public-table thead tr");
 const publicTableBody = requireElement<HTMLTableSectionElement>(".public-table tbody");
 const publicTableFoot = requireElement<HTMLTableRowElement>(".public-table tfoot tr");
+const addParticipantButton = requireElement<HTMLButtonElement>(".add-participant");
+const participantDialog = requireElement<HTMLDialogElement>(".participant-dialog");
+const participantForm = requireElement<HTMLFormElement>(".participant-dialog form");
+const participantDialogHeading = requireElement<HTMLElement>("#participant-dialog-heading");
+const participantDialogCopy = requireElement<HTMLElement>(".participant-dialog-copy");
+const participantInputLabel = requireElement<HTMLLabelElement>(".participant-input-label");
+const participantName = requireElement<HTMLInputElement>("#participant-name");
+const participantDialogError = requireElement<HTMLElement>(".dialog-error");
+const participantSubmit = requireElement<HTMLButtonElement>(".participant-submit");
+const participantCancel = requireElement<HTMLButtonElement>(".participant-cancel");
+const publicToast = requireElement<HTMLElement>(".public-toast");
 const invalidLinkScreen = requireElement<HTMLElement>(".invalid-link");
 const invalidLinkHeading = requireElement<HTMLElement>("#invalid-link-heading");
 const url = new URL(window.location.href);
@@ -191,6 +217,11 @@ const testRunId = url.searchParams.get("testRunId") ?? "browser";
 const organiserId = `local-organiser-${testRunId.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
 let pollId = url.searchParams.get("pollId");
 let proposedDates: ProposedDate[] = [];
+let publicToken: string | undefined;
+let displayedPublicPoll: PublicPollDetails | undefined;
+let participantDialogMode: "add" | "rename" | "delete" = "add";
+let selectedParticipantId: string | undefined;
+let publicRefreshInFlight = false;
 
 function codePointLength(value: string): number { return Array.from(value).length; }
 
@@ -483,6 +514,10 @@ function showInvalidLink(): void {
 }
 
 function renderPublicPoll(poll: PublicPollDetails): void {
+  const firstRender = !displayedPublicPoll;
+  if (displayedPublicPoll && poll.version <= displayedPublicPoll.version) return;
+  const previous = displayedPublicPoll;
+  displayedPublicPoll = poll;
   hidePrivateScreens();
   invalidLinkScreen.hidden = true;
   publicPollScreen.hidden = false;
@@ -517,20 +552,94 @@ function renderPublicPoll(poll: PublicPollDetails): void {
     headingCell.textContent = choiceLabel(choice);
     publicTableHead.append(headingCell);
     const total = document.createElement("td");
-    total.textContent = "0";
+    total.textContent = String(
+      poll.participants.filter(({ availability }) => availability[choice.id] === "yes").length
+    );
     publicTableFoot.append(total);
   }
+  const actionsHeading = document.createElement("th");
+  actionsHeading.scope = "col";
+  actionsHeading.className = "row-actions-heading";
+  actionsHeading.textContent = "Actions";
+  publicTableHead.append(actionsHeading);
+  publicTableFoot.append(document.createElement("td"));
   publicTableBody.replaceChildren();
-  const row = document.createElement("tr");
-  const empty = document.createElement("td");
-  empty.colSpan = poll.proposedDates.length + 1;
-  empty.textContent = "No one has answered yet.";
-  row.append(empty);
-  publicTableBody.append(row);
-  publicPollHeading.focus();
+  if (poll.participants.length === 0) {
+    const row = document.createElement("tr");
+    const empty = document.createElement("td");
+    empty.colSpan = poll.proposedDates.length + 2;
+    empty.textContent = "No one has answered yet.";
+    row.append(empty);
+    publicTableBody.append(row);
+  } else {
+    for (const participant of poll.participants) {
+      const row = document.createElement("tr");
+      row.dataset.participantId = participant.id;
+      const nameCell = document.createElement("th");
+      nameCell.scope = "row";
+      nameCell.textContent = participant.displayName;
+      row.append(nameCell);
+      for (const choice of poll.proposedDates) {
+        const cell = document.createElement("td");
+        const value = participant.availability[choice.id] ?? "no";
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `availability-toggle availability-toggle--${value}`;
+        button.dataset.dateId = choice.id;
+        button.dataset.participantId = participant.id;
+        button.dataset.availability = value;
+        button.textContent = value === "yes" ? "Yes" : "No";
+        button.setAttribute("aria-pressed", String(value === "yes"));
+        button.setAttribute(
+          "aria-label",
+          `${participant.displayName}, ${choiceLabel(choice)}: ${value === "yes" ? "Yes" : "No"}`
+        );
+        cell.append(button);
+        row.append(cell);
+      }
+      const actions = document.createElement("td");
+      actions.className = "row-actions";
+      const trigger = document.createElement("button");
+      trigger.className = "icon-button row-actions-trigger";
+      trigger.type = "button";
+      trigger.textContent = "⋯";
+      trigger.setAttribute("aria-label", `Actions for ${participant.displayName}`);
+      trigger.setAttribute("aria-expanded", "false");
+      const menu = document.createElement("div");
+      menu.className = "row-menu";
+      menu.hidden = true;
+      for (const [action, label] of [["rename", "Rename…"], ["delete", "Delete…"]] as const) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.participantAction = action;
+        button.textContent = label;
+        if (action === "delete") button.className = "danger-action";
+        menu.append(button);
+      }
+      actions.append(trigger, menu);
+      row.append(actions);
+      publicTableBody.append(row);
+    }
+  }
+  if (previous && poll.version > previous.version) {
+    for (const participant of poll.participants) {
+      const oldParticipant = previous.participants.find(({ id }) => id === participant.id);
+      if (!oldParticipant) continue;
+      for (const choice of poll.proposedDates) {
+        if (oldParticipant.availability[choice.id] === participant.availability[choice.id]) continue;
+        const changed = publicTableBody.querySelector<HTMLElement>(
+          `.availability-toggle[data-participant-id="${CSS.escape(participant.id)}"][data-date-id="${CSS.escape(choice.id)}"]`
+        );
+        changed?.classList.add("availability-toggle--fresh");
+        if (changed) window.setTimeout(() => changed.classList.remove("availability-toggle--fresh"), 1_600);
+      }
+    }
+  }
+  if (firstRender) publicPollHeading.focus();
 }
 
 async function loadPublicPoll(token: string): Promise<void> {
+  publicToken = token;
   const response = await fetch(`/api/public/polls/${encodeURIComponent(token)}`, {
     headers: { accept: "application/json" }
   });
@@ -539,6 +648,72 @@ async function loadPublicPoll(token: string): Promise<void> {
     return;
   }
   renderPublicPoll((await response.json()) as PublicPollDetails);
+}
+
+async function refreshPublicPoll(): Promise<void> {
+  if (!publicToken || publicRefreshInFlight || document.visibilityState === "hidden") return;
+  publicRefreshInFlight = true;
+  try {
+    const response = await fetch(`/api/public/polls/${encodeURIComponent(publicToken)}`, {
+      headers: { accept: "application/json" }
+    });
+    if (response.ok) renderPublicPoll((await response.json()) as PublicPollDetails);
+  } finally {
+    publicRefreshInFlight = false;
+  }
+}
+
+function openParticipantDialog(
+  mode: "add" | "rename" | "delete",
+  participant?: PublicPollDetails["participants"][number]
+): void {
+  participantDialogMode = mode;
+  selectedParticipantId = participant?.id;
+  if (mode === "add") {
+    participantDialogHeading.textContent = "Add a row";
+    participantDialogCopy.textContent = "Every date starts as No. The row saves as soon as you add it.";
+    participantInputLabel.textContent = "Display name";
+    participantName.value = "";
+    participantSubmit.textContent = "Add row";
+  } else if (mode === "rename" && participant) {
+    participantDialogHeading.textContent = `Rename “${participant.displayName}”`;
+    participantDialogCopy.textContent = "Answers stay the same.";
+    participantInputLabel.textContent = "New name";
+    participantName.value = participant.displayName;
+    participantSubmit.textContent = "Rename";
+  } else if (participant) {
+    participantDialogHeading.textContent = `Delete ${participant.displayName}'s row?`;
+    participantDialogCopy.textContent = `Type ${participant.displayName} to confirm. The organiser can undo this from the history.`;
+    participantInputLabel.textContent = `Type ${participant.displayName} to confirm`;
+    participantName.value = "";
+    participantSubmit.textContent = "Delete row";
+  }
+  participantDialogError.hidden = true;
+  participantDialogError.textContent = "";
+  participantSubmit.disabled = false;
+  participantDialog.showModal();
+  participantName.focus();
+}
+
+async function mutatePublicPoll(path: string, init: RequestInit): Promise<PublicPollDetails | undefined> {
+  const response = await fetch(path, {
+    ...init,
+    headers: { accept: "application/json", "content-type": "application/json", ...init.headers }
+  });
+  if (!response.ok) {
+    const message = await readError(response);
+    if (participantDialog.open) {
+      participantDialogError.hidden = false;
+      participantDialogError.textContent = message;
+    } else {
+      publicToast.hidden = false;
+      publicToast.textContent = message;
+    }
+    return undefined;
+  }
+  const poll = (await response.json()) as PublicPollDetails;
+  renderPublicPoll(poll);
+  return poll;
 }
 
 function addProposedDate(): void {
@@ -688,6 +863,66 @@ copyLinkButton.addEventListener("click", () => {
   });
 });
 
+addParticipantButton.addEventListener("click", () => openParticipantDialog("add"));
+publicTableBody.addEventListener("click", (event) => {
+  const target = event.target as Element;
+  const availabilityButton = target.closest<HTMLButtonElement>(".availability-toggle");
+  if (availabilityButton && publicToken) {
+    const participantId = availabilityButton.dataset.participantId;
+    const dateId = availabilityButton.dataset.dateId;
+    const availability = availabilityButton.dataset.availability === "yes" ? "no" : "yes";
+    if (!participantId || !dateId) return;
+    availabilityButton.disabled = true;
+    availabilityButton.setAttribute("aria-busy", "true");
+    void mutatePublicPoll(
+      `/api/public/polls/${encodeURIComponent(publicToken)}/participants/${encodeURIComponent(participantId)}`,
+      { method: "PUT", body: JSON.stringify({ dateId, availability }) }
+    ).finally(() => {
+      availabilityButton.disabled = false;
+      availabilityButton.removeAttribute("aria-busy");
+    });
+    return;
+  }
+  const row = target.closest<HTMLTableRowElement>("tr[data-participant-id]");
+  const participant = displayedPublicPoll?.participants.find(({ id }) => id === row?.dataset.participantId);
+  if (!row || !participant) return;
+  const trigger = target.closest<HTMLButtonElement>(".row-actions-trigger");
+  if (trigger) {
+    const menu = trigger.nextElementSibling as HTMLElement | null;
+    if (!menu) return;
+    const opening = menu.hidden;
+    for (const other of publicTableBody.querySelectorAll<HTMLElement>(".row-menu")) other.hidden = true;
+    menu.hidden = !opening;
+    trigger.setAttribute("aria-expanded", String(opening));
+    return;
+  }
+  const action = target.closest<HTMLButtonElement>("button[data-participant-action]")?.dataset.participantAction;
+  if (action === "rename" || action === "delete") openParticipantDialog(action, participant);
+});
+participantCancel.addEventListener("click", () => participantDialog.close());
+participantForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (!publicToken) return;
+  void (async () => {
+    participantSubmit.disabled = true;
+    participantSubmit.textContent = participantDialogMode === "add" ? "Adding…" : "Saving…";
+    const collection = `/api/public/polls/${encodeURIComponent(publicToken as string)}/participants`;
+    const isAdd = participantDialogMode === "add";
+    const poll = await mutatePublicPoll(
+      isAdd ? collection : `${collection}/${encodeURIComponent(selectedParticipantId as string)}`,
+      participantDialogMode === "delete"
+        ? { method: "DELETE", body: JSON.stringify({ confirmation: participantName.value }) }
+        : {
+            method: isAdd ? "POST" : "PUT",
+            body: JSON.stringify({ displayName: participantName.value })
+          }
+    );
+    participantSubmit.disabled = false;
+    participantSubmit.textContent = participantDialogMode === "add" ? "Add row" : participantDialogMode === "rename" ? "Rename" : "Delete row";
+    if (poll) participantDialog.close();
+  })();
+});
+
 async function checkApi(): Promise<void> {
   try {
     const response = await fetch("/health", { headers: { accept: "application/json" } });
@@ -698,5 +933,10 @@ async function checkApi(): Promise<void> {
 
 const publicPath = /^\/p\/([^/]+)$/.exec(window.location.pathname);
 updatePreview(); renderChoices(); updatePublicationReadiness(); void checkApi();
-if (publicPath?.[1]) void loadPublicPoll(publicPath[1]);
+if (publicPath?.[1]) {
+  void loadPublicPoll(publicPath[1]);
+  window.setInterval(() => void refreshPublicPoll(), 750);
+  document.addEventListener("visibilitychange", () => void refreshPublicPoll());
+  window.addEventListener("focus", () => void refreshPublicPoll());
+}
 else if (pollId) void loadDraft(pollId);

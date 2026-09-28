@@ -8,7 +8,7 @@ graph LR
     E001["E-001 E1 — Runnable local engineering foundation"]:::done
     E002["E-002 E2 — Organiser draft builder and preview"]:::done
     E003["E-003 E3 — Publish and securely share a public poll"]:::done
-    E004["E-004 E4 — Collaborative availability table"]:::blocked
+    E004["E-004 E4 — Collaborative availability table"]:::done
     E005["E-005 E5 — Live popular-date ranking"]:::blocked
     E006["E-006 E6 — Immutable history and safe undo"]:::blocked
     E007["E-007 E7 — Final decision and reversible poll lifecycle"]:::blocked
@@ -34,10 +34,10 @@ graph LR
     S008["S-008 Publish atomically and issue a secure public capability"]:::done
     S009["S-009 Render the safe unauthenticated public poll view"]:::done
     S010["S-010 Enforce organiser authentication and ownership on the server"]:::done
-    S011["S-011 View responses and add a validated participant row"]:::blocked
-    S012["S-012 Rename and delete any participant row collaboratively"]:::blocked
-    S013["S-013 Toggle Yes/No cells accessibly with autosave and totals"]:::blocked
-    S014["S-014 Apply concurrent edits with last-update-wins convergence"]:::blocked
+    S011["S-011 View responses and add a validated participant row"]:::done
+    S012["S-012 Rename and delete any participant row collaboratively"]:::done
+    S013["S-013 Toggle Yes/No cells accessibly with autosave and totals"]:::done
+    S014["S-014 Apply concurrent edits with last-update-wins convergence"]:::done
     S015["S-015 Calculate deterministic top-five rankings"]:::blocked
     S016["S-016 Display and refresh the live public ranking"]:::blocked
     S017["S-017 Persist and display complete immutable audit history"]:::blocked
@@ -116,18 +116,18 @@ graph LR
     T018["T-018 Implement and verify safe public poll view"]:::done
     T019["T-019 Specify organiser authentication and ownership with failing automated tests"]:::done
     T020["T-020 Implement and verify organiser authentication and ownership"]:::done
-    T021["T-021 Specify participant viewing, creation, and name validation with failing automated tests"]:::todo
-    T022["T-022 Implement participant domain, DynamoDB uniqueness, and public API"]:::blocked
-    T023["T-023 Build participant table UI and prove end-to-end validation"]:::blocked
-    T024["T-024 Specify collaborative participant rename and deletion with failing automated tests"]:::blocked
-    T025["T-025 Implement and verify collaborative participant rename and deletion"]:::blocked
-    T026["T-026 Specify accessible availability toggles and Yes totals with failing automated tests"]:::blocked
-    T027["T-027 Implement toggle transactions, totals, latest-state response, and audit"]:::blocked
-    T028["T-028 Build accessible autosaving cells and prove mouse/keyboard behavior"]:::blocked
-    T029["T-029 Specify last-update-wins service and client convergence with failing automated tests"]:::blocked
-    T030["T-030 Implement transparent contention retry and last-commit persistence"]:::blocked
-    T031["T-031 Implement client freshness handling and prove two-context convergence"]:::blocked
-    T032["T-032 Specify deterministic ranking algorithm with failing automated tests"]:::blocked
+    T021["T-021 Specify participant viewing, creation, and name validation with failing automated tests"]:::done
+    T022["T-022 Implement participant domain, DynamoDB uniqueness, and public API"]:::done
+    T023["T-023 Build participant table UI and prove end-to-end validation"]:::done
+    T024["T-024 Specify collaborative participant rename and deletion with failing automated tests"]:::done
+    T025["T-025 Implement and verify collaborative participant rename and deletion"]:::done
+    T026["T-026 Specify accessible availability toggles and Yes totals with failing automated tests"]:::done
+    T027["T-027 Implement toggle transactions, totals, latest-state response, and audit"]:::done
+    T028["T-028 Build accessible autosaving cells and prove mouse/keyboard behavior"]:::done
+    T029["T-029 Specify last-update-wins service and client convergence with failing automated tests"]:::done
+    T030["T-030 Implement transparent contention retry and last-commit persistence"]:::done
+    T031["T-031 Implement client freshness handling and prove two-context convergence"]:::done
+    T032["T-032 Specify deterministic ranking algorithm with failing automated tests"]:::todo
     T033["T-033 Implement and verify deterministic ranking algorithm"]:::blocked
     T034["T-034 Specify live ranking presentation with failing automated tests"]:::blocked
     T035["T-035 Implement and verify live ranking presentation"]:::blocked

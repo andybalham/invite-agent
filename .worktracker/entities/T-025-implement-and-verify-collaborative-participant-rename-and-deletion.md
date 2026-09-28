@@ -3,13 +3,13 @@ id: T-025
 type: task
 title: Implement and verify collaborative participant rename and deletion
 parent: S-012
-status: todo
+status: done
 dependsOn: [T-024]
 estimate: 2
 tags: [green, implementation, S-012]
 archived: false
 created: 2026-09-27T18:08:40.949Z
-updated: 2026-09-27T18:08:40.949Z
+updated: 2026-09-28T19:55:30.790Z
 ---
 Implementation scope:
 Implement atomic normalized-name lock changes, exact display-name delete confirmation, derived-total refresh, audit events, and row actions.
@@ -20,3 +20,8 @@ Acceptance criteria:
 - Targeted tests and the relevant regression suite are green.
 - Static analysis, security checks, and accessibility checks applicable to the slice pass.
 - Changed files, exact verification commands, and results are attached as evidence.
+
+Evidence:
+- Added atomic rename/delete transactions, normalized name-lock replacement, exact current-name confirmation, one anonymous audit event per accepted action, accessible row menus, and reusable dialogs with preserved invalid input.
+- Commands: npm run build; local dev stack + node --test test/integration/collaborative-availability.test.mjs; Playwright collaborative-availability.spec.ts.
+- Results: build green; 4/4 integration tests green; 3/3 Playwright scenarios green.

@@ -2,18 +2,13 @@
 
 _Generated. Do not edit by hand._
 
-- [E-004 · E4 — Collaborative availability table](../entities/E-004-e4-collaborative-availability-table.md) — blocked
-- [E-005 · E5 — Live popular-date ranking](../entities/E-005-e5-live-popular-date-ranking.md) — blocked · waiting on E-004
+- [E-005 · E5 — Live popular-date ranking](../entities/E-005-e5-live-popular-date-ranking.md) — blocked
 - [E-006 · E6 — Immutable history and safe undo](../entities/E-006-e6-immutable-history-and-safe-undo.md) — blocked · waiting on E-005
 - [E-007 · E7 — Final decision and reversible poll lifecycle](../entities/E-007-e7-final-decision-and-reversible-poll-lifecycle.md) — blocked · waiting on E-006
 - [E-008 · E8 — Production AWS platform](../entities/E-008-e8-production-aws-platform.md) — blocked · waiting on E-007
 - [E-009 · E9 — Tested production release and operations](../entities/E-009-e9-tested-production-release-and-operations.md) — blocked · waiting on E-008
-- [S-011 · View responses and add a validated participant row](../entities/S-011-view-responses-and-add-a-validated-participant-row.md) — blocked
-- [S-012 · Rename and delete any participant row collaboratively](../entities/S-012-rename-and-delete-any-participant-row-collaboratively.md) — blocked · waiting on S-011
-- [S-013 · Toggle Yes/No cells accessibly with autosave and totals](../entities/S-013-toggle-yes-no-cells-accessibly-with-autosave-and-totals.md) — blocked · waiting on S-011
-- [S-014 · Apply concurrent edits with last-update-wins convergence](../entities/S-014-apply-concurrent-edits-with-last-update-wins-convergence.md) — blocked · waiting on S-013
-- [S-015 · Calculate deterministic top-five rankings](../entities/S-015-calculate-deterministic-top-five-rankings.md) — blocked · waiting on S-013
-- [S-016 · Display and refresh the live public ranking](../entities/S-016-display-and-refresh-the-live-public-ranking.md) — blocked · waiting on S-014, S-015
+- [S-015 · Calculate deterministic top-five rankings](../entities/S-015-calculate-deterministic-top-five-rankings.md) — blocked
+- [S-016 · Display and refresh the live public ranking](../entities/S-016-display-and-refresh-the-live-public-ranking.md) — blocked · waiting on S-015
 - [S-017 · Persist and display complete immutable audit history](../entities/S-017-persist-and-display-complete-immutable-audit-history.md) — blocked · waiting on S-016
 - [S-018 · Undo an isolated change with a compensating revision](../entities/S-018-undo-an-isolated-change-with-a-compensating-revision.md) — blocked · waiting on S-017
 - [S-019 · Warn, confirm, or reject complex undo safely](../entities/S-019-warn-confirm-or-reject-complex-undo-safely.md) — blocked · waiting on S-018
@@ -29,19 +24,8 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [T-022 · Implement participant domain, DynamoDB uniqueness, and public API](../entities/T-022-implement-participant-domain-dynamodb-uniqueness-and-public-api.md) — blocked · waiting on T-021
-- [T-023 · Build participant table UI and prove end-to-end validation](../entities/T-023-build-participant-table-ui-and-prove-end-to-end-validation.md) — blocked · waiting on T-022
-- [T-024 · Specify collaborative participant rename and deletion with failing automated tests](../entities/T-024-specify-collaborative-participant-rename-and-deletion-with-failing-automated-tests.md) — blocked · waiting on T-023
-- [T-025 · Implement and verify collaborative participant rename and deletion](../entities/T-025-implement-and-verify-collaborative-participant-rename-and-deletion.md) — blocked · waiting on T-024
-- [T-026 · Specify accessible availability toggles and Yes totals with failing automated tests](../entities/T-026-specify-accessible-availability-toggles-and-yes-totals-with-failing-automated-tests.md) — blocked · waiting on T-023
-- [T-027 · Implement toggle transactions, totals, latest-state response, and audit](../entities/T-027-implement-toggle-transactions-totals-latest-state-response-and-audit.md) — blocked · waiting on T-026
-- [T-028 · Build accessible autosaving cells and prove mouse/keyboard behavior](../entities/T-028-build-accessible-autosaving-cells-and-prove-mouse-keyboard-behavior.md) — blocked · waiting on T-027
-- [T-029 · Specify last-update-wins service and client convergence with failing automated tests](../entities/T-029-specify-last-update-wins-service-and-client-convergence-with-failing-automated-tests.md) — blocked · waiting on T-028
-- [T-030 · Implement transparent contention retry and last-commit persistence](../entities/T-030-implement-transparent-contention-retry-and-last-commit-persistence.md) — blocked · waiting on T-029
-- [T-031 · Implement client freshness handling and prove two-context convergence](../entities/T-031-implement-client-freshness-handling-and-prove-two-context-convergence.md) — blocked · waiting on T-030
-- [T-032 · Specify deterministic ranking algorithm with failing automated tests](../entities/T-032-specify-deterministic-ranking-algorithm-with-failing-automated-tests.md) — blocked · waiting on T-028
 - [T-033 · Implement and verify deterministic ranking algorithm](../entities/T-033-implement-and-verify-deterministic-ranking-algorithm.md) — blocked · waiting on T-032
-- [T-034 · Specify live ranking presentation with failing automated tests](../entities/T-034-specify-live-ranking-presentation-with-failing-automated-tests.md) — blocked · waiting on T-031, T-033
+- [T-034 · Specify live ranking presentation with failing automated tests](../entities/T-034-specify-live-ranking-presentation-with-failing-automated-tests.md) — blocked · waiting on T-033
 - [T-035 · Implement and verify live ranking presentation](../entities/T-035-implement-and-verify-live-ranking-presentation.md) — blocked · waiting on T-034
 - [T-036 · Specify immutable audit persistence and history view with failing automated tests](../entities/T-036-specify-immutable-audit-persistence-and-history-view-with-failing-automated-tests.md) — blocked · waiting on T-035
 - [T-037 · Implement and verify immutable audit persistence and history view](../entities/T-037-implement-and-verify-immutable-audit-persistence-and-history-view.md) — blocked · waiting on T-036

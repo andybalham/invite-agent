@@ -1,4 +1,9 @@
-import type { CreatePollRequest, LifecycleState, ProposedDate } from "@invite-a-gent/contracts";
+import type {
+  Availability,
+  CreatePollRequest,
+  LifecycleState,
+  ProposedDate
+} from "@invite-a-gent/contracts";
 
 export interface PollRecord extends CreatePollRequest {
   readonly id: string;
@@ -13,11 +18,32 @@ export interface PollRecord extends CreatePollRequest {
 export interface AuditEvent {
   readonly pollId: string;
   readonly id: string;
-  readonly action: "POLL_CREATED" | "POLL_DETAILS_UPDATED" | "POLL_PUBLISHED";
+  readonly action:
+    | "POLL_CREATED"
+    | "POLL_DETAILS_UPDATED"
+    | "POLL_PUBLISHED"
+    | "PARTICIPANT_ADDED"
+    | "PARTICIPANT_RENAMED"
+    | "PARTICIPANT_DELETED"
+    | "AVAILABILITY_CHANGED";
   readonly actorId: string;
+  readonly actorCategory?: "organiser" | "anonymous-link-holder";
   readonly occurredAt: string;
-  readonly before?: CreatePollRequest;
-  readonly after?: CreatePollRequest;
+  readonly revision?: number;
+  readonly entityType?: "poll" | "participant" | "availability";
+  readonly entityId?: string;
+  readonly before?: unknown;
+  readonly after?: unknown;
+}
+
+export interface ParticipantRecord {
+  readonly id: string;
+  readonly pollId: string;
+  readonly displayName: string;
+  readonly normalizedName: string;
+  readonly availability: Readonly<Record<string, Availability>>;
+  readonly createdAt: string;
+  readonly updatedAt: string;
 }
 
 export interface PublicTokenRecord {

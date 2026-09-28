@@ -69,6 +69,44 @@ export function createSharedHttpHandler(dependencies: {
         if (request.method === "GET" && publicMatch?.[1]) {
           return { status: 200, body: await dependencies.polls.getPublic(publicMatch[1]) };
         }
+        const publicParticipantsMatch = /^\/api\/public\/polls\/([^/]+)\/participants$/.exec(
+          request.path
+        );
+        if (request.method === "POST" && publicParticipantsMatch?.[1]) {
+          return {
+            status: 201,
+            body: await dependencies.polls.addParticipant(
+              publicParticipantsMatch[1],
+              request.body
+            )
+          };
+        }
+        const publicParticipantMatch =
+          /^\/api\/public\/polls\/([^/]+)\/participants\/([^/]+)$/.exec(request.path);
+        if (request.method === "PUT" && publicParticipantMatch?.[1] && publicParticipantMatch[2]) {
+          return {
+            status: 200,
+            body: await dependencies.polls.updateParticipant(
+              publicParticipantMatch[1],
+              publicParticipantMatch[2],
+              request.body
+            )
+          };
+        }
+        if (
+          request.method === "DELETE" &&
+          publicParticipantMatch?.[1] &&
+          publicParticipantMatch[2]
+        ) {
+          return {
+            status: 200,
+            body: await dependencies.polls.removeParticipant(
+              publicParticipantMatch[1],
+              publicParticipantMatch[2],
+              request.body
+            )
+          };
+        }
         const match = /^\/api\/organiser\/polls\/([^/]+)$/.exec(request.path);
         if (request.method === "GET" && match?.[1]) {
           const organiserId = dependencies.authenticate(request.headers);
