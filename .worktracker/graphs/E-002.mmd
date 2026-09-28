@@ -9,10 +9,13 @@ graph LR
     S005["S-005 Create and edit draft details with safe location Markdown"]:::done
     S006["S-006 Manage ordered date and date-time choices safely across DST"]:::blocked
     S007["S-007 Preview a private draft and enforce publication readiness"]:::blocked
+    S032["S-032 Align the application UI with the primary Gather design"]:::done
     S004 --> S005
     S004 --> S006
     S005 --> S007
+    S005 --> S032
     S006 --> S007
+    S032 --> S006
   end
   subgraph Tasks
     T007["T-007 Specify draft lifecycle and validation with failing automated tests"]:::done
@@ -23,6 +26,8 @@ graph LR
     T012["T-012 Implement and verify ordered choices and DST-safe date handling"]:::blocked
     T013["T-013 Specify private preview and publication readiness with failing automated tests"]:::blocked
     T014["T-014 Implement and verify private preview and publication readiness"]:::blocked
+    T066["T-066 Specify primary-design fidelity with failing browser tests"]:::done
+    T067["T-067 Implement and verify the primary Gather design foundation"]:::done
     T007 --> T008
     T008 --> T009
     T008 --> T011
@@ -31,11 +36,14 @@ graph LR
     T011 --> T012
     T012 --> T013
     T013 --> T014
+    T066 --> T067
+    T067 --> T011
   end
   click S004 "../entities/S-004-define-draft-poll-lifecycle-and-validation-rules.md"
   click S005 "../entities/S-005-create-and-edit-draft-details-with-safe-location-markdown.md"
   click S006 "../entities/S-006-manage-ordered-date-and-date-time-choices-safely-across-dst.md"
   click S007 "../entities/S-007-preview-a-private-draft-and-enforce-publication-readiness.md"
+  click S032 "../entities/S-032-align-the-application-ui-with-the-primary-gather-design.md"
   click T007 "../entities/T-007-specify-draft-lifecycle-and-validation-with-failing-automated-tests.md"
   click T008 "../entities/T-008-implement-and-verify-draft-lifecycle-and-validation.md"
   click T009 "../entities/T-009-specify-draft-details-and-safe-location-markdown-with-failing-automated-tests.md"
@@ -44,3 +52,5 @@ graph LR
   click T012 "../entities/T-012-implement-and-verify-ordered-choices-and-dst-safe-date-handling.md"
   click T013 "../entities/T-013-specify-private-preview-and-publication-readiness-with-failing-automated-tests.md"
   click T014 "../entities/T-014-implement-and-verify-private-preview-and-publication-readiness.md"
+  click T066 "../entities/T-066-specify-primary-design-fidelity-with-failing-browser-tests.md"
+  click T067 "../entities/T-067-implement-and-verify-the-primary-gather-design-foundation.md"

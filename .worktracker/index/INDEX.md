@@ -26,6 +26,9 @@ _Generated. Do not edit by hand._
 - [ ] **S-007 · Preview a private draft and enforce publication readiness** — blocked · waiting on S-006
   - [ ] [T-013 · Specify private preview and publication readiness with failing automated tests](../entities/T-013-specify-private-preview-and-publication-readiness-with-failing-automated-tests.md) — blocked · waiting on T-012
   - [ ] [T-014 · Implement and verify private preview and publication readiness](../entities/T-014-implement-and-verify-private-preview-and-publication-readiness.md) — blocked · waiting on T-013
+- [x] **S-032 · Align the application UI with the primary Gather design** — done
+  - [x] [T-066 · Specify primary-design fidelity with failing browser tests](../entities/T-066-specify-primary-design-fidelity-with-failing-browser-tests.md) — done
+  - [x] [T-067 · Implement and verify the primary Gather design foundation](../entities/T-067-implement-and-verify-the-primary-gather-design-foundation.md) — done
 
 ## [E-003 · E3 — Publish and securely share a public poll](./E-003.md) — blocked
 - [ ] **S-008 · Publish atomically and issue a secure public capability** — blocked · waiting on S-007

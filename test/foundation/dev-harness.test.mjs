@@ -30,7 +30,7 @@ test("the local stack exposes one-command readiness-based start and scoped stop 
   assert.doesNotMatch(stop, /Get-Process\s+node|taskkill\s+\/IM|Stop-Process\s+-Name/i);
 });
 
-test("the Vite shell renders the product name and observable API health", async () => {
+test("the Vite shell renders the Gather product name and observable API health", async () => {
   const [html, main, viteConfig] = await Promise.all([
     read("frontend/index.html"),
     read("frontend/src/main.ts"),
@@ -38,7 +38,7 @@ test("the Vite shell renders the product name and observable API health", async 
   ]);
 
   assert.match(html, /<main[^>]+id="app"/);
-  assert.match(main, /Invite-a-Gent/);
+  assert.match(main, /aria-label="Gather home">Gather</);
   assert.match(main, /\/health/);
   assert.match(main, /data-testid=["'`]api-health["'`]/);
   assert.match(viteConfig, /process\.env\.API_PORT/);

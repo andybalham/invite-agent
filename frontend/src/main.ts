@@ -14,33 +14,45 @@ interface PollDetails {
 
 const app = document.querySelector<HTMLElement>("#app");
 if (!app) throw new Error("Application root is missing");
+app.className = "app-main";
 
 app.innerHTML = `
-  <main class="draft-shell">
-    <header class="masthead">
-      <a class="brand" href="/" aria-label="Invite-a-Gent home"><span role="heading" aria-level="1">Invite-a-Gent</span></a>
-      <div class="health" aria-live="polite"><span class="health__dot" aria-hidden="true"></span><span data-testid="api-health">Checking API…</span></div>
-    </header>
-    <section class="editor" aria-labelledby="draft-heading">
-      <div class="editor__intro">
-        <div><p class="eyebrow"><span>Draft</span> Only you can see this</p><h1 id="draft-heading">Shape the plan.</h1><p class="lede">Start with the details people need. Dates can come next.</p></div>
-        <p class="folio" aria-hidden="true">01 / details</p>
+  <header class="app-header">
+    <div class="app-header__inner">
+      <a class="wordmark" href="/" aria-label="Gather home">Gather</a>
+      <div class="app-header__meta">
+        <span data-testid="header-save-status">All changes saved · --:--:--</span>
+        <span class="account">olivia@example.test</span>
+        <span class="sr-only" data-testid="api-health" aria-live="polite">Checking API…</span>
       </div>
-      <form data-testid="draft-form" novalidate>
-        <div class="field field--wide"><label for="title">Title <b aria-hidden="true">*</b></label><input id="title" name="title" required autocomplete="off" placeholder="Autumn get-together"></div>
-        <div class="field field--wide"><label for="description">Description</label><textarea id="description" name="description" rows="3" placeholder="What are you planning?"></textarea></div>
-        <div class="location-layout field--wide">
-          <div class="field"><label for="location">Location</label><p class="field__hint">Plain text or Markdown · secure links only</p><textarea id="location" name="location" rows="6" spellcheck="true" placeholder="Community Hall — [map](https://…)"></textarea><div class="field__meta"><span data-testid="location-count">0 / 4,000</span></div></div>
-          <aside class="preview-card" aria-labelledby="preview-label"><p class="preview-card__label" id="preview-label">Live preview</p><div class="markdown" data-testid="location-preview"><p class="empty">Your safe location preview appears here.</p></div></aside>
+    </div>
+  </header>
+  <section class="editor" aria-labelledby="draft-heading">
+      <div class="editor__header">
+        <div>
+          <p class="tag tag-accent">Draft · only you can see this</p>
+          <h1 id="draft-heading">New poll</h1>
         </div>
-        <div class="field"><label for="instructions">Instructions</label><textarea id="instructions" name="instructions" rows="4" placeholder="Please reply by Friday."></textarea></div>
-        <div class="field"><label for="timeZone">Time zone <b aria-hidden="true">*</b></label><select id="timeZone" name="timeZone"><option value="Europe/London">Europe/London</option><option value="Europe/Paris">Europe/Paris</option><option value="America/New_York">America/New_York</option><option value="Asia/Tokyo">Asia/Tokyo</option></select></div>
+        <div class="editor__header-actions">
+          <button class="btn btn-secondary" type="button" disabled title="Add proposed dates before previewing">Preview</button>
+          <button class="btn btn-primary" type="button" disabled title="Add proposed dates before publishing">Publish</button>
+        </div>
+      </div>
+      <div class="section-rule">
+        <h2>Poll details</h2>
+        <p>Give people the context they need before you add proposed dates.</p>
+      </div>
+      <form class="editor-form" data-testid="draft-form" novalidate>
+        <div class="field field--wide"><label for="title">Title <b aria-hidden="true">*</b></label><input class="input" id="title" name="title" required autocomplete="off" placeholder="Autumn get-together"></div>
+        <div class="field field--wide"><label for="description">Description</label><textarea class="input" id="description" name="description" rows="3" placeholder="What are you planning?"></textarea></div>
+        <div class="field field--wide"><label for="location">Location — plain text or Markdown, e.g. [map](https://…)</label><textarea class="input input--code" id="location" name="location" rows="5" spellcheck="true" placeholder="Community Hall — [map](https://…)"></textarea><div class="field__meta"><span data-testid="location-count">0 / 4,000</span></div><div class="location-preview"><span>Shows as:</span><div class="markdown" data-testid="location-preview"><p class="empty">Your safe location preview appears here.</p></div></div></div>
+        <div class="field"><label for="instructions">Instructions</label><textarea class="input" id="instructions" name="instructions" rows="4" placeholder="Please reply by Friday."></textarea></div>
+        <div class="field"><label for="timeZone">Time zone <b aria-hidden="true">*</b></label><select class="input" id="timeZone" name="timeZone"><option value="Europe/London">Europe/London</option><option value="Europe/Paris">Europe/Paris</option><option value="America/New_York">America/New_York</option><option value="Asia/Tokyo">Asia/Tokyo</option></select></div>
         <div class="saved-card field--wide" hidden data-testid="saved-card"><span>Last saved location</span><div class="markdown" data-testid="saved-location"></div></div>
-        <div class="form-message field--wide"><p class="error" role="alert" hidden></p><p class="save-status" role="status" aria-live="polite"></p></div>
-        <div class="actions field--wide"><p>Required fields are marked <b>*</b></p><button class="save-button" type="submit">Save draft</button></div>
+        <div class="form-message field--wide"><p class="alert error" role="alert" hidden></p><p class="save-status" role="status" aria-live="polite"></p></div>
+        <div class="actions field--wide"><p>Required fields are marked <b>*</b></p><button class="btn btn-primary save-button" type="submit">Save draft</button></div>
       </form>
-    </section>
-  </main>`;
+  </section>`;
 
 function requireElement<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -62,6 +74,8 @@ const errorMessage = requireElement<HTMLElement>("[role='alert']");
 const saveStatus = requireElement<HTMLElement>(".save-status");
 const saveButton = requireElement<HTMLButtonElement>(".save-button");
 const health = requireElement<HTMLElement>("[data-testid='api-health']");
+const heading = requireElement<HTMLElement>("#draft-heading");
+const headerSaveStatus = requireElement<HTMLElement>("[data-testid='header-save-status']");
 const url = new URL(window.location.href);
 const testRunId = url.searchParams.get("testRunId") ?? "browser";
 const organiserId = `local-organiser-${testRunId.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
@@ -139,7 +153,7 @@ function showSaved(poll: PollDetails): void {
 
 function applyPoll(poll: PollDetails): void {
   title.value = poll.title; description.value = poll.description ?? ""; locationField.value = poll.location ?? ""; instructions.value = poll.instructions ?? ""; timeZone.value = poll.timeZone;
-  pollId = poll.id; saveButton.textContent = "Save changes"; showSaved(poll); updatePreview();
+  heading.textContent = poll.title || "New poll"; pollId = poll.id; saveButton.textContent = "Save changes"; showSaved(poll); updatePreview();
 }
 
 async function request(path: string, init?: RequestInit): Promise<Response> {
@@ -158,6 +172,7 @@ async function loadDraft(id: string): Promise<void> {
 }
 
 locationField.addEventListener("input", updatePreview);
+title.addEventListener("input", () => { heading.textContent = title.value.trim() || "New poll"; });
 form.addEventListener("submit", (event) => {
   event.preventDefault();
   void (async () => {
@@ -174,7 +189,7 @@ form.addEventListener("submit", (event) => {
     saveButton.disabled = false;
     if (!response.ok) { errorMessage.hidden = false; errorMessage.textContent = await readError(response); saveButton.textContent = editing ? "Save changes" : "Save draft"; return; }
     const poll = (await response.json()) as PollDetails;
-    applyPoll(poll); url.searchParams.set("pollId", poll.id); window.history.replaceState({}, "", url); saveStatus.textContent = editing ? "Changes saved." : "Draft saved.";
+    applyPoll(poll); url.searchParams.set("pollId", poll.id); window.history.replaceState({}, "", url); saveStatus.textContent = editing ? "Changes saved." : "Draft saved."; headerSaveStatus.textContent = `All changes saved · ${new Date().toLocaleTimeString("en-GB")}`;
   })();
 });
 
