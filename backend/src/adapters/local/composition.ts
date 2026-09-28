@@ -16,6 +16,7 @@ export interface LocalConfig {
   readonly appTableName: string;
   readonly auditTableName: string;
   readonly publicBaseUrl: string;
+  readonly publicTokenHashKey?: string;
 }
 
 export interface LocalComposition {
@@ -33,7 +34,10 @@ export async function createLocalComposition(config: LocalConfig): Promise<Local
   const authenticate = createLocalAuthentication(config.appEnv);
   const client: DynamoDBClient = createDynamoClient(config);
   const repository = new DynamoPollRepository(client, config);
-  const polls = new PollService(repository);
+  const polls = new PollService(repository, {
+    baseUrl: config.publicBaseUrl,
+    tokenHashKey: config.publicTokenHashKey ?? "local-development-token-hash-key"
+  });
   return {
     config,
     repository,

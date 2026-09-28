@@ -13,13 +13,18 @@ type ProposedDate =
 interface PollDetails {
   id: string;
   title: string;
-  status: "draft";
+  status: "draft" | "open" | "closed";
   version: number;
   timeZone: string;
   proposedDates: ProposedDate[];
   description?: string;
   instructions?: string;
   location?: string;
+}
+
+interface PublicPollDetails extends PollDetails {
+  participants: Array<{ id: string; displayName: string }>;
+  proposedDates: Array<ProposedDate & { id: string }>;
 }
 
 const app = document.querySelector<HTMLElement>("#app");
@@ -81,7 +86,46 @@ app.innerHTML = `
     <div class="preview-title"><p class="tag tag-accent">Draft · preview only</p><h1 id="preview-heading"></h1><p data-testid="preview-description"></p><p data-testid="preview-instructions"></p><p class="preview-meta"></p></div>
     <div class="preview-table-wrap"><table class="table preview-table"><thead><tr><th>Name</th></tr></thead><tbody><tr><td>No responses yet.</td></tr></tbody></table></div>
     <button class="btn btn-primary" type="button" disabled>+ Add row</button>
-  </section>`;
+  </section>
+  <section class="share-screen" hidden aria-labelledby="share-heading">
+    <div class="share-title">
+      <p class="tag tag-open">Published · Open</p>
+      <h1 id="share-heading" tabindex="-1">Share this link</h1>
+      <p>Anyone with the link can see and edit every response — no account needed.</p>
+    </div>
+    <div class="share-link">
+      <label for="public-link">Public poll link</label>
+      <div><input class="input input--code" id="public-link" readonly><button class="btn btn-primary copy-link" type="button">Copy link</button></div>
+    </div>
+    <div class="share-actions">
+      <a class="btn btn-primary go-to-poll" href="#">Go to the poll</a>
+      <a class="btn btn-secondary open-public-link" href="#" target="_blank" rel="noopener noreferrer">Open as a link holder</a>
+    </div>
+    <section class="link-security section-rule">
+      <div><h2>Link security</h2><p>If the link was shared with the wrong people, replace it. The old link stops working immediately. Dates, responses and history are kept.</p></div>
+      <button class="btn btn-secondary" type="button" disabled>Regenerate link…</button>
+    </section>
+    <p class="share-status" role="status" aria-live="polite"></p>
+  </section>
+  <main class="public-poll" hidden aria-labelledby="public-poll-heading">
+    <section class="public-title">
+      <p class="tag tag-open" data-testid="public-state">Open</p>
+      <h1 id="public-poll-heading" tabindex="-1"></h1>
+      <p data-testid="public-description"></p>
+      <p data-testid="public-instructions"></p>
+      <div class="public-meta"><span class="public-location"></span><strong class="public-time-zone"></strong></div>
+    </section>
+    <section class="answers" aria-labelledby="answers-heading">
+      <div class="collaboration-notice"><strong>This is a shared table.</strong> Anyone with the link can add, rename, delete or change any row. Every change saves automatically.</div>
+      <div class="section-rule"><h2 id="answers-heading">Everyone's answers</h2><button class="btn btn-primary" type="button" disabled>+ Add a row</button></div>
+      <div class="public-table-wrap"><table class="table public-table"><thead><tr><th>Name</th></tr></thead><tbody><tr><td>No one has answered yet.</td></tr></tbody><tfoot><tr><th>Yes total</th></tr></tfoot></table></div>
+    </section>
+  </main>
+  <main class="invalid-link" hidden aria-labelledby="invalid-link-heading">
+    <p class="invalid-kicker">LINK NOT VALID</p>
+    <h1 id="invalid-link-heading" tabindex="-1">This poll link doesn't work</h1>
+    <p>The organiser may have replaced it, or the poll isn't published yet. Ask them for the current link. Nothing you do here can change the poll.</p>
+  </main>`;
 
 function requireElement<T extends Element>(selector: string): T {
   const element = document.querySelector<T>(selector);
@@ -124,6 +168,24 @@ const saveButton = requireElement<HTMLButtonElement>(".save-button");
 const health = requireElement<HTMLElement>("[data-testid='api-health']");
 const heading = requireElement<HTMLElement>("#draft-heading");
 const headerSaveStatus = requireElement<HTMLElement>("[data-testid='header-save-status']");
+const shareScreen = requireElement<HTMLElement>(".share-screen");
+const shareHeading = requireElement<HTMLElement>("#share-heading");
+const publicLink = requireElement<HTMLInputElement>("#public-link");
+const copyLinkButton = requireElement<HTMLButtonElement>(".copy-link");
+const goToPoll = requireElement<HTMLAnchorElement>(".go-to-poll");
+const openPublicLink = requireElement<HTMLAnchorElement>(".open-public-link");
+const shareStatus = requireElement<HTMLElement>(".share-status");
+const publicPollScreen = requireElement<HTMLElement>(".public-poll");
+const publicPollHeading = requireElement<HTMLElement>("#public-poll-heading");
+const publicDescription = requireElement<HTMLElement>("[data-testid='public-description']");
+const publicInstructions = requireElement<HTMLElement>("[data-testid='public-instructions']");
+const publicLocation = requireElement<HTMLElement>(".public-location");
+const publicTimeZone = requireElement<HTMLElement>(".public-time-zone");
+const publicTableHead = requireElement<HTMLTableRowElement>(".public-table thead tr");
+const publicTableBody = requireElement<HTMLTableSectionElement>(".public-table tbody");
+const publicTableFoot = requireElement<HTMLTableRowElement>(".public-table tfoot tr");
+const invalidLinkScreen = requireElement<HTMLElement>(".invalid-link");
+const invalidLinkHeading = requireElement<HTMLElement>("#invalid-link-heading");
 const url = new URL(window.location.href);
 const testRunId = url.searchParams.get("testRunId") ?? "browser";
 const organiserId = `local-organiser-${testRunId.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
@@ -369,6 +431,116 @@ function closePreview(): void {
   previewButton.focus();
 }
 
+function draftPayload(): object {
+  return {
+    title: title.value,
+    description: description.value,
+    location: locationField.value,
+    instructions: instructions.value,
+    timeZone: timeZone.value,
+    proposedDates: proposedDates.map(editableChoice)
+  };
+}
+
+async function persistDraft(): Promise<PollDetails | undefined> {
+  const editing = Boolean(pollId);
+  const response = await request(
+    editing ? `/api/organiser/polls/${encodeURIComponent(pollId as string)}` : "/api/organiser/polls",
+    { method: editing ? "PUT" : "POST", body: JSON.stringify(draftPayload()) }
+  );
+  if (!response.ok) {
+    showChoiceError(await readError(response));
+    return undefined;
+  }
+  const poll = (await response.json()) as PollDetails;
+  applyPoll(poll);
+  url.searchParams.set("pollId", poll.id);
+  window.history.replaceState({}, "", url);
+  return poll;
+}
+
+function showShareScreen(link: string): void {
+  editor.hidden = true;
+  previewScreen.hidden = true;
+  shareScreen.hidden = false;
+  publicLink.value = link;
+  goToPoll.href = link;
+  openPublicLink.href = link;
+  shareHeading.focus();
+}
+
+function hidePrivateScreens(): void {
+  editor.hidden = true;
+  previewScreen.hidden = true;
+  shareScreen.hidden = true;
+}
+
+function showInvalidLink(): void {
+  hidePrivateScreens();
+  publicPollScreen.hidden = true;
+  invalidLinkScreen.hidden = false;
+  invalidLinkHeading.focus();
+}
+
+function renderPublicPoll(poll: PublicPollDetails): void {
+  hidePrivateScreens();
+  invalidLinkScreen.hidden = true;
+  publicPollScreen.hidden = false;
+  document.querySelector<HTMLElement>(".account")!.textContent = "No account needed";
+  headerSaveStatus.hidden = true;
+  publicPollHeading.textContent = poll.title;
+  publicDescription.textContent = poll.description ?? "";
+  publicDescription.hidden = !poll.description;
+  publicInstructions.textContent = poll.instructions ?? "";
+  publicInstructions.hidden = !poll.instructions;
+  publicLocation.replaceChildren();
+  if (poll.location) {
+    const label = document.createElement("strong");
+    label.textContent = "Where ";
+    const rendered = document.createElement("span");
+    rendered.className = "markdown";
+    renderLocation(rendered, poll.location);
+    publicLocation.append(label, rendered);
+  }
+  publicTimeZone.textContent = `Times in ${poll.timeZone}`;
+  publicTableHead.replaceChildren();
+  const name = document.createElement("th");
+  name.textContent = "Name";
+  publicTableHead.append(name);
+  publicTableFoot.replaceChildren();
+  const totalLabel = document.createElement("th");
+  totalLabel.textContent = "Yes total";
+  publicTableFoot.append(totalLabel);
+  for (const choice of poll.proposedDates) {
+    const headingCell = document.createElement("th");
+    headingCell.scope = "col";
+    headingCell.textContent = choiceLabel(choice);
+    publicTableHead.append(headingCell);
+    const total = document.createElement("td");
+    total.textContent = "0";
+    publicTableFoot.append(total);
+  }
+  publicTableBody.replaceChildren();
+  const row = document.createElement("tr");
+  const empty = document.createElement("td");
+  empty.colSpan = poll.proposedDates.length + 1;
+  empty.textContent = "No one has answered yet.";
+  row.append(empty);
+  publicTableBody.append(row);
+  publicPollHeading.focus();
+}
+
+async function loadPublicPoll(token: string): Promise<void> {
+  const response = await fetch(`/api/public/polls/${encodeURIComponent(token)}`, {
+    headers: { accept: "application/json" }
+  });
+  if (!response.ok) {
+    showInvalidLink();
+    return;
+  }
+  renderPublicPoll((await response.json()) as PublicPollDetails);
+}
+
 function addProposedDate(): void {
   clearChoiceError();
   if (!newDate.value) {
@@ -479,15 +651,41 @@ form.addEventListener("submit", (event) => {
     if (issue) { showChoiceError(issue); locationField.focus(); return; }
     saveButton.disabled = true; saveButton.textContent = "Saving…";
     const editing = Boolean(pollId);
-    const response = await request(editing ? `/api/organiser/polls/${encodeURIComponent(pollId as string)}` : "/api/organiser/polls", {
-      method: editing ? "PUT" : "POST",
-      body: JSON.stringify({ title: title.value, description: description.value, location: locationField.value, instructions: instructions.value, timeZone: timeZone.value, proposedDates: proposedDates.map(editableChoice) })
-    });
+    const poll = await persistDraft();
     saveButton.disabled = false;
-    if (!response.ok) { showChoiceError(await readError(response)); saveButton.textContent = editing ? "Save changes" : "Save draft"; return; }
-    const poll = (await response.json()) as PollDetails;
-    applyPoll(poll); url.searchParams.set("pollId", poll.id); window.history.replaceState({}, "", url); saveStatus.textContent = editing ? "Changes saved." : "Draft saved."; headerSaveStatus.textContent = `All changes saved · ${new Date().toLocaleTimeString("en-GB")}`;
+    if (!poll) { saveButton.textContent = editing ? "Save changes" : "Save draft"; return; }
+    saveStatus.textContent = editing ? "Changes saved." : "Draft saved."; headerSaveStatus.textContent = `All changes saved · ${new Date().toLocaleTimeString("en-GB")}`;
   })();
+});
+
+publishButton.addEventListener("click", () => {
+  void (async () => {
+    clearChoiceError();
+    publishButton.disabled = true;
+    publishButton.textContent = "Publishing…";
+    const poll = await persistDraft();
+    if (!poll || !pollId) {
+      publishButton.textContent = "Publish";
+      updatePublicationReadiness();
+      return;
+    }
+    const response = await request(`/api/organiser/polls/${encodeURIComponent(pollId)}/publish`, { method: "POST" });
+    if (!response.ok) {
+      showChoiceError(await readError(response));
+      publishButton.textContent = "Publish";
+      updatePublicationReadiness();
+      return;
+    }
+    const result = (await response.json()) as { publicUrl: string };
+    showShareScreen(result.publicUrl);
+  })();
+});
+
+copyLinkButton.addEventListener("click", () => {
+  void navigator.clipboard.writeText(publicLink.value).then(() => {
+    copyLinkButton.textContent = "Copied ✓";
+    shareStatus.textContent = "Public poll link copied.";
+  });
 });
 
 async function checkApi(): Promise<void> {
@@ -498,4 +696,7 @@ async function checkApi(): Promise<void> {
   } catch { health.textContent = "API unavailable"; health.parentElement?.classList.add("health--failed"); }
 }
 
-updatePreview(); renderChoices(); updatePublicationReadiness(); void checkApi(); if (pollId) void loadDraft(pollId);
+const publicPath = /^\/p\/([^/]+)$/.exec(window.location.pathname);
+updatePreview(); renderChoices(); updatePublicationReadiness(); void checkApi();
+if (publicPath?.[1]) void loadPublicPoll(publicPath[1]);
+else if (pollId) void loadDraft(pollId);

@@ -3,13 +3,13 @@ id: T-015
 type: task
 title: Specify atomic publication and public-token issuance with failing automated tests
 parent: S-008
-status: todo
+status: done
 dependsOn: [T-014]
 estimate: 1
 tags: [red, S-008, test-first]
 archived: false
 created: 2026-09-27T18:08:40.236Z
-updated: 2026-09-27T18:19:40.056Z
+updated: 2026-09-28T19:24:30.178Z
 ---
 Purpose:
 Lock the parent story's behavior before implementation.
@@ -20,3 +20,9 @@ Acceptance criteria:
 - A red run is captured showing failure because the required behavior is absent, not because the harness is broken or flaky.
 - Exact commands and the requirement/story references are recorded as evidence.
 - The red test change is not merged to the protected branch until the story's green implementation tasks complete.
+
+Evidence (2026-09-28):
+- References: E-003 / S-008; US-06; requirements §11; architecture §7.
+- Added test/foundation/publication-security.test.mjs and test/integration/publication.test.mjs.
+- Red command: node --test test/foundation/publication-security.test.mjs
+- Result: 1 expected failure, ERR_MODULE_NOT_FOUND for backend/dist/security/public-token.js; the existing build completed first, confirming the harness was healthy.

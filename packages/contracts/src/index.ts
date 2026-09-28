@@ -67,6 +67,8 @@ export interface PublicPollResponse {
   description?: string;
   instructions?: string;
   location?: string;
+  locationHtml?: string;
+  timeZone: string;
 }
 
 export interface ApiError {
@@ -222,7 +224,9 @@ function isPublicPollResponse(input: unknown): input is PublicPollResponse {
       "participants",
       "description",
       "instructions",
-      "location"
+      "location",
+      "locationHtml",
+      "timeZone"
     ]) &&
     isNonBlankString(input.id) &&
     isNonBlankString(input.title) &&
@@ -235,7 +239,9 @@ function isPublicPollResponse(input: unknown): input is PublicPollResponse {
     input.participants.every(isPublicParticipant) &&
     (input.description === undefined || typeof input.description === "string") &&
     (input.instructions === undefined || typeof input.instructions === "string") &&
-    (input.location === undefined || typeof input.location === "string")
+    (input.location === undefined || typeof input.location === "string") &&
+    (input.locationHtml === undefined || typeof input.locationHtml === "string") &&
+    isValidIanaTimeZone(input.timeZone)
   );
 }
 

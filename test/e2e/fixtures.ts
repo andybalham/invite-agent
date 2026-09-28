@@ -15,13 +15,17 @@ export const test = base.extend<HarnessFixtures>({
   diagnostics: [
     async ({ page }, use, testInfo) => {
       const apiLog: string[] = [];
+      const safeUrl = (value: string): string =>
+        value.replace(/(\/api\/public\/polls\/)[A-Za-z0-9_-]{32}(?=\/|$)/, "$1[REDACTED]");
       page.on("response", (response) => {
         if (/\/(api|health)(\/|$)/.test(new URL(response.url()).pathname)) {
-          apiLog.push(`${response.status()} ${response.request().method()} ${response.url()}`);
+          apiLog.push(`${response.status()} ${response.request().method()} ${safeUrl(response.url())}`);
         }
       });
       page.on("requestfailed", (request) => {
-        apiLog.push(`FAILED ${request.method()} ${request.url()} ${request.failure()?.errorText ?? ""}`);
+        apiLog.push(
+          `FAILED ${request.method()} ${safeUrl(request.url())} ${request.failure()?.errorText ?? ""}`
+        );
       });
 
       await use();

@@ -2,17 +2,13 @@
 
 _Generated. Do not edit by hand._
 
-- [E-003 · E3 — Publish and securely share a public poll](../entities/E-003-e3-publish-and-securely-share-a-public-poll.md) — blocked
-- [E-004 · E4 — Collaborative availability table](../entities/E-004-e4-collaborative-availability-table.md) — blocked · waiting on E-003
+- [E-004 · E4 — Collaborative availability table](../entities/E-004-e4-collaborative-availability-table.md) — blocked
 - [E-005 · E5 — Live popular-date ranking](../entities/E-005-e5-live-popular-date-ranking.md) — blocked · waiting on E-004
 - [E-006 · E6 — Immutable history and safe undo](../entities/E-006-e6-immutable-history-and-safe-undo.md) — blocked · waiting on E-005
 - [E-007 · E7 — Final decision and reversible poll lifecycle](../entities/E-007-e7-final-decision-and-reversible-poll-lifecycle.md) — blocked · waiting on E-006
 - [E-008 · E8 — Production AWS platform](../entities/E-008-e8-production-aws-platform.md) — blocked · waiting on E-007
 - [E-009 · E9 — Tested production release and operations](../entities/E-009-e9-tested-production-release-and-operations.md) — blocked · waiting on E-008
-- [S-008 · Publish atomically and issue a secure public capability](../entities/S-008-publish-atomically-and-issue-a-secure-public-capability.md) — blocked
-- [S-009 · Render the safe unauthenticated public poll view](../entities/S-009-render-the-safe-unauthenticated-public-poll-view.md) — blocked · waiting on S-008
-- [S-010 · Enforce organiser authentication and ownership on the server](../entities/S-010-enforce-organiser-authentication-and-ownership-on-the-server.md) — blocked · waiting on S-008
-- [S-011 · View responses and add a validated participant row](../entities/S-011-view-responses-and-add-a-validated-participant-row.md) — blocked · waiting on S-009
+- [S-011 · View responses and add a validated participant row](../entities/S-011-view-responses-and-add-a-validated-participant-row.md) — blocked
 - [S-012 · Rename and delete any participant row collaboratively](../entities/S-012-rename-and-delete-any-participant-row-collaboratively.md) — blocked · waiting on S-011
 - [S-013 · Toggle Yes/No cells accessibly with autosave and totals](../entities/S-013-toggle-yes-no-cells-accessibly-with-autosave-and-totals.md) — blocked · waiting on S-011
 - [S-014 · Apply concurrent edits with last-update-wins convergence](../entities/S-014-apply-concurrent-edits-with-last-update-wins-convergence.md) — blocked · waiting on S-013
@@ -21,7 +17,7 @@ _Generated. Do not edit by hand._
 - [S-017 · Persist and display complete immutable audit history](../entities/S-017-persist-and-display-complete-immutable-audit-history.md) — blocked · waiting on S-016
 - [S-018 · Undo an isolated change with a compensating revision](../entities/S-018-undo-an-isolated-change-with-a-compensating-revision.md) — blocked · waiting on S-017
 - [S-019 · Warn, confirm, or reject complex undo safely](../entities/S-019-warn-confirm-or-reject-complex-undo-safely.md) — blocked · waiting on S-018
-- [S-020 · Protect audit and undo operations](../entities/S-020-protect-audit-and-undo-operations.md) — blocked · waiting on S-010, S-017
+- [S-020 · Protect audit and undo operations](../entities/S-020-protect-audit-and-undo-operations.md) — blocked · waiting on S-017
 - [S-021 · Review attendance and close in one atomic action](../entities/S-021-review-attendance-and-close-in-one-atomic-action.md) — blocked · waiting on S-019
 - [S-022 · Enforce closed read-only state and frozen ranking](../entities/S-022-enforce-closed-read-only-state-and-frozen-ranking.md) — blocked · waiting on S-021
 - [S-023 · Maintain safe location details in every lifecycle state](../entities/S-023-maintain-safe-location-details-in-every-lifecycle-state.md) — blocked · waiting on S-020, S-022
@@ -33,12 +29,6 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [T-016 · Implement and verify atomic publication and public-token issuance](../entities/T-016-implement-and-verify-atomic-publication-and-public-token-issuance.md) — blocked · waiting on T-015
-- [T-017 · Specify safe public poll view with failing automated tests](../entities/T-017-specify-safe-public-poll-view-with-failing-automated-tests.md) — blocked · waiting on T-016
-- [T-018 · Implement and verify safe public poll view](../entities/T-018-implement-and-verify-safe-public-poll-view.md) — blocked · waiting on T-017
-- [T-019 · Specify organiser authentication and ownership with failing automated tests](../entities/T-019-specify-organiser-authentication-and-ownership-with-failing-automated-tests.md) — blocked · waiting on T-016
-- [T-020 · Implement and verify organiser authentication and ownership](../entities/T-020-implement-and-verify-organiser-authentication-and-ownership.md) — blocked · waiting on T-019
-- [T-021 · Specify participant viewing, creation, and name validation with failing automated tests](../entities/T-021-specify-participant-viewing-creation-and-name-validation-with-failing-automated-tests.md) — blocked · waiting on T-018
 - [T-022 · Implement participant domain, DynamoDB uniqueness, and public API](../entities/T-022-implement-participant-domain-dynamodb-uniqueness-and-public-api.md) — blocked · waiting on T-021
 - [T-023 · Build participant table UI and prove end-to-end validation](../entities/T-023-build-participant-table-ui-and-prove-end-to-end-validation.md) — blocked · waiting on T-022
 - [T-024 · Specify collaborative participant rename and deletion with failing automated tests](../entities/T-024-specify-collaborative-participant-rename-and-deletion-with-failing-automated-tests.md) — blocked · waiting on T-023
@@ -59,7 +49,7 @@ _Generated. Do not edit by hand._
 - [T-039 · Implement and verify ordinary compensating undo](../entities/T-039-implement-and-verify-ordinary-compensating-undo.md) — blocked · waiting on T-038
 - [T-040 · Specify warned and structurally invalid undo with failing automated tests](../entities/T-040-specify-warned-and-structurally-invalid-undo-with-failing-automated-tests.md) — blocked · waiting on T-039
 - [T-041 · Implement and verify warned and structurally invalid undo](../entities/T-041-implement-and-verify-warned-and-structurally-invalid-undo.md) — blocked · waiting on T-040
-- [T-042 · Specify audit and undo authorization with failing automated tests](../entities/T-042-specify-audit-and-undo-authorization-with-failing-automated-tests.md) — blocked · waiting on T-020, T-037
+- [T-042 · Specify audit and undo authorization with failing automated tests](../entities/T-042-specify-audit-and-undo-authorization-with-failing-automated-tests.md) — blocked · waiting on T-037
 - [T-043 · Implement and verify audit and undo authorization](../entities/T-043-implement-and-verify-audit-and-undo-authorization.md) — blocked · waiting on T-042
 - [T-044 · Specify close preview and atomic final selection with failing automated tests](../entities/T-044-specify-close-preview-and-atomic-final-selection-with-failing-automated-tests.md) — blocked · waiting on T-041
 - [T-045 · Implement and verify close preview and atomic final selection](../entities/T-045-implement-and-verify-close-preview-and-atomic-final-selection.md) — blocked · waiting on T-044

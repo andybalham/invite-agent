@@ -30,20 +30,20 @@ _Generated. Do not edit by hand._
   - [x] [T-066 · Specify primary-design fidelity with failing browser tests](../entities/T-066-specify-primary-design-fidelity-with-failing-browser-tests.md) — done
   - [x] [T-067 · Implement and verify the primary Gather design foundation](../entities/T-067-implement-and-verify-the-primary-gather-design-foundation.md) — done
 
-## [E-003 · E3 — Publish and securely share a public poll](./E-003.md) — blocked
-- [ ] **S-008 · Publish atomically and issue a secure public capability** — blocked
-  - [ ] [T-015 · Specify atomic publication and public-token issuance with failing automated tests](../entities/T-015-specify-atomic-publication-and-public-token-issuance-with-failing-automated-tests.md) — todo
-  - [ ] [T-016 · Implement and verify atomic publication and public-token issuance](../entities/T-016-implement-and-verify-atomic-publication-and-public-token-issuance.md) — blocked · waiting on T-015
-- [ ] **S-009 · Render the safe unauthenticated public poll view** — blocked · waiting on S-008
-  - [ ] [T-017 · Specify safe public poll view with failing automated tests](../entities/T-017-specify-safe-public-poll-view-with-failing-automated-tests.md) — blocked · waiting on T-016
-  - [ ] [T-018 · Implement and verify safe public poll view](../entities/T-018-implement-and-verify-safe-public-poll-view.md) — blocked · waiting on T-017
-- [ ] **S-010 · Enforce organiser authentication and ownership on the server** — blocked · waiting on S-008
-  - [ ] [T-019 · Specify organiser authentication and ownership with failing automated tests](../entities/T-019-specify-organiser-authentication-and-ownership-with-failing-automated-tests.md) — blocked · waiting on T-016
-  - [ ] [T-020 · Implement and verify organiser authentication and ownership](../entities/T-020-implement-and-verify-organiser-authentication-and-ownership.md) — blocked · waiting on T-019
+## [E-003 · E3 — Publish and securely share a public poll](./E-003.md) — done
+- [x] **S-008 · Publish atomically and issue a secure public capability** — done
+  - [x] [T-015 · Specify atomic publication and public-token issuance with failing automated tests](../entities/T-015-specify-atomic-publication-and-public-token-issuance-with-failing-automated-tests.md) — done
+  - [x] [T-016 · Implement and verify atomic publication and public-token issuance](../entities/T-016-implement-and-verify-atomic-publication-and-public-token-issuance.md) — done
+- [x] **S-009 · Render the safe unauthenticated public poll view** — done
+  - [x] [T-017 · Specify safe public poll view with failing automated tests](../entities/T-017-specify-safe-public-poll-view-with-failing-automated-tests.md) — done
+  - [x] [T-018 · Implement and verify safe public poll view](../entities/T-018-implement-and-verify-safe-public-poll-view.md) — done
+- [x] **S-010 · Enforce organiser authentication and ownership on the server** — done
+  - [x] [T-019 · Specify organiser authentication and ownership with failing automated tests](../entities/T-019-specify-organiser-authentication-and-ownership-with-failing-automated-tests.md) — done
+  - [x] [T-020 · Implement and verify organiser authentication and ownership](../entities/T-020-implement-and-verify-organiser-authentication-and-ownership.md) — done
 
 ## [E-004 · E4 — Collaborative availability table](./E-004.md) — blocked
-- [ ] **S-011 · View responses and add a validated participant row** — blocked · waiting on S-009
-  - [ ] [T-021 · Specify participant viewing, creation, and name validation with failing automated tests](../entities/T-021-specify-participant-viewing-creation-and-name-validation-with-failing-automated-tests.md) — blocked · waiting on T-018
+- [ ] **S-011 · View responses and add a validated participant row** — blocked
+  - [ ] [T-021 · Specify participant viewing, creation, and name validation with failing automated tests](../entities/T-021-specify-participant-viewing-creation-and-name-validation-with-failing-automated-tests.md) — todo
   - [ ] [T-022 · Implement participant domain, DynamoDB uniqueness, and public API](../entities/T-022-implement-participant-domain-dynamodb-uniqueness-and-public-api.md) — blocked · waiting on T-021
   - [ ] [T-023 · Build participant table UI and prove end-to-end validation](../entities/T-023-build-participant-table-ui-and-prove-end-to-end-validation.md) — blocked · waiting on T-022
 - [ ] **S-012 · Rename and delete any participant row collaboratively** — blocked · waiting on S-011
@@ -76,8 +76,8 @@ _Generated. Do not edit by hand._
 - [ ] **S-019 · Warn, confirm, or reject complex undo safely** — blocked · waiting on S-018
   - [ ] [T-040 · Specify warned and structurally invalid undo with failing automated tests](../entities/T-040-specify-warned-and-structurally-invalid-undo-with-failing-automated-tests.md) — blocked · waiting on T-039
   - [ ] [T-041 · Implement and verify warned and structurally invalid undo](../entities/T-041-implement-and-verify-warned-and-structurally-invalid-undo.md) — blocked · waiting on T-040
-- [ ] **S-020 · Protect audit and undo operations** — blocked · waiting on S-010, S-017
-  - [ ] [T-042 · Specify audit and undo authorization with failing automated tests](../entities/T-042-specify-audit-and-undo-authorization-with-failing-automated-tests.md) — blocked · waiting on T-020, T-037
+- [ ] **S-020 · Protect audit and undo operations** — blocked · waiting on S-017
+  - [ ] [T-042 · Specify audit and undo authorization with failing automated tests](../entities/T-042-specify-audit-and-undo-authorization-with-failing-automated-tests.md) — blocked · waiting on T-037
   - [ ] [T-043 · Implement and verify audit and undo authorization](../entities/T-043-implement-and-verify-audit-and-undo-authorization.md) — blocked · waiting on T-042
 
 ## [E-007 · E7 — Final decision and reversible poll lifecycle](./E-007.md) — blocked

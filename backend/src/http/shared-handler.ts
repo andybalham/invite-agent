@@ -57,6 +57,18 @@ export function createSharedHttpHandler(dependencies: {
             )
           };
         }
+        const publishMatch = /^\/api\/organiser\/polls\/([^/]+)\/publish$/.exec(request.path);
+        if (request.method === "POST" && publishMatch?.[1]) {
+          const organiserId = dependencies.authenticate(request.headers);
+          return {
+            status: 200,
+            body: await dependencies.polls.publish(publishMatch[1], organiserId)
+          };
+        }
+        const publicMatch = /^\/api\/public\/polls\/([^/]+)$/.exec(request.path);
+        if (request.method === "GET" && publicMatch?.[1]) {
+          return { status: 200, body: await dependencies.polls.getPublic(publicMatch[1]) };
+        }
         const match = /^\/api\/organiser\/polls\/([^/]+)$/.exec(request.path);
         if (request.method === "GET" && match?.[1]) {
           const organiserId = dependencies.authenticate(request.headers);

@@ -16,6 +16,7 @@ export function readLocalConfig(environment: NodeJS.ProcessEnv): LocalConfig {
     dynamodbEndpoint: required(environment, "DYNAMODB_ENDPOINT"),
     appTableName: required(environment, "APP_TABLE_NAME"),
     auditTableName: required(environment, "AUDIT_TABLE_NAME"),
-    publicBaseUrl: required(environment, "PUBLIC_BASE_URL")
+    publicBaseUrl: required(environment, "PUBLIC_BASE_URL"),
+    publicTokenHashKey: environment.PUBLIC_TOKEN_HASH_KEY ?? "local-development-token-hash-key"
   };
 }

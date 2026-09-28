@@ -3,10 +3,11 @@ import {
   GetItemCommand,
   QueryCommand,
   TransactWriteItemsCommand,
+  UpdateItemCommand,
   type AttributeValue,
   type DynamoDBClient
 } from "@aws-sdk/client-dynamodb";
-import type { AuditEvent, PollRecord, RepositoryHealth } from "./types.js";
+import type { AuditEvent, PollRecord, PublicTokenRecord, RepositoryHealth } from "./types.js";
 
 interface RepositoryConfig {
   readonly appTableName: string;
@@ -50,7 +51,9 @@ export class DynamoPollRepository {
                 SK: { S: "METADATA" },
                 GSI1PK: { S: `ORGANISER#${poll.organiserId}` },
                 GSI1SK: { S: `POLL#${poll.createdAt}#${poll.id}` },
-                document: { S: JSON.stringify(poll) }
+                document: { S: JSON.stringify(poll) },
+                status: { S: poll.status },
+                version: { N: String(poll.version) }
               },
               ConditionExpression: "attribute_not_exists(PK)"
             }
@@ -86,7 +89,9 @@ export class DynamoPollRepository {
                 SK: { S: "METADATA" },
                 GSI1PK: { S: `ORGANISER#${poll.organiserId}` },
                 GSI1SK: { S: `POLL#${poll.createdAt}#${poll.id}` },
-                document: { S: JSON.stringify(poll) }
+                document: { S: JSON.stringify(poll) },
+                status: { S: poll.status },
+                version: { N: String(poll.version) }
               },
               ConditionExpression: "attribute_exists(PK)"
             }
@@ -121,6 +126,90 @@ export class DynamoPollRepository {
       })
     );
     return result.Item ? decodePoll(result.Item) : undefined;
+  }
+
+  public async publishPoll(poll: PollRecord, audit: AuditEvent): Promise<void> {
+    if (!poll.publicTokenHash) throw new Error("Published poll requires a token hash");
+    await this.client.send(
+      new TransactWriteItemsCommand({
+        TransactItems: [
+          {
+            Put: {
+              TableName: this.config.appTableName,
+              Item: {
+                PK: { S: `POLL#${poll.id}` },
+                SK: { S: "METADATA" },
+                GSI1PK: { S: `ORGANISER#${poll.organiserId}` },
+                GSI1SK: { S: `POLL#${poll.createdAt}#${poll.id}` },
+                document: { S: JSON.stringify(poll) },
+                status: { S: poll.status },
+                version: { N: String(poll.version) }
+              },
+              ConditionExpression: "#status = :draft AND #version = :previousVersion",
+              ExpressionAttributeNames: { "#status": "status", "#version": "version" },
+              ExpressionAttributeValues: {
+                ":draft": { S: "draft" },
+                ":previousVersion": { N: String(poll.version - 1) }
+              }
+            }
+          },
+          {
+            Put: {
+              TableName: this.config.appTableName,
+              Item: {
+                PK: { S: `PUBLIC_TOKEN#${poll.publicTokenHash}` },
+                SK: { S: "CAPABILITY" },
+                pollId: { S: poll.id },
+                state: { S: "active" }
+              },
+              ConditionExpression: "attribute_not_exists(PK)"
+            }
+          },
+          {
+            Put: {
+              TableName: this.config.auditTableName,
+              Item: {
+                PK: { S: `POLL#${audit.pollId}` },
+                SK: { S: `EVENT#${audit.occurredAt}#${audit.id}` },
+                action: { S: audit.action },
+                actorId: { S: audit.actorId },
+                occurredAt: { S: audit.occurredAt },
+                id: { S: audit.id }
+              },
+              ConditionExpression: "attribute_not_exists(PK) AND attribute_not_exists(SK)"
+            }
+          }
+        ]
+      })
+    );
+  }
+
+  public async getPublicToken(tokenHash: string): Promise<PublicTokenRecord | undefined> {
+    const result = await this.client.send(
+      new GetItemCommand({
+        TableName: this.config.appTableName,
+        Key: { PK: { S: `PUBLIC_TOKEN#${tokenHash}` }, SK: { S: "CAPABILITY" } },
+        ConsistentRead: true
+      })
+    );
+    if (!result.Item) return undefined;
+    return {
+      pollId: stringValue(result.Item.pollId, "pollId"),
+      state: stringValue(result.Item.state, "state") as PublicTokenRecord["state"]
+    };
+  }
+
+  public async revokePublicToken(tokenHash: string): Promise<void> {
+    await this.client.send(
+      new UpdateItemCommand({
+        TableName: this.config.appTableName,
+        Key: { PK: { S: `PUBLIC_TOKEN#${tokenHash}` }, SK: { S: "CAPABILITY" } },
+        UpdateExpression: "SET #state = :revoked",
+        ConditionExpression: "attribute_exists(PK)",
+        ExpressionAttributeNames: { "#state": "state" },
+        ExpressionAttributeValues: { ":revoked": { S: "revoked" } }
+      })
+    );
   }
 
   public async listAuditEvents(pollId: string): Promise<AuditEvent[]> {

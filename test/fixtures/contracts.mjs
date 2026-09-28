@@ -12,6 +12,7 @@ export const validPublicPollResponse = Object.freeze({
   title: "Autumn planning session",
   status: "open",
   version: 3,
+  timeZone: "Europe/London",
   proposedDates: [
     Object.freeze({ id: "date_1", kind: "date", localDate: "2026-10-12" })
   ],
