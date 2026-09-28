@@ -2,17 +2,14 @@
 
 _Generated. Do not edit by hand._
 
-- [E-002 · E2 — Organiser draft builder and preview](../entities/E-002-e2-organiser-draft-builder-and-preview.md) — blocked
-- [E-003 · E3 — Publish and securely share a public poll](../entities/E-003-e3-publish-and-securely-share-a-public-poll.md) — blocked · waiting on E-002
+- [E-003 · E3 — Publish and securely share a public poll](../entities/E-003-e3-publish-and-securely-share-a-public-poll.md) — blocked
 - [E-004 · E4 — Collaborative availability table](../entities/E-004-e4-collaborative-availability-table.md) — blocked · waiting on E-003
 - [E-005 · E5 — Live popular-date ranking](../entities/E-005-e5-live-popular-date-ranking.md) — blocked · waiting on E-004
 - [E-006 · E6 — Immutable history and safe undo](../entities/E-006-e6-immutable-history-and-safe-undo.md) — blocked · waiting on E-005
 - [E-007 · E7 — Final decision and reversible poll lifecycle](../entities/E-007-e7-final-decision-and-reversible-poll-lifecycle.md) — blocked · waiting on E-006
 - [E-008 · E8 — Production AWS platform](../entities/E-008-e8-production-aws-platform.md) — blocked · waiting on E-007
 - [E-009 · E9 — Tested production release and operations](../entities/E-009-e9-tested-production-release-and-operations.md) — blocked · waiting on E-008
-- [S-006 · Manage ordered date and date-time choices safely across DST](../entities/S-006-manage-ordered-date-and-date-time-choices-safely-across-dst.md) — blocked
-- [S-007 · Preview a private draft and enforce publication readiness](../entities/S-007-preview-a-private-draft-and-enforce-publication-readiness.md) — blocked · waiting on S-006
-- [S-008 · Publish atomically and issue a secure public capability](../entities/S-008-publish-atomically-and-issue-a-secure-public-capability.md) — blocked · waiting on S-007
+- [S-008 · Publish atomically and issue a secure public capability](../entities/S-008-publish-atomically-and-issue-a-secure-public-capability.md) — blocked
 - [S-009 · Render the safe unauthenticated public poll view](../entities/S-009-render-the-safe-unauthenticated-public-poll-view.md) — blocked · waiting on S-008
 - [S-010 · Enforce organiser authentication and ownership on the server](../entities/S-010-enforce-organiser-authentication-and-ownership-on-the-server.md) — blocked · waiting on S-008
 - [S-011 · View responses and add a validated participant row](../entities/S-011-view-responses-and-add-a-validated-participant-row.md) — blocked · waiting on S-009
@@ -36,10 +33,6 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [T-012 · Implement and verify ordered choices and DST-safe date handling](../entities/T-012-implement-and-verify-ordered-choices-and-dst-safe-date-handling.md) — blocked · waiting on T-011
-- [T-013 · Specify private preview and publication readiness with failing automated tests](../entities/T-013-specify-private-preview-and-publication-readiness-with-failing-automated-tests.md) — blocked · waiting on T-012
-- [T-014 · Implement and verify private preview and publication readiness](../entities/T-014-implement-and-verify-private-preview-and-publication-readiness.md) — blocked · waiting on T-013
-- [T-015 · Specify atomic publication and public-token issuance with failing automated tests](../entities/T-015-specify-atomic-publication-and-public-token-issuance-with-failing-automated-tests.md) — blocked · waiting on T-014
 - [T-016 · Implement and verify atomic publication and public-token issuance](../entities/T-016-implement-and-verify-atomic-publication-and-public-token-issuance.md) — blocked · waiting on T-015
 - [T-017 · Specify safe public poll view with failing automated tests](../entities/T-017-specify-safe-public-poll-view-with-failing-automated-tests.md) — blocked · waiting on T-016
 - [T-018 · Implement and verify safe public poll view](../entities/T-018-implement-and-verify-safe-public-poll-view.md) — blocked · waiting on T-017

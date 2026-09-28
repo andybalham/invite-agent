@@ -3,13 +3,13 @@ id: T-013
 type: task
 title: Specify private preview and publication readiness with failing automated tests
 parent: S-007
-status: todo
+status: done
 dependsOn: [T-010, T-012]
 estimate: 1
 tags: [red, S-007, test-first]
 archived: false
 created: 2026-09-27T18:08:40.095Z
-updated: 2026-09-27T18:19:39.998Z
+updated: 2026-09-28T19:02:28.983Z
 ---
 Purpose:
 Lock the parent story's behavior before implementation.

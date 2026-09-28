@@ -3,13 +3,13 @@ id: T-014
 type: task
 title: Implement and verify private preview and publication readiness
 parent: S-007
-status: todo
+status: done
 dependsOn: [T-013]
 estimate: 2
 tags: [green, implementation, S-007]
 archived: false
 created: 2026-09-27T18:08:40.163Z
-updated: 2026-09-27T18:19:38.012Z
+updated: 2026-09-28T19:09:17.594Z
 ---
 Implementation scope:
 Implement participant-like Draft preview, non-editable controls, blocking-field feedback, and server-side publish readiness enforcement.

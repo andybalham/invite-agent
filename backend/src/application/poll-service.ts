@@ -1,7 +1,12 @@
 import { randomUUID } from "node:crypto";
 import type { CreatePollRequest } from "@invite-a-gent/contracts";
 import type { DynamoPollRepository, PollRecord } from "../data/index.js";
-import { renderSafeLocationMarkdown, validateCreatePollRequest } from "../domain/index.js";
+import {
+  renderSafeLocationMarkdown,
+  resolveProposedDate,
+  validateCreatePollRequest,
+  validateDraftPublication
+} from "../domain/index.js";
 import { ApplicationError } from "./errors.js";
 
 export interface PollResponse {
@@ -10,7 +15,7 @@ export interface PollResponse {
   readonly status: "draft";
   readonly version: number;
   readonly timeZone: string;
-  readonly proposedDates: CreatePollRequest["proposedDates"];
+  readonly proposedDates: PollRecord["proposedDates"];
   readonly description?: string;
   readonly instructions?: string;
   readonly location?: string;
@@ -50,6 +55,16 @@ function publicResponse(poll: PollRecord): PollResponse {
   };
 }
 
+function resolveChoices(input: CreatePollRequest): PollRecord["proposedDates"] {
+  return input.proposedDates.map((choice) => {
+    const result = resolveProposedDate(choice, input.timeZone);
+    if (!result.success) {
+      throw new ApplicationError("VALIDATION_ERROR", result.issue.message);
+    }
+    return result.data;
+  });
+}
+
 export class PollService {
   public constructor(private readonly repository: DynamoPollRepository) {}
 
@@ -62,6 +77,7 @@ export class PollService {
     const id = randomUUID();
     const poll: PollRecord = {
       ...parsed.data,
+      proposedDates: resolveChoices(parsed.data),
       id,
       organiserId,
       status: "draft",
@@ -104,6 +120,7 @@ export class PollService {
     const updated: PollRecord = {
       ...existing,
       ...parsed.data,
+      proposedDates: resolveChoices(parsed.data),
       version: existing.version + 1
     };
     const occurredAt = new Date().toISOString();
@@ -117,5 +134,24 @@ export class PollService {
       after: parsed.data
     });
     return publicResponse(updated);
+  }
+
+  public async assertPublicationReady(
+    id: string,
+    organiserId: string
+  ): Promise<{ readonly ready: true }> {
+    const poll = await this.repository.getPoll(id);
+    if (!poll) throw new ApplicationError("NOT_FOUND", "Poll not found");
+    if (poll.organiserId !== organiserId) {
+      throw new ApplicationError("FORBIDDEN", "The organiser does not own this poll");
+    }
+    const readiness = validateDraftPublication(pollDetails(poll));
+    if (!readiness.success) {
+      throw new ApplicationError(
+        "VALIDATION_ERROR",
+        readiness.issues.map(({ message }) => message).join("; ")
+      );
+    }
+    return { ready: true };
   }
 }

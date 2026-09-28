@@ -8,18 +8,27 @@ import {
   type ProposedDateInput
 } from "@invite-a-gent/contracts";
 import { validateLocationMarkdown, type LocationValidationCode } from "./location-markdown.js";
+import {
+  proposedDateKey,
+  resolveProposedDate,
+  type DateChoiceResolutionCode
+} from "./date-choice.js";
 
 export type DraftValidationCode =
   | "DRAFT_INVALID"
   | "TITLE_REQUIRED"
   | "TIME_ZONE_INVALID"
   | "CHOICES_INVALID"
+  | "CHOICES_DUPLICATE"
+  | DateChoiceResolutionCode
   | LocationValidationCode;
 
 export type PublicationValidationCode =
+  | "TITLE_REQUIRED"
   | "CHOICES_MINIMUM"
   | "CHOICES_INVALID"
-  | "CHOICES_DUPLICATE";
+  | "CHOICES_DUPLICATE"
+  | LocationValidationCode;
 
 export interface ValidationIssue<Code extends string> {
   readonly code: Code;
@@ -84,6 +93,29 @@ export function validateDraftPoll(
       field: "proposedDates",
       message: "Correct the invalid date choices"
     });
+  } else if (Array.isArray(input.proposedDates) && isValidIanaTimeZone(input.timeZone)) {
+    const resolved = input.proposedDates.map((choice) =>
+      resolveProposedDate(choice, input.timeZone as string)
+    );
+    for (const [index, result] of resolved.entries()) {
+      if (!result.success) {
+        issues.push({
+          code: result.issue.code,
+          field: `proposedDates.${index}`,
+          message: result.issue.message
+        });
+      }
+    }
+    const keys = resolved
+      .filter((result) => result.success)
+      .map((result) => proposedDateKey(result.data));
+    if (new Set(keys).size !== keys.length) {
+      issues.push({
+        code: "CHOICES_DUPLICATE",
+        field: "proposedDates",
+        message: "Use distinct date choices"
+      });
+    }
   }
 
   if (issues.length > 0) {
@@ -99,12 +131,6 @@ export function validateDraftPoll(
     };
   }
   return parsed;
-}
-
-function choiceKey(choice: ProposedDateInput): string {
-  return choice.kind === "date"
-    ? `date:${choice.localDate}`
-    : `date-time:${choice.localDateTime}:${choice.utcOffset ?? ""}`;
 }
 
 export function validatePublicationReadiness(
@@ -136,7 +162,7 @@ export function validatePublicationReadiness(
       ]
     };
   }
-  if (new Set(input.map(choiceKey)).size !== input.length) {
+  if (new Set(input.map(proposedDateKey)).size !== input.length) {
     return {
       success: false,
       input,
@@ -150,6 +176,81 @@ export function validatePublicationReadiness(
     };
   }
   return { success: true, data: input };
+}
+
+export function validateDraftPublication(
+  input: unknown
+): ValidationResult<CreatePollRequest, PublicationValidationCode> {
+  if (!isRecord(input)) {
+    return {
+      success: false,
+      input,
+      issues: [{ code: "CHOICES_INVALID", field: "draft", message: "Enter valid poll details." }]
+    };
+  }
+  const issues: ValidationIssue<PublicationValidationCode>[] = [];
+  if (typeof input.title !== "string" || input.title.trim().length === 0) {
+    issues.push({ code: "TITLE_REQUIRED", field: "title", message: "Add a title." });
+  }
+  if (!Array.isArray(input.proposedDates) || input.proposedDates.length === 0) {
+    issues.push({
+      code: "CHOICES_MINIMUM",
+      field: "proposedDates",
+      message: "Add at least two proposed dates."
+    });
+  } else if (input.proposedDates.length === 1) {
+    issues.push({
+      code: "CHOICES_MINIMUM",
+      field: "proposedDates",
+      message: "Add at least one more proposed date (minimum two)."
+    });
+  } else if (isValidIanaTimeZone(input.timeZone)) {
+    const seen = new Map<string, number>();
+    for (const [index, choice] of input.proposedDates.entries()) {
+      const result = resolveProposedDate(choice, input.timeZone as string);
+      if (!result.success) {
+        issues.push({
+          code: "CHOICES_INVALID",
+          field: `proposedDates.${index}`,
+          message: `Date ${index + 1} isn't a valid date.`
+        });
+        continue;
+      }
+      const key = proposedDateKey(result.data);
+      const first = seen.get(key);
+      if (first !== undefined) {
+        issues.push({
+          code: "CHOICES_DUPLICATE",
+          field: `proposedDates.${index}`,
+          message: `Date ${index + 1} is the same as date ${first + 1}.`
+        });
+      } else {
+        seen.set(key, index);
+      }
+    }
+  }
+  if (typeof input.location === "string") {
+    const locationIssue = validateLocationMarkdown(input.location);
+    if (locationIssue) {
+      issues.push({
+        code: locationIssue.code,
+        field: "location",
+        message:
+          locationIssue.code === "LOCATION_LINK_UNSAFE"
+            ? "Location: Use secure HTTPS links only"
+            : `Location: ${locationIssue.message}`
+      });
+    }
+  }
+  if (issues.length > 0) return { success: false, input, issues };
+  const parsed = createPollRequestSchema.safeParse(input);
+  return parsed.success
+    ? parsed
+    : {
+        success: false,
+        input,
+        issues: [{ code: "CHOICES_INVALID", field: "draft", message: "Enter valid poll details." }]
+      };
 }
 
 const ALLOWED_TRANSITIONS: Readonly<Record<LifecycleState, readonly LifecycleState[]>> = {

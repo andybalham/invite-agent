@@ -3,13 +3,13 @@ id: T-012
 type: task
 title: Implement and verify ordered choices and DST-safe date handling
 parent: S-006
-status: todo
+status: done
 dependsOn: [T-011]
 estimate: 2
 tags: [green, implementation, S-006]
 archived: false
 created: 2026-09-27T18:08:40.017Z
-updated: 2026-09-27T18:19:37.954Z
+updated: 2026-09-28T19:01:31.055Z
 ---
 Implementation scope:
 Implement date-only/timed representations, UTC/IANA/offset conversion, duplicate detection, ordering mutations, DST gap rejection, and fold selection UI.

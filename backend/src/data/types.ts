@@ -1,11 +1,11 @@
-import type { CreatePollRequest, LifecycleState, ProposedDateInput } from "@invite-a-gent/contracts";
+import type { CreatePollRequest, LifecycleState, ProposedDate } from "@invite-a-gent/contracts";
 
 export interface PollRecord extends CreatePollRequest {
   readonly id: string;
   readonly organiserId: string;
   readonly status: LifecycleState;
   readonly version: number;
-  readonly proposedDates: ProposedDateInput[];
+  readonly proposedDates: ProposedDate[];
   readonly createdAt: string;
 }
 

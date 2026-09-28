@@ -30,6 +30,16 @@ export interface DateTimeChoice {
 
 export type ProposedDateInput = DateChoice | DateTimeChoice;
 
+export interface ResolvedDateTimeChoice {
+  kind: "date-time";
+  localDateTime: string;
+  utcInstant: string;
+  timeZone: string;
+  utcOffset: string;
+}
+
+export type ProposedDate = DateChoice | ResolvedDateTimeChoice;
+
 export interface CreatePollRequest {
   title: string;
   timeZone: string;

@@ -13,26 +13,26 @@ _Generated. Do not edit by hand._
   - [x] [T-005 · Specify one-command local stack and browser harness with failing automated tests](../entities/T-005-specify-one-command-local-stack-and-browser-harness-with-failing-automated-tests.md) — done
   - [x] [T-006 · Implement and verify one-command local stack and browser harness](../entities/T-006-implement-and-verify-one-command-local-stack-and-browser-harness.md) — done
 
-## [E-002 · E2 — Organiser draft builder and preview](./E-002.md) — blocked
+## [E-002 · E2 — Organiser draft builder and preview](./E-002.md) — done
 - [x] **S-004 · Define draft poll lifecycle and validation rules** — done
   - [x] [T-007 · Specify draft lifecycle and validation with failing automated tests](../entities/T-007-specify-draft-lifecycle-and-validation-with-failing-automated-tests.md) — done
   - [x] [T-008 · Implement and verify draft lifecycle and validation](../entities/T-008-implement-and-verify-draft-lifecycle-and-validation.md) — done
 - [x] **S-005 · Create and edit draft details with safe location Markdown** — done
   - [x] [T-009 · Specify draft details and safe location Markdown with failing automated tests](../entities/T-009-specify-draft-details-and-safe-location-markdown-with-failing-automated-tests.md) — done
   - [x] [T-010 · Implement and verify draft details and safe location Markdown](../entities/T-010-implement-and-verify-draft-details-and-safe-location-markdown.md) — done
-- [ ] **S-006 · Manage ordered date and date-time choices safely across DST** — blocked
-  - [ ] [T-011 · Specify ordered choices and DST-safe date handling with failing automated tests](../entities/T-011-specify-ordered-choices-and-dst-safe-date-handling-with-failing-automated-tests.md) — todo
-  - [ ] [T-012 · Implement and verify ordered choices and DST-safe date handling](../entities/T-012-implement-and-verify-ordered-choices-and-dst-safe-date-handling.md) — blocked · waiting on T-011
-- [ ] **S-007 · Preview a private draft and enforce publication readiness** — blocked · waiting on S-006
-  - [ ] [T-013 · Specify private preview and publication readiness with failing automated tests](../entities/T-013-specify-private-preview-and-publication-readiness-with-failing-automated-tests.md) — blocked · waiting on T-012
-  - [ ] [T-014 · Implement and verify private preview and publication readiness](../entities/T-014-implement-and-verify-private-preview-and-publication-readiness.md) — blocked · waiting on T-013
+- [x] **S-006 · Manage ordered date and date-time choices safely across DST** — done
+  - [x] [T-011 · Specify ordered choices and DST-safe date handling with failing automated tests](../entities/T-011-specify-ordered-choices-and-dst-safe-date-handling-with-failing-automated-tests.md) — done
+  - [x] [T-012 · Implement and verify ordered choices and DST-safe date handling](../entities/T-012-implement-and-verify-ordered-choices-and-dst-safe-date-handling.md) — done
+- [x] **S-007 · Preview a private draft and enforce publication readiness** — done
+  - [x] [T-013 · Specify private preview and publication readiness with failing automated tests](../entities/T-013-specify-private-preview-and-publication-readiness-with-failing-automated-tests.md) — done
+  - [x] [T-014 · Implement and verify private preview and publication readiness](../entities/T-014-implement-and-verify-private-preview-and-publication-readiness.md) — done
 - [x] **S-032 · Align the application UI with the primary Gather design** — done
   - [x] [T-066 · Specify primary-design fidelity with failing browser tests](../entities/T-066-specify-primary-design-fidelity-with-failing-browser-tests.md) — done
   - [x] [T-067 · Implement and verify the primary Gather design foundation](../entities/T-067-implement-and-verify-the-primary-gather-design-foundation.md) — done
 
 ## [E-003 · E3 — Publish and securely share a public poll](./E-003.md) — blocked
-- [ ] **S-008 · Publish atomically and issue a secure public capability** — blocked · waiting on S-007
-  - [ ] [T-015 · Specify atomic publication and public-token issuance with failing automated tests](../entities/T-015-specify-atomic-publication-and-public-token-issuance-with-failing-automated-tests.md) — blocked · waiting on T-014
+- [ ] **S-008 · Publish atomically and issue a secure public capability** — blocked
+  - [ ] [T-015 · Specify atomic publication and public-token issuance with failing automated tests](../entities/T-015-specify-atomic-publication-and-public-token-issuance-with-failing-automated-tests.md) — todo
   - [ ] [T-016 · Implement and verify atomic publication and public-token issuance](../entities/T-016-implement-and-verify-atomic-publication-and-public-token-issuance.md) — blocked · waiting on T-015
 - [ ] **S-009 · Render the safe unauthenticated public poll view** — blocked · waiting on S-008
   - [ ] [T-017 · Specify safe public poll view with failing automated tests](../entities/T-017-specify-safe-public-poll-view-with-failing-automated-tests.md) — blocked · waiting on T-016

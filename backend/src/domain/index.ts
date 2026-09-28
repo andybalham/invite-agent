@@ -2,6 +2,7 @@ export const applicationName = "Invite-a-Gent";
 export {
   transitionLifecycle,
   validateDraftPoll,
+  validateDraftPublication,
   validatePublicationReadiness
 } from "./draft-poll.js";
 export type {
@@ -17,6 +18,12 @@ export {
   renderSafeLocationMarkdown,
   validateLocationMarkdown
 } from "./location-markdown.js";
+export { proposedDateKey, resolveProposedDate } from "./date-choice.js";
+export type {
+  DateChoiceResolution,
+  DateChoiceResolutionCode,
+  DateChoiceResolutionIssue
+} from "./date-choice.js";
 export type {
   LocationValidationCode,
   LocationValidationIssue
