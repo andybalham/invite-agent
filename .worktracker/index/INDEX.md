@@ -14,14 +14,14 @@ _Generated. Do not edit by hand._
   - [x] [T-006 · Implement and verify one-command local stack and browser harness](../entities/T-006-implement-and-verify-one-command-local-stack-and-browser-harness.md) — done
 
 ## [E-002 · E2 — Organiser draft builder and preview](./E-002.md) — blocked
-- [ ] **S-004 · Define draft poll lifecycle and validation rules** — blocked
-  - [ ] [T-007 · Specify draft lifecycle and validation with failing automated tests](../entities/T-007-specify-draft-lifecycle-and-validation-with-failing-automated-tests.md) — todo
-  - [ ] [T-008 · Implement and verify draft lifecycle and validation](../entities/T-008-implement-and-verify-draft-lifecycle-and-validation.md) — blocked · waiting on T-007
-- [ ] **S-005 · Create and edit draft details with safe location Markdown** — blocked · waiting on S-004
-  - [ ] [T-009 · Specify draft details and safe location Markdown with failing automated tests](../entities/T-009-specify-draft-details-and-safe-location-markdown-with-failing-automated-tests.md) — blocked · waiting on T-008
+- [x] **S-004 · Define draft poll lifecycle and validation rules** — done
+  - [x] [T-007 · Specify draft lifecycle and validation with failing automated tests](../entities/T-007-specify-draft-lifecycle-and-validation-with-failing-automated-tests.md) — done
+  - [x] [T-008 · Implement and verify draft lifecycle and validation](../entities/T-008-implement-and-verify-draft-lifecycle-and-validation.md) — done
+- [ ] **S-005 · Create and edit draft details with safe location Markdown** — blocked
+  - [ ] [T-009 · Specify draft details and safe location Markdown with failing automated tests](../entities/T-009-specify-draft-details-and-safe-location-markdown-with-failing-automated-tests.md) — todo
   - [ ] [T-010 · Implement and verify draft details and safe location Markdown](../entities/T-010-implement-and-verify-draft-details-and-safe-location-markdown.md) — blocked · waiting on T-009
-- [ ] **S-006 · Manage ordered date and date-time choices safely across DST** — blocked · waiting on S-004
-  - [ ] [T-011 · Specify ordered choices and DST-safe date handling with failing automated tests](../entities/T-011-specify-ordered-choices-and-dst-safe-date-handling-with-failing-automated-tests.md) — blocked · waiting on T-008
+- [ ] **S-006 · Manage ordered date and date-time choices safely across DST** — blocked
+  - [ ] [T-011 · Specify ordered choices and DST-safe date handling with failing automated tests](../entities/T-011-specify-ordered-choices-and-dst-safe-date-handling-with-failing-automated-tests.md) — todo
   - [ ] [T-012 · Implement and verify ordered choices and DST-safe date handling](../entities/T-012-implement-and-verify-ordered-choices-and-dst-safe-date-handling.md) — blocked · waiting on T-011
 - [ ] **S-007 · Preview a private draft and enforce publication readiness** — blocked · waiting on S-005, S-006
   - [ ] [T-013 · Specify private preview and publication readiness with failing automated tests](../entities/T-013-specify-private-preview-and-publication-readiness-with-failing-automated-tests.md) — blocked · waiting on T-010, T-012

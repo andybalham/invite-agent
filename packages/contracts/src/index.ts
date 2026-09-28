@@ -33,6 +33,8 @@ export type ProposedDateInput = DateChoice | DateTimeChoice;
 export interface CreatePollRequest {
   title: string;
   timeZone: string;
+  description?: string;
+  instructions?: string;
   location?: string;
   proposedDates: ProposedDateInput[];
 }
@@ -52,6 +54,8 @@ export interface PublicPollResponse {
   version: number;
   proposedDates: PublicProposedDate[];
   participants: PublicParticipant[];
+  description?: string;
+  instructions?: string;
   location?: string;
 }
 
@@ -103,7 +107,22 @@ function isIsoDate(input: unknown): input is string {
   );
 }
 
-function isProposedDateInput(input: unknown): input is ProposedDateInput {
+function isIsoLocalDateTime(input: unknown): input is string {
+  if (typeof input !== "string") {
+    return false;
+  }
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(input);
+  if (!match) {
+    return false;
+  }
+  const [, yearText, monthText, dayText, hourText, minuteText] = match;
+  const datePart = `${yearText}-${monthText}-${dayText}`;
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  return isIsoDate(datePart) && hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+}
+
+export function isProposedDateInput(input: unknown): input is ProposedDateInput {
   if (!isRecord(input)) {
     return false;
   }
@@ -113,12 +132,23 @@ function isProposedDateInput(input: unknown): input is ProposedDateInput {
   if (input.kind === "date-time") {
     return (
       hasOnlyKeys(input, ["kind", "localDateTime", "utcOffset"]) &&
-      typeof input.localDateTime === "string" &&
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(input.localDateTime) &&
+      isIsoLocalDateTime(input.localDateTime) &&
       (input.utcOffset === undefined || /^[-+]\d{2}:\d{2}$/.test(String(input.utcOffset)))
     );
   }
   return false;
+}
+
+export function isValidIanaTimeZone(input: unknown): input is string {
+  if (typeof input !== "string" || input.length === 0) {
+    return false;
+  }
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: input }).format();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isPublicProposedDate(input: unknown): input is PublicProposedDate {
@@ -152,12 +182,20 @@ function isAvailability(input: unknown): input is Availability {
 function isCreatePollRequest(input: unknown): input is CreatePollRequest {
   return (
     isRecord(input) &&
-    hasOnlyKeys(input, ["title", "timeZone", "location", "proposedDates"]) &&
+    hasOnlyKeys(input, [
+      "title",
+      "timeZone",
+      "description",
+      "instructions",
+      "location",
+      "proposedDates"
+    ]) &&
     isNonBlankString(input.title) &&
-    isNonBlankString(input.timeZone) &&
+    isValidIanaTimeZone(input.timeZone) &&
+    (input.description === undefined || typeof input.description === "string") &&
+    (input.instructions === undefined || typeof input.instructions === "string") &&
     (input.location === undefined || typeof input.location === "string") &&
     Array.isArray(input.proposedDates) &&
-    input.proposedDates.length > 0 &&
     input.proposedDates.every(isProposedDateInput)
   );
 }
@@ -165,7 +203,17 @@ function isCreatePollRequest(input: unknown): input is CreatePollRequest {
 function isPublicPollResponse(input: unknown): input is PublicPollResponse {
   return (
     isRecord(input) &&
-    hasOnlyKeys(input, ["id", "title", "status", "version", "proposedDates", "participants", "location"]) &&
+    hasOnlyKeys(input, [
+      "id",
+      "title",
+      "status",
+      "version",
+      "proposedDates",
+      "participants",
+      "description",
+      "instructions",
+      "location"
+    ]) &&
     isNonBlankString(input.id) &&
     isNonBlankString(input.title) &&
     isLifecycleState(input.status) &&
@@ -175,6 +223,8 @@ function isPublicPollResponse(input: unknown): input is PublicPollResponse {
     input.proposedDates.every(isPublicProposedDate) &&
     Array.isArray(input.participants) &&
     input.participants.every(isPublicParticipant) &&
+    (input.description === undefined || typeof input.description === "string") &&
+    (input.instructions === undefined || typeof input.instructions === "string") &&
     (input.location === undefined || typeof input.location === "string")
   );
 }

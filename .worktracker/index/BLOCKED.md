@@ -10,9 +10,8 @@ _Generated. Do not edit by hand._
 - [E-007 · E7 — Final decision and reversible poll lifecycle](../entities/E-007-e7-final-decision-and-reversible-poll-lifecycle.md) — blocked · waiting on E-006
 - [E-008 · E8 — Production AWS platform](../entities/E-008-e8-production-aws-platform.md) — blocked · waiting on E-007
 - [E-009 · E9 — Tested production release and operations](../entities/E-009-e9-tested-production-release-and-operations.md) — blocked · waiting on E-008
-- [S-004 · Define draft poll lifecycle and validation rules](../entities/S-004-define-draft-poll-lifecycle-and-validation-rules.md) — blocked
-- [S-005 · Create and edit draft details with safe location Markdown](../entities/S-005-create-and-edit-draft-details-with-safe-location-markdown.md) — blocked · waiting on S-004
-- [S-006 · Manage ordered date and date-time choices safely across DST](../entities/S-006-manage-ordered-date-and-date-time-choices-safely-across-dst.md) — blocked · waiting on S-004
+- [S-005 · Create and edit draft details with safe location Markdown](../entities/S-005-create-and-edit-draft-details-with-safe-location-markdown.md) — blocked
+- [S-006 · Manage ordered date and date-time choices safely across DST](../entities/S-006-manage-ordered-date-and-date-time-choices-safely-across-dst.md) — blocked
 - [S-007 · Preview a private draft and enforce publication readiness](../entities/S-007-preview-a-private-draft-and-enforce-publication-readiness.md) — blocked · waiting on S-005, S-006
 - [S-008 · Publish atomically and issue a secure public capability](../entities/S-008-publish-atomically-and-issue-a-secure-public-capability.md) — blocked · waiting on S-007
 - [S-009 · Render the safe unauthenticated public poll view](../entities/S-009-render-the-safe-unauthenticated-public-poll-view.md) — blocked · waiting on S-008
@@ -38,10 +37,7 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [T-008 · Implement and verify draft lifecycle and validation](../entities/T-008-implement-and-verify-draft-lifecycle-and-validation.md) — blocked · waiting on T-007
-- [T-009 · Specify draft details and safe location Markdown with failing automated tests](../entities/T-009-specify-draft-details-and-safe-location-markdown-with-failing-automated-tests.md) — blocked · waiting on T-008
 - [T-010 · Implement and verify draft details and safe location Markdown](../entities/T-010-implement-and-verify-draft-details-and-safe-location-markdown.md) — blocked · waiting on T-009
-- [T-011 · Specify ordered choices and DST-safe date handling with failing automated tests](../entities/T-011-specify-ordered-choices-and-dst-safe-date-handling-with-failing-automated-tests.md) — blocked · waiting on T-008
 - [T-012 · Implement and verify ordered choices and DST-safe date handling](../entities/T-012-implement-and-verify-ordered-choices-and-dst-safe-date-handling.md) — blocked · waiting on T-011
 - [T-013 · Specify private preview and publication readiness with failing automated tests](../entities/T-013-specify-private-preview-and-publication-readiness-with-failing-automated-tests.md) — blocked · waiting on T-010, T-012
 - [T-014 · Implement and verify private preview and publication readiness](../entities/T-014-implement-and-verify-private-preview-and-publication-readiness.md) — blocked · waiting on T-013

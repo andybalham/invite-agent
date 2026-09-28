@@ -21,3 +21,26 @@ test("backend rejects invalid data even if a client attempted to submit it", asy
 
   assert.equal(validateCreatePollRequest(invalidRequest).success, false);
 });
+
+test("backend draft validation accepts empty optional content and zero proposed choices", async () => {
+  const { validateCreatePollRequest } = await import(validatorUrl);
+  const draftRequest = {
+    title: "Autumn planning session",
+    timeZone: "Europe/London",
+    description: "",
+    instructions: "",
+    location: "",
+    proposedDates: []
+  };
+
+  assert.equal(validateCreatePollRequest(draftRequest).success, true);
+});
+
+test("backend draft validation rejects time-zone-shaped strings that are not IANA zones", async () => {
+  const { validateCreatePollRequest } = await import(validatorUrl);
+
+  assert.equal(
+    validateCreatePollRequest({ ...validCreatePollRequest, timeZone: "Europe/Nowhere" }).success,
+    false
+  );
+});

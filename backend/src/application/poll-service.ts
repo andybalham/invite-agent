@@ -11,6 +11,8 @@ export interface PollResponse {
   readonly version: number;
   readonly timeZone: string;
   readonly proposedDates: CreatePollRequest["proposedDates"];
+  readonly description?: string;
+  readonly instructions?: string;
   readonly location?: string;
 }
 
@@ -23,7 +25,12 @@ function publicResponse(poll: PollRecord): PollResponse {
     timeZone: poll.timeZone,
     proposedDates: poll.proposedDates
   };
-  return poll.location === undefined ? base : { ...base, location: poll.location };
+  return {
+    ...base,
+    ...(poll.description === undefined ? {} : { description: poll.description }),
+    ...(poll.instructions === undefined ? {} : { instructions: poll.instructions }),
+    ...(poll.location === undefined ? {} : { location: poll.location })
+  };
 }
 
 export class PollService {
