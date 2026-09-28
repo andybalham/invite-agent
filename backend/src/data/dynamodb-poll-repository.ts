@@ -74,6 +74,44 @@ export class DynamoPollRepository {
     );
   }
 
+  public async updatePoll(poll: PollRecord, audit: AuditEvent): Promise<void> {
+    await this.client.send(
+      new TransactWriteItemsCommand({
+        TransactItems: [
+          {
+            Put: {
+              TableName: this.config.appTableName,
+              Item: {
+                PK: { S: `POLL#${poll.id}` },
+                SK: { S: "METADATA" },
+                GSI1PK: { S: `ORGANISER#${poll.organiserId}` },
+                GSI1SK: { S: `POLL#${poll.createdAt}#${poll.id}` },
+                document: { S: JSON.stringify(poll) }
+              },
+              ConditionExpression: "attribute_exists(PK)"
+            }
+          },
+          {
+            Put: {
+              TableName: this.config.auditTableName,
+              Item: {
+                PK: { S: `POLL#${audit.pollId}` },
+                SK: { S: `EVENT#${audit.occurredAt}#${audit.id}` },
+                action: { S: audit.action },
+                actorId: { S: audit.actorId },
+                occurredAt: { S: audit.occurredAt },
+                id: { S: audit.id },
+                ...(audit.before ? { before: { S: JSON.stringify(audit.before) } } : {}),
+                ...(audit.after ? { after: { S: JSON.stringify(audit.after) } } : {})
+              },
+              ConditionExpression: "attribute_not_exists(PK) AND attribute_not_exists(SK)"
+            }
+          }
+        ]
+      })
+    );
+  }
+
   public async getPoll(id: string): Promise<PollRecord | undefined> {
     const result = await this.client.send(
       new GetItemCommand({
@@ -97,9 +135,11 @@ export class DynamoPollRepository {
     return (result.Items ?? []).map((item) => ({
       pollId,
       id: stringValue(item.id, "id"),
-      action: "POLL_CREATED",
+      action: stringValue(item.action, "action") as AuditEvent["action"],
       actorId: stringValue(item.actorId, "actorId"),
-      occurredAt: stringValue(item.occurredAt, "occurredAt")
+      occurredAt: stringValue(item.occurredAt, "occurredAt"),
+      ...(item.before ? { before: JSON.parse(stringValue(item.before, "before")) } : {}),
+      ...(item.after ? { after: JSON.parse(stringValue(item.after, "after")) } : {})
     }));
   }
 }

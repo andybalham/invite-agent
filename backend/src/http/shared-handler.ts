@@ -49,6 +49,13 @@ export function createSharedHttpHandler(dependencies: {
           const organiserId = dependencies.authenticate(request.headers);
           return { status: 200, body: await dependencies.polls.get(match[1], organiserId) };
         }
+        if (request.method === "PUT" && match?.[1]) {
+          const organiserId = dependencies.authenticate(request.headers);
+          return {
+            status: 200,
+            body: await dependencies.polls.update(match[1], request.body, organiserId)
+          };
+        }
         throw new ApplicationError("NOT_FOUND", "Route not found");
       } catch (error) {
         return errorResponse(error);

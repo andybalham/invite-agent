@@ -12,3 +12,12 @@ export type {
   ValidationResult
 } from "./draft-poll.js";
 export { validateCreatePollRequest } from "./validate-create-poll-request.js";
+export {
+  LOCATION_MAX_CODE_POINTS,
+  renderSafeLocationMarkdown,
+  validateLocationMarkdown
+} from "./location-markdown.js";
+export type {
+  LocationValidationCode,
+  LocationValidationIssue
+} from "./location-markdown.js";

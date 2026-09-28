@@ -97,6 +97,51 @@ test("local HTTP uses shared validation, authorization, persistence, audit, and 
     ["POLL_CREATED"]
   );
 
+  const updated = await app.http.handle({
+    method: "PUT",
+    path: `/api/organiser/polls/${created.body.id}`,
+    headers: { "x-local-organiser-id": "local-organiser-1" },
+    body: {
+      ...validPoll,
+      title: "Updated planning session",
+      description: "Bring ideas",
+      instructions: "Reply by Friday",
+      location: "**Community Hall** — [map](https://example.test/map)"
+    }
+  });
+  assert.equal(updated.status, 200);
+  assert.equal(updated.body.title, "Updated planning session");
+  assert.match(updated.body.locationHtml, /<strong>Community Hall<\/strong>/);
+  assert.match(updated.body.locationHtml, /href="https:\/\/example\.test\/map"/);
+  assert.equal((await app.repository.getPoll(created.body.id)).location, updated.body.location);
+  assert.deepEqual(
+    (await app.repository.listAuditEvents(created.body.id)).map((event) => event.action),
+    ["POLL_CREATED", "POLL_DETAILS_UPDATED"]
+  );
+
+  const previous = await app.repository.getPoll(created.body.id);
+  const previousAuditCount = (await app.repository.listAuditEvents(created.body.id)).length;
+  const unsafe = await app.http.handle({
+    method: "PUT",
+    path: `/api/organiser/polls/${created.body.id}`,
+    headers: { "x-local-organiser-id": "local-organiser-1" },
+    body: { ...validPoll, location: "[click](javascript:alert(1))" }
+  });
+  assert.equal(unsafe.status, 400);
+  assert.equal(unsafe.body.error.code, "VALIDATION_ERROR");
+  assert.deepEqual(await app.repository.getPoll(created.body.id), previous);
+  assert.equal((await app.repository.listAuditEvents(created.body.id)).length, previousAuditCount);
+
+  const forbiddenUpdate = await app.http.handle({
+    method: "PUT",
+    path: `/api/organiser/polls/${created.body.id}`,
+    headers: { "x-local-organiser-id": "local-organiser-2" },
+    body: { ...validPoll, location: "Other venue" }
+  });
+  assert.equal(forbiddenUpdate.status, 403);
+  assert.deepEqual(await app.repository.getPoll(created.body.id), previous);
+  assert.equal((await app.repository.listAuditEvents(created.body.id)).length, previousAuditCount);
+
   const forbidden = await app.http.handle({
     method: "GET",
     path: `/api/organiser/polls/${created.body.id}`,

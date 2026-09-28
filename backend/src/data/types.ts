@@ -12,9 +12,11 @@ export interface PollRecord extends CreatePollRequest {
 export interface AuditEvent {
   readonly pollId: string;
   readonly id: string;
-  readonly action: "POLL_CREATED";
+  readonly action: "POLL_CREATED" | "POLL_DETAILS_UPDATED";
   readonly actorId: string;
   readonly occurredAt: string;
+  readonly before?: CreatePollRequest;
+  readonly after?: CreatePollRequest;
 }
 
 export interface RepositoryHealth {

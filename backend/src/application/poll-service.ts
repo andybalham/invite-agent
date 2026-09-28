@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { CreatePollRequest } from "@invite-a-gent/contracts";
 import type { DynamoPollRepository, PollRecord } from "../data/index.js";
-import { validateCreatePollRequest } from "../domain/index.js";
+import { renderSafeLocationMarkdown, validateCreatePollRequest } from "../domain/index.js";
 import { ApplicationError } from "./errors.js";
 
 export interface PollResponse {
@@ -14,6 +14,18 @@ export interface PollResponse {
   readonly description?: string;
   readonly instructions?: string;
   readonly location?: string;
+  readonly locationHtml?: string;
+}
+
+function pollDetails(poll: PollRecord): CreatePollRequest {
+  return {
+    title: poll.title,
+    timeZone: poll.timeZone,
+    proposedDates: poll.proposedDates,
+    ...(poll.description === undefined ? {} : { description: poll.description }),
+    ...(poll.instructions === undefined ? {} : { instructions: poll.instructions }),
+    ...(poll.location === undefined ? {} : { location: poll.location })
+  };
 }
 
 function publicResponse(poll: PollRecord): PollResponse {
@@ -29,7 +41,12 @@ function publicResponse(poll: PollRecord): PollResponse {
     ...base,
     ...(poll.description === undefined ? {} : { description: poll.description }),
     ...(poll.instructions === undefined ? {} : { instructions: poll.instructions }),
-    ...(poll.location === undefined ? {} : { location: poll.location })
+    ...(poll.location === undefined
+      ? {}
+      : {
+          location: poll.location,
+          locationHtml: renderSafeLocationMarkdown(poll.location)
+        })
   };
 }
 
@@ -70,5 +87,35 @@ export class PollService {
       throw new ApplicationError("FORBIDDEN", "The organiser does not own this poll");
     }
     return publicResponse(poll);
+  }
+
+  public async update(id: string, input: unknown, organiserId: string): Promise<PollResponse> {
+    const existing = await this.repository.getPoll(id);
+    if (!existing) {
+      throw new ApplicationError("NOT_FOUND", "Poll not found");
+    }
+    if (existing.organiserId !== organiserId) {
+      throw new ApplicationError("FORBIDDEN", "The organiser does not own this poll");
+    }
+    const parsed = validateCreatePollRequest(input);
+    if (!parsed.success) {
+      throw new ApplicationError("VALIDATION_ERROR", parsed.issues.join("; "));
+    }
+    const updated: PollRecord = {
+      ...existing,
+      ...parsed.data,
+      version: existing.version + 1
+    };
+    const occurredAt = new Date().toISOString();
+    await this.repository.updatePoll(updated, {
+      pollId: id,
+      id: randomUUID(),
+      action: "POLL_DETAILS_UPDATED",
+      actorId: organiserId,
+      occurredAt,
+      before: pollDetails(existing),
+      after: parsed.data
+    });
+    return publicResponse(updated);
   }
 }

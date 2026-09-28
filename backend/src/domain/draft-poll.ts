@@ -7,12 +7,14 @@ import {
   type LifecycleState,
   type ProposedDateInput
 } from "@invite-a-gent/contracts";
+import { validateLocationMarkdown, type LocationValidationCode } from "./location-markdown.js";
 
 export type DraftValidationCode =
   | "DRAFT_INVALID"
   | "TITLE_REQUIRED"
   | "TIME_ZONE_INVALID"
-  | "CHOICES_INVALID";
+  | "CHOICES_INVALID"
+  | LocationValidationCode;
 
 export type PublicationValidationCode =
   | "CHOICES_MINIMUM"
@@ -66,6 +68,12 @@ export function validateDraftPoll(
       field: "timeZone",
       message: "Select a valid time zone"
     });
+  }
+  if (typeof input.location === "string") {
+    const locationIssue = validateLocationMarkdown(input.location);
+    if (locationIssue) {
+      issues.push({ ...locationIssue, field: "location" });
+    }
   }
   if (
     Array.isArray(input.proposedDates) &&

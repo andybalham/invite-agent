@@ -3,13 +3,13 @@ id: T-010
 type: task
 title: Implement and verify draft details and safe location Markdown
 parent: S-005
-status: todo
+status: done
 dependsOn: [T-009]
 estimate: 2
 tags: [green, implementation, S-005]
 archived: false
 created: 2026-09-27T18:08:39.882Z
-updated: 2026-09-27T18:19:37.902Z
+updated: 2026-09-28T18:13:08.922Z
 ---
 Implementation scope:
 Implement owner-only draft create/edit, 4,000-code-point validation, Markdown allow-list, HTTPS-link enforcement, sanitisation, persistence, and UI.

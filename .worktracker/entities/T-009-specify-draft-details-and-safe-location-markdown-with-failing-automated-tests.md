@@ -3,13 +3,13 @@ id: T-009
 type: task
 title: Specify draft details and safe location Markdown with failing automated tests
 parent: S-005
-status: todo
+status: done
 dependsOn: [T-008]
 estimate: 1
 tags: [red, S-005, test-first]
 archived: false
 created: 2026-09-27T18:08:39.818Z
-updated: 2026-09-27T18:19:39.811Z
+updated: 2026-09-28T18:04:57.115Z
 ---
 Purpose:
 Lock the parent story's behavior before implementation.
