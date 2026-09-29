@@ -435,10 +435,8 @@ The intended repository layout is:
 ├── frontend/               # React/Vite SPA
 ├── packages/
 │   └── contracts/          # Shared API schemas and generated types
-├── scripts/                # Build/deploy and local-development helpers
+├── scripts/                # Build/deploy and local-development helpers (Start-DevStack.ps1, Stop-DevStack.ps1)
 ├── Deploy.ps1
-├── Start-DevStack.ps1
-├── Stop-DevStack.ps1
 ├── compose.yaml            # DynamoDB Local for development and E2E tests
 └── README.md
 ```
@@ -498,7 +496,7 @@ The complete application must run on a developer workstation and in CI without d
 ### 16.1 Local topology
 
 ```text
-┌──────────────────────┐       http://localhost:5173
+┌──────────────────────┐       http://127.0.0.1:15173
 │ Browser / Playwright │────────────────────────────────┐
 └──────────────────────┘                                ▼
                                                ┌─────────────────┐
@@ -510,7 +508,7 @@ The complete application must run on a developer workstation and in CI without d
                                                ┌─────────────────┐
                                                │ Local Node.js   │
                                                │ HTTP adapter    │
-                                               │ port 3001       │
+                                               │ port 14000      │
                                                └────────┬────────┘
                                                         │
                                       ┌─────────────────┴──────────────┐
@@ -523,11 +521,11 @@ The complete application must run on a developer workstation and in CI without d
                                       ▼
                              ┌──────────────────┐
                              │ DynamoDB Local   │
-                             │ port 8000        │
+                             │ port 18000       │
                              └──────────────────┘
 ```
 
-Vite proxies `/api/*` to the local backend, preserving the same-origin URL contract used by CloudFront in production. The frontend therefore uses relative API URLs in every environment. Public links use a configured base URL: `http://localhost:5173` locally and `https://invite-agent.10printiamcool.com` in production.
+Vite proxies `/api/*` to the local backend, preserving the same-origin URL contract used by CloudFront in production. The frontend therefore uses relative API URLs in every environment. Public links use a configured base URL: `http://127.0.0.1:15173` locally and `https://invite-agent.10printiamcool.com` in production.
 
 ### 16.2 Portable application boundaries
 
@@ -546,7 +544,7 @@ Only composition-root concerns vary by environment: HTTP event parsing, verified
 
 ### 16.3 DynamoDB Local
 
-`compose.yaml` runs DynamoDB Local on port `8000`. The backend selects it through `DYNAMODB_ENDPOINT=http://localhost:8000`; omitting this setting in deployed environments uses the regional AWS endpoint. Local table names are isolated from deployed names.
+`compose.yaml` runs DynamoDB Local, publishing its container port `8000` on host port `18000` (overridable with `DYNAMODB_PORT`). The backend selects it through `DYNAMODB_ENDPOINT=http://127.0.0.1:18000`; omitting this setting in deployed environments uses the regional AWS endpoint. Local table names are isolated from deployed names.
 
 An idempotent initialisation command creates the application and audit tables, keys, and indexes exactly as defined by the production infrastructure. A reset command deletes only the explicitly named local tables and recreates them. E2E workers receive an isolated table-name suffix or run serially so test cases cannot leak state into one another.
 
@@ -572,42 +570,44 @@ Local configuration is supplied through a checked-in `.env.example` and an ignor
 | Variable | Local value | Purpose |
 |---|---|---|
 | `APP_ENV` | `local` or `test` | Selects the permitted local composition root |
-| `PORT` | `3001` | Local API listener |
+| `API_PORT` | `14000` | Local API listener |
 | `AWS_REGION` | `eu-west-2` | Required by the AWS SDK, even with a local endpoint |
-| `DYNAMODB_ENDPOINT` | `http://localhost:8000` | Selects DynamoDB Local |
+| `DYNAMODB_ENDPOINT` | `http://127.0.0.1:18000` | Selects DynamoDB Local |
 | `APP_TABLE_NAME` | Test-specific local name | Current-state table |
 | `AUDIT_TABLE_NAME` | Test-specific local name | Audit table |
-| `PUBLIC_BASE_URL` | `http://localhost:5173` | Generated public links |
+| `PUBLIC_BASE_URL` | `http://127.0.0.1:15173` | Generated public links |
 | `AUTH_MODE` | `local` | Enables only the local authentication adapter |
+| `WEB_PORT` | `15173` | Vite dev server listener; also used to derive `PUBLIC_BASE_URL` |
+| `DYNAMODB_PORT` | `18000` | Host port for DynamoDB Local; also used to derive `DYNAMODB_ENDPOINT` |
 
 Dummy local AWS access-key values may be supplied to satisfy SDK credential resolution, but they must never be accepted as production credentials or committed as real secrets.
 
 ### 16.6 Stack lifecycle and deterministic data
 
-The root scripts provide a one-command developer experience:
+The `scripts/` directory provides a one-command developer experience through npm scripts:
 
 ```powershell
-.\Start-DevStack.ps1
-# application is available at http://localhost:5173
-.\Stop-DevStack.ps1
+npm run dev        # runs scripts/Start-DevStack.ps1
+# application is available at http://127.0.0.1:15173
+npm run dev:stop   # runs scripts/Stop-DevStack.ps1
 ```
 
-`Start-DevStack.ps1`:
+`scripts/Start-DevStack.ps1`:
 
 1. Validates Node.js, package installation, and the DynamoDB Local runtime.
 2. Starts DynamoDB Local through Docker Compose.
 3. Waits for its health check and initialises the two tables.
-4. Starts the local API and waits for `/api/v1/health`.
+4. Starts the local API and waits for `/health`.
 5. Starts Vite and waits for the application URL.
 6. Records only the processes and containers it started so shutdown is scoped and recoverable.
 
-`Stop-DevStack.ps1` stops those recorded processes and the project-scoped DynamoDB Local container. It does not delete developer data by default. A separate, explicit reset command recreates local tables.
+`scripts/Stop-DevStack.ps1` stops those recorded processes and the project-scoped DynamoDB Local container. It does not delete developer data by default. A separate, explicit reset command recreates local tables.
 
 Seed fixtures create deterministic draft, open, and closed polls with known IDs, versions, dates, participants, link tokens, rankings, and audit events. Seeding is idempotent and available only in local/test mode. Browser tests may request a fresh named fixture through a local-only test setup command before each scenario.
 
 ### 16.7 E2E and CI execution
 
-Playwright drives the SPA through `http://localhost:5173`; tests do not call application services directly. The E2E suite covers:
+Playwright drives the SPA through `http://127.0.0.1:15173`; tests do not call application services directly. The E2E suite covers:
 
 - organiser sign-in behavior through the local auth adapter;
 - draft creation, validation, date editing, publication, and public-link copying;
