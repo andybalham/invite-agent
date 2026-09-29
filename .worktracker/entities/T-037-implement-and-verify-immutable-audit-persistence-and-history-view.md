@@ -3,13 +3,13 @@ id: T-037
 type: task
 title: Implement and verify immutable audit persistence and history view
 parent: S-017
-status: todo
+status: done
 dependsOn: [T-036]
 estimate: 2
 tags: [green, implementation, S-017]
 archived: false
 created: 2026-09-27T18:08:41.732Z
-updated: 2026-09-27T18:19:38.771Z
+updated: 2026-09-29T18:04:57.395Z
 ---
 Implementation scope:
 Integrate one append-only event into every successful mutation; implement newest-first owner history projection and UI.

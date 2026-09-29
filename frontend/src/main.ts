@@ -35,6 +35,35 @@ interface PublicPollDetails extends PollDetails {
   }>;
 }
 
+interface AuditHistoryEvent {
+  id: string;
+  revision: number;
+  entity: { type: "poll" | "date" | "participant" | "availability"; id: string };
+  action: string;
+  summary: string;
+  before: unknown;
+  after: unknown;
+  occurredAt: string;
+  actor: { category: "organiser" | "anonymous-link-holder"; subject?: string };
+  undoOf?: { id: string; revision: number };
+}
+
+interface UndoPreview {
+  eventId: string;
+  revision: number;
+  summary: string;
+  restoredBefore: unknown;
+  restoredAfter: unknown;
+  wouldOverwrite: boolean;
+  warning?: string;
+}
+
+interface AuditHistoryPage {
+  items: AuditHistoryEvent[];
+  total: number;
+  nextCursor?: string;
+}
+
 const app = document.querySelector<HTMLElement>("#app");
 if (!app) throw new Error("Application root is missing");
 app.className = "app-main";
@@ -108,6 +137,7 @@ app.innerHTML = `
     <div class="share-actions">
       <a class="btn btn-primary go-to-poll" href="#">Go to the poll</a>
       <a class="btn btn-secondary open-public-link" href="#" target="_blank" rel="noopener noreferrer">Open as a link holder</a>
+      <a class="btn btn-secondary open-history" href="#">History</a>
     </div>
     <section class="link-security section-rule">
       <div><h2>Link security</h2><p>If the link was shared with the wrong people, replace it. The old link stops working immediately. Dates, responses and history are kept.</p></div>
@@ -115,6 +145,28 @@ app.innerHTML = `
     </section>
     <p class="share-status" role="status" aria-live="polite"></p>
   </section>
+  <main class="history-screen" hidden aria-labelledby="history-heading">
+    <a class="btn btn-ghost history-back" href="#">← Back to poll</a>
+    <div class="history-title">
+      <p class="kicker">ORGANISER</p>
+      <h1 id="history-heading" tabindex="-1">History</h1>
+      <p class="history-summary" aria-live="polite"></p>
+    </div>
+    <div class="history-table-wrap">
+      <table class="table history-table" aria-label="Poll history">
+        <thead><tr><th>#</th><th>When</th><th>Who</th><th>Change</th><th>Before</th><th>After</th><th>Undo</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <button class="btn btn-secondary history-more" type="button" hidden>Load older changes</button>
+    <p class="history-error error" role="alert" hidden></p>
+    <p class="history-status" role="status" aria-live="polite"></p>
+  </main>
+  <main class="invalid-link history-access-denied" hidden aria-labelledby="history-access-heading">
+    <p class="invalid-kicker">ACCESS DENIED</p>
+    <h1 id="history-access-heading" tabindex="-1">History isn’t available</h1>
+    <p>Sign in as the poll organiser to view history and undo changes.</p>
+  </main>
   <main class="public-poll" hidden aria-labelledby="public-poll-heading">
     <section class="public-title">
       <p class="tag tag-open" data-testid="public-state">Open</p>
@@ -146,7 +198,17 @@ app.innerHTML = `
       <div class="dialog-actions"><button class="btn btn-primary participant-submit" type="submit">Add row</button><button class="btn btn-ghost participant-cancel" type="button">Cancel</button></div>
     </form>
   </dialog>
-  <main class="invalid-link" hidden aria-labelledby="invalid-link-heading">
+  <dialog class="dialog undo-dialog" aria-labelledby="undo-dialog-heading">
+    <form method="dialog" class="dialog-form">
+      <h2 id="undo-dialog-heading">Undo change?</h2>
+      <p class="undo-dialog-warning" role="alert" hidden></p>
+      <p class="undo-dialog-summary"></p>
+      <p>The original entry stays in the history. A new Undo entry is added.</p>
+      <p class="dialog-error undo-dialog-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button class="btn btn-primary undo-confirm" type="submit">Undo change</button><button class="btn btn-ghost undo-cancel" type="button">Cancel</button></div>
+    </form>
+  </dialog>
+  <main class="invalid-link public-invalid-link" hidden aria-labelledby="invalid-link-heading">
     <p class="invalid-kicker">LINK NOT VALID</p>
     <h1 id="invalid-link-heading" tabindex="-1">This poll link doesn't work</h1>
     <p>The organiser may have replaced it, or the poll isn't published yet. Ask them for the current link. Nothing you do here can change the poll.</p>
@@ -200,7 +262,25 @@ const publicLink = requireElement<HTMLInputElement>("#public-link");
 const copyLinkButton = requireElement<HTMLButtonElement>(".copy-link");
 const goToPoll = requireElement<HTMLAnchorElement>(".go-to-poll");
 const openPublicLink = requireElement<HTMLAnchorElement>(".open-public-link");
+const openHistory = requireElement<HTMLAnchorElement>(".open-history");
 const shareStatus = requireElement<HTMLElement>(".share-status");
+const historyScreen = requireElement<HTMLElement>(".history-screen");
+const historyHeading = requireElement<HTMLElement>("#history-heading");
+const historyBack = requireElement<HTMLAnchorElement>(".history-back");
+const historySummary = requireElement<HTMLElement>(".history-summary");
+const historyBody = requireElement<HTMLTableSectionElement>(".history-table tbody");
+const historyMore = requireElement<HTMLButtonElement>(".history-more");
+const historyError = requireElement<HTMLElement>(".history-error");
+const historyStatus = requireElement<HTMLElement>(".history-status");
+const historyAccessDenied = requireElement<HTMLElement>(".history-access-denied");
+const historyAccessHeading = requireElement<HTMLElement>("#history-access-heading");
+const undoDialog = requireElement<HTMLDialogElement>(".undo-dialog");
+const undoDialogHeading = requireElement<HTMLElement>("#undo-dialog-heading");
+const undoDialogSummary = requireElement<HTMLElement>(".undo-dialog-summary");
+const undoDialogWarning = requireElement<HTMLElement>(".undo-dialog-warning");
+const undoDialogError = requireElement<HTMLElement>(".undo-dialog-error");
+const undoConfirm = requireElement<HTMLButtonElement>(".undo-confirm");
+const undoCancel = requireElement<HTMLButtonElement>(".undo-cancel");
 const publicPollScreen = requireElement<HTMLElement>(".public-poll");
 const publicPollHeading = requireElement<HTMLElement>("#public-poll-heading");
 const publicDescription = requireElement<HTMLElement>("[data-testid='public-description']");
@@ -225,18 +305,20 @@ const participantDialogError = requireElement<HTMLElement>(".dialog-error");
 const participantSubmit = requireElement<HTMLButtonElement>(".participant-submit");
 const participantCancel = requireElement<HTMLButtonElement>(".participant-cancel");
 const publicToast = requireElement<HTMLElement>(".public-toast");
-const invalidLinkScreen = requireElement<HTMLElement>(".invalid-link");
+const invalidLinkScreen = requireElement<HTMLElement>(".public-invalid-link");
 const invalidLinkHeading = requireElement<HTMLElement>("#invalid-link-heading");
 const url = new URL(window.location.href);
 const testRunId = url.searchParams.get("testRunId") ?? "browser";
 const organiserId = `local-organiser-${testRunId.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
 let pollId = url.searchParams.get("pollId");
+const historyView = url.searchParams.get("view") === "history";
 let proposedDates: ProposedDate[] = [];
 let publicToken: string | undefined;
 let displayedPublicPoll: PublicPollDetails | undefined;
 let participantDialogMode: "add" | "rename" | "delete" = "add";
 let selectedParticipantId: string | undefined;
 let publicRefreshInFlight = false;
+let selectedUndoEventId: string | undefined;
 
 function codePointLength(value: string): number { return Array.from(value).length; }
 
@@ -512,6 +594,9 @@ function showShareScreen(link: string): void {
   publicLink.value = link;
   goToPoll.href = link;
   openPublicLink.href = link;
+  if (pollId) {
+    openHistory.href = `/?pollId=${encodeURIComponent(pollId)}&testRunId=${encodeURIComponent(testRunId)}&view=history`;
+  }
   shareHeading.focus();
 }
 
@@ -826,6 +911,131 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
   return fetch(path, { ...init, headers: { accept: "application/json", "content-type": "application/json", "x-local-organiser-id": organiserId, ...init?.headers } });
 }
 
+function historyValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
+  if (typeof value === "object" && value && "displayName" in value) {
+    return String((value as { displayName?: unknown }).displayName ?? "—");
+  }
+  if (typeof value === "object" && value && "status" in value) {
+    return String((value as { status?: unknown }).status ?? "—");
+  }
+  return "Changed values";
+}
+
+function appendHistoryRows(items: AuditHistoryEvent[]): void {
+  const alreadyUndone = new Set(items.flatMap(({ undoOf }) => undoOf ? [undoOf.id] : []));
+  for (const event of items) {
+    const row = document.createElement("tr");
+    if (event.action === "UNDO") row.className = "history-row--undo";
+    const actor = event.actor.category === "organiser"
+      ? `${event.actor.subject ?? "Organiser"} (organiser)`
+      : "Anonymous link holder";
+    const values = [
+      `#${event.revision}`,
+      new Date(event.occurredAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+      actor,
+      event.summary,
+      historyValue(event.before),
+      historyValue(event.after)
+    ];
+    values.forEach((value, index) => {
+      const cell = document.createElement(index === 3 ? "th" : "td");
+      if (index === 3) (cell as HTMLTableCellElement).scope = "row";
+      cell.textContent = value;
+      row.append(cell);
+    });
+    const undoCell = document.createElement("td");
+    if (["AVAILABILITY_CHANGED", "PARTICIPANT_RENAMED", "PARTICIPANT_ADDED", "PARTICIPANT_DELETED"].includes(event.action) && !alreadyUndone.has(event.id)) {
+      const undoButton = document.createElement("button");
+      undoButton.type = "button";
+      undoButton.className = "btn btn-ghost history-undo";
+      undoButton.dataset.eventId = event.id;
+      undoButton.textContent = "Undo";
+      undoCell.append(undoButton);
+    }
+    row.append(undoCell);
+    historyBody.append(row);
+  }
+}
+
+async function openUndoPreview(eventId: string): Promise<void> {
+  if (!pollId) return;
+  historyError.hidden = true;
+  const response = await request(`/api/organiser/polls/${encodeURIComponent(pollId)}/history/${encodeURIComponent(eventId)}/undo-preview`, { method: "POST" });
+  if (!response.ok) {
+    historyError.hidden = false;
+    historyError.textContent = await readError(response);
+    return;
+  }
+  const preview = (await response.json()) as UndoPreview;
+  selectedUndoEventId = preview.eventId;
+  undoDialogHeading.textContent = `Undo #${preview.revision}?`;
+  undoDialogSummary.textContent = preview.summary;
+  undoDialogWarning.hidden = !preview.wouldOverwrite;
+  undoDialogWarning.textContent = preview.warning ?? "";
+  undoConfirm.textContent = preview.wouldOverwrite ? "Overwrite & undo" : "Undo change";
+  undoDialogError.hidden = true;
+  undoConfirm.disabled = false;
+  undoDialog.showModal();
+  undoConfirm.focus();
+}
+
+async function confirmUndo(): Promise<void> {
+  if (!pollId || !selectedUndoEventId) return;
+  undoConfirm.disabled = true;
+  const response = await request(`/api/organiser/polls/${encodeURIComponent(pollId)}/history/${encodeURIComponent(selectedUndoEventId)}/undo`, {
+    method: "POST",
+    body: JSON.stringify({ confirmed: true })
+  });
+  if (!response.ok) {
+    undoDialogError.hidden = false;
+    undoDialogError.textContent = await readError(response);
+    undoConfirm.disabled = false;
+    return;
+  }
+  undoDialog.close();
+  selectedUndoEventId = undefined;
+  historyStatus.textContent = "Undone. The original entry remains in history.";
+  await loadHistory(pollId);
+}
+
+async function loadHistory(id: string, cursor?: string): Promise<void> {
+  historyMore.disabled = true;
+  historyError.hidden = true;
+  const response = await request(`/api/organiser/polls/${encodeURIComponent(id)}/history`, {
+    headers: {
+      "x-audit-page-size": "25",
+      ...(cursor ? { "x-audit-cursor": cursor } : {})
+    }
+  });
+  if (!response.ok) {
+    if (response.status === 401 || response.status === 403) {
+      historyScreen.hidden = true;
+      historyAccessDenied.hidden = false;
+      historyBody.replaceChildren();
+      selectedUndoEventId = undefined;
+      if (undoDialog.open) undoDialog.close();
+      historyAccessHeading.focus();
+      return;
+    }
+    historyScreen.hidden = false;
+    historyError.hidden = false;
+    historyError.textContent = await readError(response);
+    return;
+  }
+  historyAccessDenied.hidden = true;
+  historyScreen.hidden = false;
+  const page = (await response.json()) as AuditHistoryPage;
+  if (!cursor) historyBody.replaceChildren();
+  appendHistoryRows(page.items);
+  historySummary.textContent = `${page.total} ${page.total === 1 ? "change" : "changes"}, newest first. Undo adds a new entry — nothing is ever removed.`;
+  historyMore.hidden = !page.nextCursor;
+  historyMore.disabled = false;
+  historyMore.dataset.cursor = page.nextCursor ?? "";
+  historyHeading.focus();
+}
+
 async function readError(response: Response): Promise<string> {
   const body = (await response.json()) as { error?: { message?: string } };
   return body.error?.message ?? "The draft could not be saved. Try again.";
@@ -978,6 +1188,18 @@ participantForm.addEventListener("submit", (event) => {
     if (poll) participantDialog.close();
   })();
 });
+historyMore.addEventListener("click", () => {
+  if (pollId && historyMore.dataset.cursor) void loadHistory(pollId, historyMore.dataset.cursor);
+});
+historyBody.addEventListener("click", (event) => {
+  const button = (event.target as Element).closest<HTMLButtonElement>(".history-undo");
+  if (button?.dataset.eventId) void openUndoPreview(button.dataset.eventId);
+});
+undoCancel.addEventListener("click", () => undoDialog.close());
+undoDialog.addEventListener("submit", (event) => {
+  event.preventDefault();
+  void confirmUndo();
+});
 
 async function checkApi(): Promise<void> {
   try {
@@ -994,5 +1216,15 @@ if (publicPath?.[1]) {
   window.setInterval(() => void refreshPublicPoll(), 750);
   document.addEventListener("visibilitychange", () => void refreshPublicPoll());
   window.addEventListener("focus", () => void refreshPublicPoll());
+}
+else if (pollId && historyView) {
+  editor.hidden = true;
+  previewScreen.hidden = true;
+  shareScreen.hidden = true;
+  publicPollScreen.hidden = true;
+  historyScreen.hidden = true;
+  historyAccessDenied.hidden = true;
+  historyBack.href = `/?pollId=${encodeURIComponent(pollId)}&testRunId=${encodeURIComponent(testRunId)}`;
+  void loadHistory(pollId);
 }
 else if (pollId) void loadDraft(pollId);

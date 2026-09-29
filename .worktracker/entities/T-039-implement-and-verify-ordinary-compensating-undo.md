@@ -3,13 +3,13 @@ id: T-039
 type: task
 title: Implement and verify ordinary compensating undo
 parent: S-018
-status: todo
+status: done
 dependsOn: [T-038]
 estimate: 2
 tags: [green, implementation, S-018]
 archived: false
 created: 2026-09-27T18:08:41.872Z
-updated: 2026-09-27T18:19:38.655Z
+updated: 2026-09-29T18:19:56.748Z
 ---
 Implementation scope:
 Implement reversible-event preview/execution, derived-value recalculation, original-event preservation, and linked UNDO append.

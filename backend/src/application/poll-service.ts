@@ -1,16 +1,22 @@
 import { randomUUID } from "node:crypto";
 import type {
+  AuditHistoryEvent,
+  AuditHistoryPage,
   Availability,
   CreatePollRequest,
-  PublicPollResponse
+  PublicPollResponse,
+  UndoPreview,
+  UndoResult
 } from "@invite-a-gent/contracts";
 import type {
+  AuditEvent,
   DynamoPollRepository,
   ParticipantRecord,
   PollRecord
 } from "../data/index.js";
 import {
   calculateTopFiveRanking,
+  planIsolatedUndo,
   renderSafeLocationMarkdown,
   resolveProposedDate,
   validateCreatePollRequest,
@@ -112,6 +118,41 @@ function isTransactionContention(error: unknown): boolean {
 
 const PUBLIC_MUTATION_ATTEMPTS = 6;
 
+function auditSummary(event: AuditEvent): string {
+  const after = event.after as Record<string, unknown> | null;
+  const before = event.before as Record<string, unknown> | null;
+  switch (event.action) {
+    case "POLL_CREATED": return "Created the draft poll";
+    case "POLL_DETAILS_UPDATED": return "Updated poll details, dates, or location";
+    case "POLL_PUBLISHED": return "Published the poll";
+    case "PARTICIPANT_ADDED": return `Added participant ${String(after?.displayName ?? "")}`.trim();
+    case "PARTICIPANT_RENAMED": return `Renamed participant ${String(before?.displayName ?? "")} to ${String(after?.displayName ?? "")}`;
+    case "PARTICIPANT_DELETED": return `Deleted participant ${String(before?.displayName ?? "")}`.trim();
+    case "AVAILABILITY_CHANGED": return `Changed availability from ${String(before?.value ?? "")} to ${String(after?.value ?? "")}`;
+    case "UNDO": return `Undo #${event.undoOfRevision ?? ""}: restored ${event.entityType}`;
+  }
+}
+
+function historyEvent(event: AuditEvent): AuditHistoryEvent {
+  return {
+    id: event.id,
+    revision: event.revision,
+    entity: { type: event.entityType, id: event.entityId },
+    action: event.action,
+    summary: auditSummary(event),
+    before: event.before,
+    after: event.after,
+    occurredAt: event.occurredAt,
+    actor: {
+      category: event.actorCategory,
+      ...(event.actorCategory === "organiser" ? { subject: event.actorId } : {})
+    },
+    ...(event.undoOfEventId && event.undoOfRevision
+      ? { undoOf: { id: event.undoOfEventId, revision: event.undoOfRevision } }
+      : {})
+  };
+}
+
 export class PollService {
   public constructor(
     private readonly repository: DynamoPollRepository,
@@ -139,7 +180,13 @@ export class PollService {
       id: randomUUID(),
       action: "POLL_CREATED",
       actorId: organiserId,
-      occurredAt: createdAt
+      actorCategory: "organiser",
+      occurredAt: createdAt,
+      revision: poll.version,
+      entityType: "poll",
+      entityId: id,
+      before: null,
+      after: pollDetails(poll)
     });
     return publicResponse(poll);
   }
@@ -153,6 +200,150 @@ export class PollService {
       throw new ApplicationError("FORBIDDEN", "The organiser does not own this poll");
     }
     return publicResponse(poll);
+  }
+
+  public async history(
+    id: string,
+    organiserId: string,
+    pageSize = 25,
+    cursor?: string
+  ): Promise<AuditHistoryPage> {
+    const poll = await this.repository.getPoll(id);
+    if (!poll) throw new ApplicationError("NOT_FOUND", "Poll not found");
+    if (poll.organiserId !== organiserId) {
+      throw new ApplicationError("FORBIDDEN", "The organiser does not own this poll");
+    }
+    const limit = Number.isSafeInteger(pageSize) ? Math.min(50, Math.max(1, pageSize)) : 25;
+    let offset = 0;
+    if (cursor) {
+      const decoded = Buffer.from(cursor, "base64url").toString("utf8");
+      if (!/^\d+$/.test(decoded)) throw new ApplicationError("VALIDATION_ERROR", "Invalid history cursor");
+      offset = Number(decoded);
+    }
+    const events = (await this.repository.listAuditEvents(id)).toReversed();
+    if (offset > events.length) throw new ApplicationError("VALIDATION_ERROR", "Invalid history cursor");
+    const items = events.slice(offset, offset + limit).map(historyEvent);
+    const nextOffset = offset + items.length;
+    return {
+      items,
+      total: events.length,
+      ...(nextOffset < events.length
+        ? { nextCursor: Buffer.from(String(nextOffset), "utf8").toString("base64url") }
+        : {})
+    };
+  }
+
+  public async previewUndo(
+    id: string,
+    eventId: string,
+    organiserId: string
+  ): Promise<UndoPreview> {
+    const prepared = await this.prepareUndo(id, eventId, organiserId);
+    return {
+      eventId: prepared.event.id,
+      revision: prepared.event.revision,
+      action: prepared.event.action,
+      summary: this.undoSummary(prepared.event),
+      restoredBefore: prepared.plan.auditBefore,
+      restoredAfter: prepared.plan.auditAfter,
+      requiresConfirmation: true,
+      wouldOverwrite: prepared.plan.wouldOverwrite,
+      ...(prepared.plan.warning ? { warning: prepared.plan.warning } : {})
+    };
+  }
+
+  public async undo(
+    id: string,
+    eventId: string,
+    input: unknown,
+    organiserId: string
+  ): Promise<UndoResult> {
+    if (!isRecord(input) || !hasExactlyKeys(input, ["confirmed"]) || input.confirmed !== true) {
+      throw new ApplicationError("VALIDATION_ERROR", "Confirm the undo before applying it.");
+    }
+    for (let attempt = 0; attempt < PUBLIC_MUTATION_ATTEMPTS; attempt += 1) {
+      const prepared = await this.prepareUndo(id, eventId, organiserId);
+      const occurredAt = new Date().toISOString();
+      const updated = { ...prepared.poll, version: prepared.poll.version + 1 };
+      const undoEvent: AuditEvent = {
+        pollId: id,
+        id: randomUUID(),
+        action: "UNDO",
+        actorId: organiserId,
+        actorCategory: "organiser",
+        occurredAt,
+        revision: updated.version,
+        entityType: prepared.event.entityType,
+        entityId: prepared.event.entityId,
+        before: prepared.plan.auditBefore,
+        after: prepared.plan.auditAfter,
+        undoOfEventId: prepared.event.id,
+        undoOfRevision: prepared.event.revision
+      };
+      try {
+        await this.repository.applyParticipantUndo(
+          updated,
+          prepared.current,
+          prepared.plan.operation === "delete" ? undefined : prepared.plan.participant,
+          undoEvent
+        );
+        return { poll: await this.publicView(updated), event: historyEvent(undoEvent) };
+      } catch (error) {
+        if (!isTransactionContention(error)) throw error;
+      }
+    }
+    throw new ApplicationError("CONFLICT", "The poll changed while undo was being applied. Refresh and try again.");
+  }
+
+  private async prepareUndo(id: string, eventId: string, organiserId: string) {
+    const poll = await this.repository.getPoll(id);
+    if (!poll) throw new ApplicationError("NOT_FOUND", "Poll not found");
+    if (poll.organiserId !== organiserId) {
+      throw new ApplicationError("FORBIDDEN", "The organiser does not own this poll");
+    }
+    if (poll.status !== "open") {
+      throw new ApplicationError("INVALID_LIFECYCLE", "Reopen the poll to undo response changes.");
+    }
+    const events = await this.repository.listAuditEvents(id);
+    const event = events.find(({ id: candidate }) => candidate === eventId);
+    if (!event) throw new ApplicationError("NOT_FOUND", "History entry not found");
+    if (events.some(({ action, undoOfEventId }) => action === "UNDO" && undoOfEventId === eventId)) {
+      throw new ApplicationError("CONFLICT", "This history entry has already been undone.");
+    }
+    const participants = await this.repository.listParticipants(id);
+    const participantId = event.action === "AVAILABILITY_CHANGED"
+      ? event.entityId.slice(0, event.entityId.lastIndexOf(":"))
+      : event.entityId;
+    const current = participants.find(({ id: candidate }) => candidate === participantId);
+    try {
+      const plan = planIsolatedUndo(event, current, { pollId: id, occurredAt: new Date().toISOString() });
+      const restoredDateIds = Object.keys(plan.participant.availability).sort();
+      const currentDateIds = dateIds(poll).sort();
+      if (restoredDateIds.length !== currentDateIds.length ||
+        restoredDateIds.some((dateId, index) => dateId !== currentDateIds[index])) {
+        throw new ApplicationError("CONFLICT", "Undo would restore a participant row that no longer matches the poll's dates.");
+      }
+      if (plan.operation !== "delete" && participants.some(({ id: candidateId, normalizedName }) =>
+        candidateId !== plan.participant.id && normalizedName === plan.participant.normalizedName)) {
+        throw new ApplicationError("CONFLICT", `Another participant is already named "${plan.participant.displayName}".`);
+      }
+      return { poll, event, current, plan };
+    } catch (error) {
+      if (error instanceof ApplicationError) throw error;
+      throw new ApplicationError("CONFLICT", error instanceof Error ? error.message : "This entry cannot be undone.");
+    }
+  }
+
+  private undoSummary(event: AuditEvent): string {
+    const before = event.before as Record<string, unknown> | null;
+    const after = event.after as Record<string, unknown> | null;
+    switch (event.action) {
+      case "PARTICIPANT_ADDED": return `Remove participant ${String(after?.displayName ?? "")}`.trim();
+      case "PARTICIPANT_DELETED": return `Restore participant ${String(before?.displayName ?? "")}`.trim();
+      case "PARTICIPANT_RENAMED": return `Restore participant name to ${String(before?.displayName ?? "")}`.trim();
+      case "AVAILABILITY_CHANGED": return `Restore availability to ${String(before?.value ?? "") === "yes" ? "Yes" : "No"}`;
+      default: return "Restore the previous value";
+    }
   }
 
   public async update(id: string, input: unknown, organiserId: string): Promise<PollResponse> {
@@ -179,7 +370,11 @@ export class PollService {
       id: randomUUID(),
       action: "POLL_DETAILS_UPDATED",
       actorId: organiserId,
+      actorCategory: "organiser",
       occurredAt,
+      revision: updated.version,
+      entityType: "poll",
+      entityId: id,
       before: pollDetails(existing),
       after: parsed.data
     });
@@ -238,7 +433,13 @@ export class PollService {
         id: randomUUID(),
         action: "POLL_PUBLISHED",
         actorId: organiserId,
-        occurredAt
+        actorCategory: "organiser",
+        occurredAt,
+        revision: published.version,
+        entityType: "poll",
+        entityId: id,
+        before: { status: existing.status },
+        after: { status: published.status }
       });
     } catch (error) {
       if (error instanceof Error && error.name === "TransactionCanceledException") {
@@ -292,6 +493,7 @@ export class PollService {
           revision: updated.version,
           entityType: "participant",
           entityId: participant.id,
+          before: null,
           after: { displayName: participant.displayName, availability: participant.availability }
         });
         return this.getPublic(token);
@@ -353,7 +555,8 @@ export class PollService {
           revision: updated.version,
           entityType: "participant",
           entityId: participant.id,
-          before: { displayName: participant.displayName, availability: participant.availability }
+          before: { displayName: participant.displayName, availability: participant.availability },
+          after: null
         });
         return this.getPublic(token);
       } catch (error) {

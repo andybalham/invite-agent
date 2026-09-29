@@ -25,15 +25,18 @@ export interface AuditEvent {
     | "PARTICIPANT_ADDED"
     | "PARTICIPANT_RENAMED"
     | "PARTICIPANT_DELETED"
-    | "AVAILABILITY_CHANGED";
+    | "AVAILABILITY_CHANGED"
+    | "UNDO";
   readonly actorId: string;
-  readonly actorCategory?: "organiser" | "anonymous-link-holder";
+  readonly actorCategory: "organiser" | "anonymous-link-holder";
   readonly occurredAt: string;
-  readonly revision?: number;
-  readonly entityType?: "poll" | "participant" | "availability";
-  readonly entityId?: string;
-  readonly before?: unknown;
-  readonly after?: unknown;
+  readonly revision: number;
+  readonly entityType: "poll" | "date" | "participant" | "availability";
+  readonly entityId: string;
+  readonly before: unknown;
+  readonly after: unknown;
+  readonly undoOfEventId?: string;
+  readonly undoOfRevision?: number;
 }
 
 export interface ParticipantRecord {

@@ -3,13 +3,13 @@ id: T-042
 type: task
 title: Specify audit and undo authorization with failing automated tests
 parent: S-020
-status: todo
+status: done
 dependsOn: [T-020, T-037]
 estimate: 1
 tags: [red, S-020, test-first]
 archived: false
 created: 2026-09-27T18:08:42.066Z
-updated: 2026-09-27T18:19:40.932Z
+updated: 2026-09-29T18:33:27.679Z
 ---
 Purpose:
 Lock the parent story's behavior before implementation.

@@ -3,13 +3,13 @@ id: T-036
 type: task
 title: Specify immutable audit persistence and history view with failing automated tests
 parent: S-017
-status: todo
+status: done
 dependsOn: [T-035]
 estimate: 1
 tags: [red, S-017, test-first]
 archived: false
 created: 2026-09-27T18:08:41.664Z
-updated: 2026-09-27T18:19:40.686Z
+updated: 2026-09-29T17:59:07.762Z
 ---
 Purpose:
 Lock the parent story's behavior before implementation.

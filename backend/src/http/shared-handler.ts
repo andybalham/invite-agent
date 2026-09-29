@@ -107,6 +107,45 @@ export function createSharedHttpHandler(dependencies: {
             )
           };
         }
+        const historyMatch = /^\/api\/organiser\/polls\/([^/]+)\/history$/.exec(request.path);
+        if (request.method === "GET" && historyMatch?.[1]) {
+          const organiserId = dependencies.authenticate(request.headers);
+          const requestedSize = Number(request.headers["x-audit-page-size"] ?? "25");
+          return {
+            status: 200,
+            body: await dependencies.polls.history(
+              historyMatch[1],
+              organiserId,
+              requestedSize,
+              request.headers["x-audit-cursor"]
+            )
+          };
+        }
+        const undoPreviewMatch = /^\/api\/organiser\/polls\/([^/]+)\/history\/([^/]+)\/undo-preview$/.exec(request.path);
+        if (request.method === "POST" && undoPreviewMatch?.[1] && undoPreviewMatch[2]) {
+          const organiserId = dependencies.authenticate(request.headers);
+          return {
+            status: 200,
+            body: await dependencies.polls.previewUndo(
+              undoPreviewMatch[1],
+              undoPreviewMatch[2],
+              organiserId
+            )
+          };
+        }
+        const undoMatch = /^\/api\/organiser\/polls\/([^/]+)\/history\/([^/]+)\/undo$/.exec(request.path);
+        if (request.method === "POST" && undoMatch?.[1] && undoMatch[2]) {
+          const organiserId = dependencies.authenticate(request.headers);
+          return {
+            status: 200,
+            body: await dependencies.polls.undo(
+              undoMatch[1],
+              undoMatch[2],
+              request.body,
+              organiserId
+            )
+          };
+        }
         const match = /^\/api\/organiser\/polls\/([^/]+)$/.exec(request.path);
         if (request.method === "GET" && match?.[1]) {
           const organiserId = dependencies.authenticate(request.headers);

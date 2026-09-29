@@ -94,6 +94,49 @@ export interface PublicPollResponse {
   timeZone: string;
 }
 
+export type AuditActorCategory = "organiser" | "anonymous-link-holder";
+export type AuditEntityType = "poll" | "date" | "participant" | "availability";
+
+export interface AuditHistoryEvent {
+  id: string;
+  revision: number;
+  entity: { type: AuditEntityType; id: string };
+  action: string;
+  summary: string;
+  before: unknown;
+  after: unknown;
+  occurredAt: string;
+  actor: { category: AuditActorCategory; subject?: string };
+  undoOf?: { id: string; revision: number };
+}
+
+export interface UndoPreview {
+  eventId: string;
+  revision: number;
+  action: string;
+  summary: string;
+  restoredBefore: unknown;
+  restoredAfter: unknown;
+  requiresConfirmation: true;
+  wouldOverwrite: boolean;
+  warning?: string;
+}
+
+export interface UndoResult {
+  poll: PublicPollResponse;
+  event: AuditHistoryEvent;
+}
+
+export interface ConfirmUndoRequest {
+  confirmed: true;
+}
+
+export interface AuditHistoryPage {
+  items: AuditHistoryEvent[];
+  total: number;
+  nextCursor?: string;
+}
+
 export interface ApiError {
   code: ApiErrorCode;
   status: (typeof API_ERROR_STATUS)[ApiErrorCode];
@@ -299,6 +342,76 @@ function isApiError(input: unknown): input is ApiError {
   );
 }
 
+function isAuditActor(input: unknown): input is AuditHistoryEvent["actor"] {
+  return (
+    isRecord(input) &&
+    hasOnlyKeys(input, ["category", "subject"]) &&
+    (input.category === "organiser" || input.category === "anonymous-link-holder") &&
+    (input.subject === undefined || isNonBlankString(input.subject)) &&
+    (input.category === "organiser" ? isNonBlankString(input.subject) : input.subject === undefined)
+  );
+}
+
+function isAuditEntity(input: unknown): input is AuditHistoryEvent["entity"] {
+  return (
+    isRecord(input) &&
+    hasOnlyKeys(input, ["type", "id"]) &&
+    ["poll", "date", "participant", "availability"].includes(String(input.type)) &&
+    isNonBlankString(input.id)
+  );
+}
+
+function isAuditHistoryEvent(input: unknown): input is AuditHistoryEvent {
+  return (
+    isRecord(input) &&
+    hasOnlyKeys(input, ["id", "revision", "entity", "action", "summary", "before", "after", "occurredAt", "actor", "undoOf"]) &&
+    isNonBlankString(input.id) &&
+    Number.isSafeInteger(input.revision) && Number(input.revision) > 0 &&
+    isAuditEntity(input.entity) &&
+    isNonBlankString(input.action) &&
+    isNonBlankString(input.summary) &&
+    isNonBlankString(input.occurredAt) && !Number.isNaN(Date.parse(input.occurredAt)) &&
+    isAuditActor(input.actor) &&
+    (input.undoOf === undefined || (
+      isRecord(input.undoOf) &&
+      hasOnlyKeys(input.undoOf, ["id", "revision"]) &&
+      isNonBlankString(input.undoOf.id) &&
+      Number.isSafeInteger(input.undoOf.revision) && Number(input.undoOf.revision) > 0
+    ))
+  );
+}
+
+function isAuditHistoryPage(input: unknown): input is AuditHistoryPage {
+  return (
+    isRecord(input) &&
+    hasOnlyKeys(input, ["items", "total", "nextCursor"]) &&
+    Array.isArray(input.items) && input.items.every(isAuditHistoryEvent) &&
+    Number.isSafeInteger(input.total) && Number(input.total) >= input.items.length &&
+    (input.nextCursor === undefined || isNonBlankString(input.nextCursor))
+  );
+}
+
+function isUndoPreview(input: unknown): input is UndoPreview {
+  return isRecord(input) &&
+    hasOnlyKeys(input, ["eventId", "revision", "action", "summary", "restoredBefore", "restoredAfter", "requiresConfirmation", "wouldOverwrite", "warning"]) &&
+    isNonBlankString(input.eventId) &&
+    Number.isSafeInteger(input.revision) && Number(input.revision) > 0 &&
+    isNonBlankString(input.action) && isNonBlankString(input.summary) &&
+    "restoredBefore" in input && "restoredAfter" in input &&
+    input.requiresConfirmation === true && typeof input.wouldOverwrite === "boolean" &&
+    (input.wouldOverwrite ? isNonBlankString(input.warning) : input.warning === undefined);
+}
+
+function isUndoResult(input: unknown): input is UndoResult {
+  return isRecord(input) && hasOnlyKeys(input, ["poll", "event"]) &&
+    isPublicPollResponse(input.poll) && isAuditHistoryEvent(input.event) &&
+    input.event.action === "UNDO" && input.event.undoOf !== undefined;
+}
+
+function isConfirmUndoRequest(input: unknown): input is ConfirmUndoRequest {
+  return isRecord(input) && hasOnlyKeys(input, ["confirmed"]) && input.confirmed === true;
+}
+
 export const lifecycleStateSchema = schema<LifecycleState>(
   isLifecycleState,
   "Expected one of: draft, open, closed"
@@ -313,3 +426,13 @@ export const publicPollResponseSchema = schema<PublicPollResponse>(
   "Invalid public-poll response"
 );
 export const apiErrorSchema = schema<ApiError>(isApiError, "Invalid API error");
+export const auditHistoryPageSchema = schema<AuditHistoryPage>(
+  isAuditHistoryPage,
+  "Invalid audit-history page"
+);
+export const undoPreviewSchema = schema<UndoPreview>(isUndoPreview, "Invalid undo preview");
+export const undoResultSchema = schema<UndoResult>(isUndoResult, "Invalid undo result");
+export const confirmUndoRequestSchema = schema<ConfirmUndoRequest>(
+  isConfirmUndoRequest,
+  "Undo must be explicitly confirmed"
+);

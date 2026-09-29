@@ -61,6 +61,12 @@ function participantItem(participant: ParticipantRecord): Record<string, Attribu
 }
 
 function auditPut(tableName: string, audit: AuditEvent): TransactWriteItem {
+  const undoReference = audit.undoOfEventId && audit.undoOfRevision
+    ? {
+        undoOfEventId: { S: audit.undoOfEventId },
+        undoOfRevision: { N: String(audit.undoOfRevision) }
+      }
+    : {};
   return {
     Put: {
       TableName: tableName,
@@ -71,12 +77,13 @@ function auditPut(tableName: string, audit: AuditEvent): TransactWriteItem {
         actorId: { S: audit.actorId },
         occurredAt: { S: audit.occurredAt },
         id: { S: audit.id },
-        ...(audit.actorCategory ? { actorCategory: { S: audit.actorCategory } } : {}),
-        ...(audit.revision === undefined ? {} : { revision: { N: String(audit.revision) } }),
-        ...(audit.entityType ? { entityType: { S: audit.entityType } } : {}),
-        ...(audit.entityId ? { entityId: { S: audit.entityId } } : {}),
-        ...(audit.before === undefined ? {} : { before: { S: JSON.stringify(audit.before) } }),
-        ...(audit.after === undefined ? {} : { after: { S: JSON.stringify(audit.after) } })
+        actorCategory: { S: audit.actorCategory },
+        revision: { N: String(audit.revision) },
+        entityType: { S: audit.entityType },
+        entityId: { S: audit.entityId },
+        before: { S: JSON.stringify(audit.before) },
+        after: { S: JSON.stringify(audit.after) },
+        ...undoReference
       },
       ConditionExpression: "attribute_not_exists(PK) AND attribute_not_exists(SK)"
     }
@@ -120,20 +127,7 @@ export class DynamoPollRepository {
               ConditionExpression: "attribute_not_exists(PK)"
             }
           },
-          {
-            Put: {
-              TableName: this.config.auditTableName,
-              Item: {
-                PK: { S: `POLL#${audit.pollId}` },
-                SK: { S: `EVENT#${audit.occurredAt}#${audit.id}` },
-                action: { S: audit.action },
-                actorId: { S: audit.actorId },
-                occurredAt: { S: audit.occurredAt },
-                id: { S: audit.id }
-              },
-              ConditionExpression: "attribute_not_exists(PK) AND attribute_not_exists(SK)"
-            }
-          }
+          auditPut(this.config.auditTableName, audit)
         ]
       })
     );
@@ -158,22 +152,7 @@ export class DynamoPollRepository {
               ConditionExpression: "attribute_exists(PK)"
             }
           },
-          {
-            Put: {
-              TableName: this.config.auditTableName,
-              Item: {
-                PK: { S: `POLL#${audit.pollId}` },
-                SK: { S: `EVENT#${audit.occurredAt}#${audit.id}` },
-                action: { S: audit.action },
-                actorId: { S: audit.actorId },
-                occurredAt: { S: audit.occurredAt },
-                id: { S: audit.id },
-                ...(audit.before ? { before: { S: JSON.stringify(audit.before) } } : {}),
-                ...(audit.after ? { after: { S: JSON.stringify(audit.after) } } : {})
-              },
-              ConditionExpression: "attribute_not_exists(PK) AND attribute_not_exists(SK)"
-            }
-          }
+          auditPut(this.config.auditTableName, audit)
         ]
       })
     );
@@ -327,6 +306,97 @@ export class DynamoPollRepository {
     );
   }
 
+  public async applyParticipantUndo(
+    poll: PollRecord,
+    before: ParticipantRecord | undefined,
+    after: ParticipantRecord | undefined,
+    audit: AuditEvent
+  ): Promise<void> {
+    const participantChange: TransactWriteItem[] = before && after
+      ? [
+          {
+            Put: {
+              TableName: this.config.appTableName,
+              Item: participantItem(after),
+              ConditionExpression: "#document = :beforeDocument",
+              ExpressionAttributeNames: { "#document": "document" },
+              ExpressionAttributeValues: { ":beforeDocument": { S: JSON.stringify(before) } }
+            }
+          },
+          ...(before.normalizedName === after.normalizedName ? [] : [
+            {
+              Delete: {
+                TableName: this.config.appTableName,
+                Key: { PK: { S: `POLL#${poll.id}` }, SK: { S: `NAME#${before.normalizedName}` } },
+                ConditionExpression: "participantId = :participantId",
+                ExpressionAttributeValues: { ":participantId": { S: before.id } }
+              }
+            },
+            {
+              Put: {
+                TableName: this.config.appTableName,
+                Item: {
+                  PK: { S: `POLL#${poll.id}` },
+                  SK: { S: `NAME#${after.normalizedName}` },
+                  participantId: { S: after.id }
+                },
+                ConditionExpression: "attribute_not_exists(PK) AND attribute_not_exists(SK)"
+              }
+            }
+          ] satisfies TransactWriteItem[])
+        ]
+      : before
+        ? [
+            {
+              Delete: {
+                TableName: this.config.appTableName,
+                Key: { PK: { S: `POLL#${poll.id}` }, SK: { S: `PARTICIPANT#${before.id}` } },
+                ConditionExpression: "#document = :beforeDocument",
+                ExpressionAttributeNames: { "#document": "document" },
+                ExpressionAttributeValues: { ":beforeDocument": { S: JSON.stringify(before) } }
+              }
+            },
+            {
+              Delete: {
+                TableName: this.config.appTableName,
+                Key: { PK: { S: `POLL#${poll.id}` }, SK: { S: `NAME#${before.normalizedName}` } },
+                ConditionExpression: "participantId = :participantId",
+                ExpressionAttributeValues: { ":participantId": { S: before.id } }
+              }
+            }
+          ]
+        : after
+          ? [
+              {
+                Put: {
+                  TableName: this.config.appTableName,
+                  Item: participantItem(after),
+                  ConditionExpression: "attribute_not_exists(PK) AND attribute_not_exists(SK)"
+                }
+              },
+              {
+                Put: {
+                  TableName: this.config.appTableName,
+                  Item: {
+                    PK: { S: `POLL#${poll.id}` },
+                    SK: { S: `NAME#${after.normalizedName}` },
+                    participantId: { S: after.id }
+                  },
+                  ConditionExpression: "attribute_not_exists(PK) AND attribute_not_exists(SK)"
+                }
+              }
+            ]
+          : [];
+    if (participantChange.length === 0) throw new Error("Undo requires a participant change");
+    await this.client.send(new TransactWriteItemsCommand({
+      TransactItems: [
+        versionedPollPut(this.config.appTableName, poll),
+        ...participantChange,
+        auditPut(this.config.auditTableName, audit)
+      ]
+    }));
+  }
+
   public async publishPoll(poll: PollRecord, audit: AuditEvent): Promise<void> {
     if (!poll.publicTokenHash) throw new Error("Published poll requires a token hash");
     await this.client.send(
@@ -364,20 +434,7 @@ export class DynamoPollRepository {
               ConditionExpression: "attribute_not_exists(PK)"
             }
           },
-          {
-            Put: {
-              TableName: this.config.auditTableName,
-              Item: {
-                PK: { S: `POLL#${audit.pollId}` },
-                SK: { S: `EVENT#${audit.occurredAt}#${audit.id}` },
-                action: { S: audit.action },
-                actorId: { S: audit.actorId },
-                occurredAt: { S: audit.occurredAt },
-                id: { S: audit.id }
-              },
-              ConditionExpression: "attribute_not_exists(PK) AND attribute_not_exists(SK)"
-            }
-          }
+          auditPut(this.config.auditTableName, audit)
         ]
       })
     );
@@ -420,32 +477,24 @@ export class DynamoPollRepository {
         ConsistentRead: true
       })
     );
-    return (result.Items ?? []).map((item) => ({
+    return (result.Items ?? []).map((item) => Object.freeze({
       pollId,
       id: stringValue(item.id, "id"),
       action: stringValue(item.action, "action") as AuditEvent["action"],
       actorId: stringValue(item.actorId, "actorId"),
       occurredAt: stringValue(item.occurredAt, "occurredAt"),
-      ...(item.actorCategory
+      actorCategory: stringValue(item.actorCategory, "actorCategory") as AuditEvent["actorCategory"],
+      revision: numberValue(item.revision, "revision"),
+      entityType: stringValue(item.entityType, "entityType") as AuditEvent["entityType"],
+      entityId: stringValue(item.entityId, "entityId"),
+      before: JSON.parse(stringValue(item.before, "before")),
+      after: JSON.parse(stringValue(item.after, "after")),
+      ...("undoOfEventId" in item && "undoOfRevision" in item
         ? {
-            actorCategory: stringValue(
-              item.actorCategory,
-              "actorCategory"
-            ) as NonNullable<AuditEvent["actorCategory"]>
+            undoOfEventId: stringValue(item.undoOfEventId, "undoOfEventId"),
+            undoOfRevision: numberValue(item.undoOfRevision, "undoOfRevision")
           }
-        : {}),
-      ...(item.revision ? { revision: numberValue(item.revision, "revision") } : {}),
-      ...(item.entityType
-        ? {
-            entityType: stringValue(
-              item.entityType,
-              "entityType"
-            ) as NonNullable<AuditEvent["entityType"]>
-          }
-        : {}),
-      ...(item.entityId ? { entityId: stringValue(item.entityId, "entityId") } : {}),
-      ...(item.before ? { before: JSON.parse(stringValue(item.before, "before")) } : {}),
-      ...(item.after ? { after: JSON.parse(stringValue(item.after, "after")) } : {})
-    }));
+        : {})
+    })).sort((left, right) => left.revision - right.revision);
   }
 }

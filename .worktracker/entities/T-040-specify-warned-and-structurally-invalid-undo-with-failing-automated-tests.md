@@ -3,13 +3,13 @@ id: T-040
 type: task
 title: Specify warned and structurally invalid undo with failing automated tests
 parent: S-019
-status: todo
+status: done
 dependsOn: [T-039]
 estimate: 1
 tags: [red, S-019, test-first]
 archived: false
 created: 2026-09-27T18:08:41.939Z
-updated: 2026-09-27T18:19:40.811Z
+updated: 2026-09-29T18:23:42.244Z
 ---
 Purpose:
 Lock the parent story's behavior before implementation.

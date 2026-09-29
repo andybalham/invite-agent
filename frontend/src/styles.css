@@ -126,6 +126,22 @@ textarea.input { display: block; resize: vertical; }
 .link-security { align-items: center; }
 .link-security > div { display: grid; gap: 4px; max-width: 680px; }
 .share-status { min-height: 22px; margin: 0; color: var(--color-neutral-700); font-size: 13px; font-weight: 600; }
+.history-screen { display: grid; gap: 20px; }
+.history-screen[hidden] { display: none; }
+.history-back { width: max-content; padding-left: 0; text-decoration: none; }
+.history-title { display: grid; gap: 6px; border-top: 2px solid var(--color-text); padding-top: 16px; }
+.history-title h1, .history-title p { margin: 0; }
+.history-summary { color: var(--color-neutral-700); }
+.history-table-wrap { max-width: 100%; overflow-x: auto; }
+.history-table { min-width: 760px; font-size: 13px; }
+.history-table td, .history-table th { vertical-align: top; text-align: left; }
+.history-table tbody th { font-weight: 800; text-transform: none; letter-spacing: normal; }
+.history-more { width: max-content; }
+.history-status { min-height: 22px; margin: 0; color: var(--color-neutral-700); font-size: 13px; font-weight: 700; }
+.history-row--undo { background: var(--color-accent-100); }
+.history-undo { padding-inline: 0; }
+.undo-dialog-summary { font-weight: 700; }
+.undo-dialog-warning { border: 2px solid var(--color-accent); padding: 10px 12px; color: var(--color-accent-900); font-weight: 700; }
 .public-poll { display: grid; gap: 28px; }
 .public-poll[hidden], .invalid-link[hidden] { display: none; }
 .public-title { display: grid; gap: 8px; border-top: 2px solid var(--color-text); padding-top: 16px; }

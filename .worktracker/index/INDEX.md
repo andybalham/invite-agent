@@ -66,23 +66,23 @@ _Generated. Do not edit by hand._
   - [x] [T-034 · Specify live ranking presentation with failing automated tests](../entities/T-034-specify-live-ranking-presentation-with-failing-automated-tests.md) — done
   - [x] [T-035 · Implement and verify live ranking presentation](../entities/T-035-implement-and-verify-live-ranking-presentation.md) — done
 
-## [E-006 · E6 — Immutable history and safe undo](./E-006.md) — blocked
-- [ ] **S-017 · Persist and display complete immutable audit history** — blocked
-  - [ ] [T-036 · Specify immutable audit persistence and history view with failing automated tests](../entities/T-036-specify-immutable-audit-persistence-and-history-view-with-failing-automated-tests.md) — todo
-  - [ ] [T-037 · Implement and verify immutable audit persistence and history view](../entities/T-037-implement-and-verify-immutable-audit-persistence-and-history-view.md) — blocked · waiting on T-036
-- [ ] **S-018 · Undo an isolated change with a compensating revision** — blocked · waiting on S-017
-  - [ ] [T-038 · Specify ordinary compensating undo with failing automated tests](../entities/T-038-specify-ordinary-compensating-undo-with-failing-automated-tests.md) — blocked · waiting on T-037
-  - [ ] [T-039 · Implement and verify ordinary compensating undo](../entities/T-039-implement-and-verify-ordinary-compensating-undo.md) — blocked · waiting on T-038
-- [ ] **S-019 · Warn, confirm, or reject complex undo safely** — blocked · waiting on S-018
-  - [ ] [T-040 · Specify warned and structurally invalid undo with failing automated tests](../entities/T-040-specify-warned-and-structurally-invalid-undo-with-failing-automated-tests.md) — blocked · waiting on T-039
-  - [ ] [T-041 · Implement and verify warned and structurally invalid undo](../entities/T-041-implement-and-verify-warned-and-structurally-invalid-undo.md) — blocked · waiting on T-040
-- [ ] **S-020 · Protect audit and undo operations** — blocked · waiting on S-017
-  - [ ] [T-042 · Specify audit and undo authorization with failing automated tests](../entities/T-042-specify-audit-and-undo-authorization-with-failing-automated-tests.md) — blocked · waiting on T-037
-  - [ ] [T-043 · Implement and verify audit and undo authorization](../entities/T-043-implement-and-verify-audit-and-undo-authorization.md) — blocked · waiting on T-042
+## [E-006 · E6 — Immutable history and safe undo](./E-006.md) — in-progress
+- [x] **S-017 · Persist and display complete immutable audit history** — done
+  - [x] [T-036 · Specify immutable audit persistence and history view with failing automated tests](../entities/T-036-specify-immutable-audit-persistence-and-history-view-with-failing-automated-tests.md) — done
+  - [x] [T-037 · Implement and verify immutable audit persistence and history view](../entities/T-037-implement-and-verify-immutable-audit-persistence-and-history-view.md) — done
+- [x] **S-018 · Undo an isolated change with a compensating revision** — done
+  - [x] [T-038 · Specify ordinary compensating undo with failing automated tests](../entities/T-038-specify-ordinary-compensating-undo-with-failing-automated-tests.md) — done
+  - [x] [T-039 · Implement and verify ordinary compensating undo](../entities/T-039-implement-and-verify-ordinary-compensating-undo.md) — done
+- [x] **S-019 · Warn, confirm, or reject complex undo safely** — done
+  - [x] [T-040 · Specify warned and structurally invalid undo with failing automated tests](../entities/T-040-specify-warned-and-structurally-invalid-undo-with-failing-automated-tests.md) — done
+  - [x] [T-041 · Implement and verify warned and structurally invalid undo](../entities/T-041-implement-and-verify-warned-and-structurally-invalid-undo.md) — done
+- [ ] **S-020 · Protect audit and undo operations** — in-progress
+  - [x] [T-042 · Specify audit and undo authorization with failing automated tests](../entities/T-042-specify-audit-and-undo-authorization-with-failing-automated-tests.md) — done
+  - [ ] [T-043 · Implement and verify audit and undo authorization](../entities/T-043-implement-and-verify-audit-and-undo-authorization.md) — in-progress
 
 ## [E-007 · E7 — Final decision and reversible poll lifecycle](./E-007.md) — blocked
-- [ ] **S-021 · Review attendance and close in one atomic action** — blocked · waiting on S-019
-  - [ ] [T-044 · Specify close preview and atomic final selection with failing automated tests](../entities/T-044-specify-close-preview-and-atomic-final-selection-with-failing-automated-tests.md) — blocked · waiting on T-041
+- [ ] **S-021 · Review attendance and close in one atomic action** — blocked · waiting on E-007
+  - [ ] [T-044 · Specify close preview and atomic final selection with failing automated tests](../entities/T-044-specify-close-preview-and-atomic-final-selection-with-failing-automated-tests.md) — todo · waiting on E-007
   - [ ] [T-045 · Implement and verify close preview and atomic final selection](../entities/T-045-implement-and-verify-close-preview-and-atomic-final-selection.md) — blocked · waiting on T-044
 - [ ] **S-022 · Enforce closed read-only state and frozen ranking** — blocked · waiting on S-021
   - [ ] [T-046 · Specify closed-state enforcement and frozen results with failing automated tests](../entities/T-046-specify-closed-state-enforcement-and-frozen-results-with-failing-automated-tests.md) — blocked · waiting on T-045

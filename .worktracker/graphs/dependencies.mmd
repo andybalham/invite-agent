@@ -10,7 +10,7 @@ graph LR
     E003["E-003 E3 — Publish and securely share a public poll"]:::done
     E004["E-004 E4 — Collaborative availability table"]:::done
     E005["E-005 E5 — Live popular-date ranking"]:::done
-    E006["E-006 E6 — Immutable history and safe undo"]:::blocked
+    E006["E-006 E6 — Immutable history and safe undo"]:::inprogress
     E007["E-007 E7 — Final decision and reversible poll lifecycle"]:::blocked
     E008["E-008 E8 — Production AWS platform"]:::blocked
     E009["E-009 E9 — Tested production release and operations"]:::blocked
@@ -40,10 +40,10 @@ graph LR
     S014["S-014 Apply concurrent edits with last-update-wins convergence"]:::done
     S015["S-015 Calculate deterministic top-five rankings"]:::done
     S016["S-016 Display and refresh the live public ranking"]:::done
-    S017["S-017 Persist and display complete immutable audit history"]:::blocked
-    S018["S-018 Undo an isolated change with a compensating revision"]:::blocked
-    S019["S-019 Warn, confirm, or reject complex undo safely"]:::blocked
-    S020["S-020 Protect audit and undo operations"]:::blocked
+    S017["S-017 Persist and display complete immutable audit history"]:::done
+    S018["S-018 Undo an isolated change with a compensating revision"]:::done
+    S019["S-019 Warn, confirm, or reject complex undo safely"]:::done
+    S020["S-020 Protect audit and undo operations"]:::inprogress
     S021["S-021 Review attendance and close in one atomic action"]:::blocked
     S022["S-022 Enforce closed read-only state and frozen ranking"]:::blocked
     S023["S-023 Maintain safe location details in every lifecycle state"]:::blocked
@@ -131,15 +131,15 @@ graph LR
     T033["T-033 Implement and verify deterministic ranking algorithm"]:::done
     T034["T-034 Specify live ranking presentation with failing automated tests"]:::done
     T035["T-035 Implement and verify live ranking presentation"]:::done
-    T036["T-036 Specify immutable audit persistence and history view with failing automated tests"]:::todo
-    T037["T-037 Implement and verify immutable audit persistence and history view"]:::blocked
-    T038["T-038 Specify ordinary compensating undo with failing automated tests"]:::blocked
-    T039["T-039 Implement and verify ordinary compensating undo"]:::blocked
-    T040["T-040 Specify warned and structurally invalid undo with failing automated tests"]:::blocked
-    T041["T-041 Implement and verify warned and structurally invalid undo"]:::blocked
-    T042["T-042 Specify audit and undo authorization with failing automated tests"]:::blocked
-    T043["T-043 Implement and verify audit and undo authorization"]:::blocked
-    T044["T-044 Specify close preview and atomic final selection with failing automated tests"]:::blocked
+    T036["T-036 Specify immutable audit persistence and history view with failing automated tests"]:::done
+    T037["T-037 Implement and verify immutable audit persistence and history view"]:::done
+    T038["T-038 Specify ordinary compensating undo with failing automated tests"]:::done
+    T039["T-039 Implement and verify ordinary compensating undo"]:::done
+    T040["T-040 Specify warned and structurally invalid undo with failing automated tests"]:::done
+    T041["T-041 Implement and verify warned and structurally invalid undo"]:::done
+    T042["T-042 Specify audit and undo authorization with failing automated tests"]:::done
+    T043["T-043 Implement and verify audit and undo authorization"]:::inprogress
+    T044["T-044 Specify close preview and atomic final selection with failing automated tests"]:::todo
     T045["T-045 Implement and verify close preview and atomic final selection"]:::blocked
     T046["T-046 Specify closed-state enforcement and frozen results with failing automated tests"]:::blocked
     T047["T-047 Implement and verify closed-state enforcement and frozen results"]:::blocked

@@ -3,13 +3,13 @@ id: T-041
 type: task
 title: Implement and verify warned and structurally invalid undo
 parent: S-019
-status: todo
+status: done
 dependsOn: [T-040]
 estimate: 2
 tags: [green, implementation, S-019]
 archived: false
 created: 2026-09-27T18:08:42.002Z
-updated: 2026-09-27T18:19:38.832Z
+updated: 2026-09-29T18:26:59.686Z
 ---
 Implementation scope:
 Implement later-change detection, risk preview, explicit confirmation, overwrite-to-before semantics, and atomic structural rejection.
