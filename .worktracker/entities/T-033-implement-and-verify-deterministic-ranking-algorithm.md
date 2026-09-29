@@ -3,13 +3,13 @@ id: T-033
 type: task
 title: Implement and verify deterministic ranking algorithm
 parent: S-015
-status: todo
+status: done
 dependsOn: [T-032]
 estimate: 2
 tags: [green, implementation, S-015]
 archived: false
 created: 2026-09-27T18:08:41.469Z
-updated: 2026-09-27T18:19:38.490Z
+updated: 2026-09-29T17:40:50.358Z
 ---
 Implementation scope:
 Implement backend ranking by Yes descending then original choice order, capped at five.

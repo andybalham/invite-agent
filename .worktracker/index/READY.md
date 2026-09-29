@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-032 · Specify deterministic ranking algorithm with failing automated tests](../entities/T-032-specify-deterministic-ranking-algorithm-with-failing-automated-tests.md) — todo
+- [ ] [T-036 · Specify immutable audit persistence and history view with failing automated tests](../entities/T-036-specify-immutable-audit-persistence-and-history-view-with-failing-automated-tests.md) — todo

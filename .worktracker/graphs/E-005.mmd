@@ -5,15 +5,15 @@ graph LR
   classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
   classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
   subgraph Stories
-    S015["S-015 Calculate deterministic top-five rankings"]:::blocked
-    S016["S-016 Display and refresh the live public ranking"]:::blocked
+    S015["S-015 Calculate deterministic top-five rankings"]:::done
+    S016["S-016 Display and refresh the live public ranking"]:::done
     S015 --> S016
   end
   subgraph Tasks
-    T032["T-032 Specify deterministic ranking algorithm with failing automated tests"]:::todo
-    T033["T-033 Implement and verify deterministic ranking algorithm"]:::blocked
-    T034["T-034 Specify live ranking presentation with failing automated tests"]:::blocked
-    T035["T-035 Implement and verify live ranking presentation"]:::blocked
+    T032["T-032 Specify deterministic ranking algorithm with failing automated tests"]:::done
+    T033["T-033 Implement and verify deterministic ranking algorithm"]:::done
+    T034["T-034 Specify live ranking presentation with failing automated tests"]:::done
+    T035["T-035 Implement and verify live ranking presentation"]:::done
     T032 --> T033
     T033 --> T034
     T034 --> T035

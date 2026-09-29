@@ -3,13 +3,13 @@ id: T-032
 type: task
 title: Specify deterministic ranking algorithm with failing automated tests
 parent: S-015
-status: todo
+status: done
 dependsOn: [T-028]
 estimate: 1
 tags: [red, S-015, test-first]
 archived: false
 created: 2026-09-27T18:08:41.399Z
-updated: 2026-09-27T18:19:40.502Z
+updated: 2026-09-29T17:38:05.164Z
 ---
 Purpose:
 Lock the parent story's behavior before implementation.

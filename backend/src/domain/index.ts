@@ -34,3 +34,5 @@ export type {
   LocationValidationCode,
   LocationValidationIssue
 } from "./location-markdown.js";
+export { calculateTopFiveRanking, MAX_RANKED_CHOICES } from "./ranking.js";
+export type { RankingEntry, RankingParticipant } from "./ranking.js";

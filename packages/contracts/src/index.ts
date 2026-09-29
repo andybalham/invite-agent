@@ -57,6 +57,11 @@ export interface PublicParticipant {
   availability: Record<string, Availability>;
 }
 
+export interface PublicRankingEntry {
+  choiceId: string;
+  yesTotal: number;
+}
+
 export interface CreateParticipantRequest {
   displayName: string;
 }
@@ -81,6 +86,7 @@ export interface PublicPollResponse {
   version: number;
   proposedDates: PublicProposedDate[];
   participants: PublicParticipant[];
+  ranking: PublicRankingEntry[];
   description?: string;
   instructions?: string;
   location?: string;
@@ -200,6 +206,16 @@ function isPublicParticipant(input: unknown): input is PublicParticipant {
   );
 }
 
+function isPublicRankingEntry(input: unknown): input is PublicRankingEntry {
+  return (
+    isRecord(input) &&
+    hasOnlyKeys(input, ["choiceId", "yesTotal"]) &&
+    isNonBlankString(input.choiceId) &&
+    Number.isSafeInteger(input.yesTotal) &&
+    Number(input.yesTotal) >= 0
+  );
+}
+
 function isLifecycleState(input: unknown): input is LifecycleState {
   return typeof input === "string" && (LIFECYCLE_STATES as readonly string[]).includes(input);
 }
@@ -239,6 +255,7 @@ function isPublicPollResponse(input: unknown): input is PublicPollResponse {
       "version",
       "proposedDates",
       "participants",
+      "ranking",
       "description",
       "instructions",
       "location",
@@ -254,6 +271,9 @@ function isPublicPollResponse(input: unknown): input is PublicPollResponse {
     input.proposedDates.every(isPublicProposedDate) &&
     Array.isArray(input.participants) &&
     input.participants.every(isPublicParticipant) &&
+    Array.isArray(input.ranking) &&
+    input.ranking.length <= 5 &&
+    input.ranking.every(isPublicRankingEntry) &&
     (input.description === undefined || typeof input.description === "string") &&
     (input.instructions === undefined || typeof input.instructions === "string") &&
     (input.location === undefined || typeof input.location === "string") &&

@@ -132,6 +132,10 @@ test("availability accepts only Yes or No, returns latest totals state, and audi
   const yes = await app.http.handle({ method: "PUT", path: item, headers: {}, body: { dateId, availability: "yes" } });
   assert.equal(yes.status, 200);
   assert.equal(yes.body.participants[0].availability[dateId], "yes");
+  assert.deepEqual(yes.body.ranking, [
+    { choiceId: dateId, yesTotal: 1 },
+    { choiceId: yes.body.proposedDates[1].id, yesTotal: 0 }
+  ]);
   assert.ok(yes.body.version > added.body.version);
 
   const auditAfterYes = await app.repository.listAuditEvents(pollId);

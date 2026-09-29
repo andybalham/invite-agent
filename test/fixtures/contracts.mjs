@@ -22,7 +22,8 @@ export const validPublicPollResponse = Object.freeze({
       displayName: "Alice",
       availability: Object.freeze({ date_1: "yes" })
     })
-  ]
+  ],
+  ranking: [Object.freeze({ choiceId: "date_1", yesTotal: 1 })]
 });
 
 export const stableErrorStatuses = Object.freeze({

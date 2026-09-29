@@ -29,6 +29,10 @@ interface PublicPollDetails extends PollDetails {
     availability: Record<string, "yes" | "no">;
   }>;
   proposedDates: Array<ProposedDate & { id: string }>;
+  ranking: Array<{
+    choiceId: string;
+    yesTotal: number;
+  }>;
 }
 
 const app = document.querySelector<HTMLElement>("#app");
@@ -119,6 +123,13 @@ app.innerHTML = `
       <p data-testid="public-instructions"></p>
       <div class="public-meta"><span class="public-location"></span><strong class="public-time-zone"></strong></div>
     </section>
+    <section class="ranking" aria-labelledby="ranking-heading">
+      <div class="ranking__header">
+        <h2 id="ranking-heading">Most popular dates</h2>
+        <p class="ranking__note">Top 5 by Yes · ties keep the original order · updates live</p>
+      </div>
+      <ol class="ranking__list" aria-label="Most popular dates"></ol>
+    </section>
     <section class="answers" aria-labelledby="answers-heading">
       <div class="collaboration-notice"><strong>This is a shared table.</strong> Anyone with the link can add, rename, delete or change any row. Every change saves automatically.</div>
       <div class="section-rule"><h2 id="answers-heading">Everyone's answers</h2><button class="btn btn-primary add-participant" type="button">+ Add a row</button></div>
@@ -196,6 +207,10 @@ const publicDescription = requireElement<HTMLElement>("[data-testid='public-desc
 const publicInstructions = requireElement<HTMLElement>("[data-testid='public-instructions']");
 const publicLocation = requireElement<HTMLElement>(".public-location");
 const publicTimeZone = requireElement<HTMLElement>(".public-time-zone");
+const publicState = requireElement<HTMLElement>("[data-testid='public-state']");
+const rankingHeading = requireElement<HTMLElement>("#ranking-heading");
+const rankingNote = requireElement<HTMLElement>(".ranking__note");
+const rankingList = requireElement<HTMLOListElement>(".ranking__list");
 const publicTableHead = requireElement<HTMLTableRowElement>(".public-table thead tr");
 const publicTableBody = requireElement<HTMLTableSectionElement>(".public-table tbody");
 const publicTableFoot = requireElement<HTMLTableRowElement>(".public-table tfoot tr");
@@ -523,6 +538,7 @@ function renderPublicPoll(poll: PublicPollDetails): void {
   publicPollScreen.hidden = false;
   document.querySelector<HTMLElement>(".account")!.textContent = "No account needed";
   headerSaveStatus.hidden = true;
+  publicState.textContent = poll.status === "closed" ? "Closed" : "Open";
   publicPollHeading.textContent = poll.title;
   publicDescription.textContent = poll.description ?? "";
   publicDescription.hidden = !poll.description;
@@ -538,6 +554,46 @@ function renderPublicPoll(poll: PublicPollDetails): void {
     publicLocation.append(label, rendered);
   }
   publicTimeZone.textContent = `Times in ${poll.timeZone}`;
+  const rankingIsFrozen = poll.status === "closed";
+  rankingHeading.textContent = rankingIsFrozen ? "Final ranking" : "Most popular dates";
+  rankingNote.textContent = rankingIsFrozen
+    ? "Frozen when the poll closed · read-only"
+    : `Top ${Math.min(5, poll.proposedDates.length)} by Yes · ties keep the original order · updates live`;
+  rankingList.setAttribute("aria-label", rankingIsFrozen ? "Final ranking" : "Most popular dates");
+  rankingList.classList.toggle("ranking__list--frozen", rankingIsFrozen);
+  rankingList.replaceChildren();
+  const choicesById = new Map(poll.proposedDates.map((choice) => [choice.id, choice]));
+  const maximumYes = Math.max(1, ...poll.ranking.map(({ yesTotal }) => yesTotal));
+  poll.ranking.forEach((entry, index) => {
+    const choice = choicesById.get(entry.choiceId);
+    if (!choice) return;
+    const item = document.createElement("li");
+    item.className = "ranking__item";
+    item.dataset.choiceId = entry.choiceId;
+
+    const rank = document.createElement("strong");
+    rank.className = "ranking__rank";
+    rank.textContent = String(index + 1);
+
+    const label = document.createElement("span");
+    label.className = "ranking__date";
+    label.textContent = choiceLabel(choice);
+
+    const bar = document.createElement("span");
+    bar.className = "ranking__bar";
+    bar.setAttribute("aria-hidden", "true");
+    const fill = document.createElement("span");
+    fill.className = "ranking__bar-fill";
+    fill.style.width = `${(entry.yesTotal / maximumYes) * 100}%`;
+    bar.append(fill);
+
+    const yes = document.createElement("span");
+    yes.className = "ranking__yes";
+    yes.textContent = `${entry.yesTotal} yes`;
+
+    item.append(rank, label, bar, yes);
+    rankingList.append(item);
+  });
   publicTableHead.replaceChildren();
   const name = document.createElement("th");
   name.textContent = "Name";

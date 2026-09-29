@@ -10,6 +10,7 @@ import type {
   PollRecord
 } from "../data/index.js";
 import {
+  calculateTopFiveRanking,
   renderSafeLocationMarkdown,
   resolveProposedDate,
   validateCreatePollRequest,
@@ -487,6 +488,7 @@ export class PollService {
 
   private async publicView(poll: PollRecord): Promise<PublicPollResponse> {
     const participants = await this.repository.listParticipants(poll.id);
+    const proposedDateIds = dateIds(poll);
     return {
       id: poll.id,
       title: poll.title,
@@ -508,6 +510,7 @@ export class PollService {
         displayName,
         availability: { ...availability }
       })),
+      ranking: calculateTopFiveRanking(proposedDateIds, participants),
       ...(poll.description === undefined ? {} : { description: poll.description }),
       ...(poll.instructions === undefined ? {} : { instructions: poll.instructions }),
       ...(poll.location === undefined

@@ -58,17 +58,17 @@ _Generated. Do not edit by hand._
   - [x] [T-030 · Implement transparent contention retry and last-commit persistence](../entities/T-030-implement-transparent-contention-retry-and-last-commit-persistence.md) — done
   - [x] [T-031 · Implement client freshness handling and prove two-context convergence](../entities/T-031-implement-client-freshness-handling-and-prove-two-context-convergence.md) — done
 
-## [E-005 · E5 — Live popular-date ranking](./E-005.md) — blocked
-- [ ] **S-015 · Calculate deterministic top-five rankings** — blocked
-  - [ ] [T-032 · Specify deterministic ranking algorithm with failing automated tests](../entities/T-032-specify-deterministic-ranking-algorithm-with-failing-automated-tests.md) — todo
-  - [ ] [T-033 · Implement and verify deterministic ranking algorithm](../entities/T-033-implement-and-verify-deterministic-ranking-algorithm.md) — blocked · waiting on T-032
-- [ ] **S-016 · Display and refresh the live public ranking** — blocked · waiting on S-015
-  - [ ] [T-034 · Specify live ranking presentation with failing automated tests](../entities/T-034-specify-live-ranking-presentation-with-failing-automated-tests.md) — blocked · waiting on T-033
-  - [ ] [T-035 · Implement and verify live ranking presentation](../entities/T-035-implement-and-verify-live-ranking-presentation.md) — blocked · waiting on T-034
+## [E-005 · E5 — Live popular-date ranking](./E-005.md) — done
+- [x] **S-015 · Calculate deterministic top-five rankings** — done
+  - [x] [T-032 · Specify deterministic ranking algorithm with failing automated tests](../entities/T-032-specify-deterministic-ranking-algorithm-with-failing-automated-tests.md) — done
+  - [x] [T-033 · Implement and verify deterministic ranking algorithm](../entities/T-033-implement-and-verify-deterministic-ranking-algorithm.md) — done
+- [x] **S-016 · Display and refresh the live public ranking** — done
+  - [x] [T-034 · Specify live ranking presentation with failing automated tests](../entities/T-034-specify-live-ranking-presentation-with-failing-automated-tests.md) — done
+  - [x] [T-035 · Implement and verify live ranking presentation](../entities/T-035-implement-and-verify-live-ranking-presentation.md) — done
 
 ## [E-006 · E6 — Immutable history and safe undo](./E-006.md) — blocked
-- [ ] **S-017 · Persist and display complete immutable audit history** — blocked · waiting on S-016
-  - [ ] [T-036 · Specify immutable audit persistence and history view with failing automated tests](../entities/T-036-specify-immutable-audit-persistence-and-history-view-with-failing-automated-tests.md) — blocked · waiting on T-035
+- [ ] **S-017 · Persist and display complete immutable audit history** — blocked
+  - [ ] [T-036 · Specify immutable audit persistence and history view with failing automated tests](../entities/T-036-specify-immutable-audit-persistence-and-history-view-with-failing-automated-tests.md) — todo
   - [ ] [T-037 · Implement and verify immutable audit persistence and history view](../entities/T-037-implement-and-verify-immutable-audit-persistence-and-history-view.md) — blocked · waiting on T-036
 - [ ] **S-018 · Undo an isolated change with a compensating revision** — blocked · waiting on S-017
   - [ ] [T-038 · Specify ordinary compensating undo with failing automated tests](../entities/T-038-specify-ordinary-compensating-undo-with-failing-automated-tests.md) — blocked · waiting on T-037

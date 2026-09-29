@@ -2,14 +2,11 @@
 
 _Generated. Do not edit by hand._
 
-- [E-005 · E5 — Live popular-date ranking](../entities/E-005-e5-live-popular-date-ranking.md) — blocked
-- [E-006 · E6 — Immutable history and safe undo](../entities/E-006-e6-immutable-history-and-safe-undo.md) — blocked · waiting on E-005
+- [E-006 · E6 — Immutable history and safe undo](../entities/E-006-e6-immutable-history-and-safe-undo.md) — blocked
 - [E-007 · E7 — Final decision and reversible poll lifecycle](../entities/E-007-e7-final-decision-and-reversible-poll-lifecycle.md) — blocked · waiting on E-006
 - [E-008 · E8 — Production AWS platform](../entities/E-008-e8-production-aws-platform.md) — blocked · waiting on E-007
 - [E-009 · E9 — Tested production release and operations](../entities/E-009-e9-tested-production-release-and-operations.md) — blocked · waiting on E-008
-- [S-015 · Calculate deterministic top-five rankings](../entities/S-015-calculate-deterministic-top-five-rankings.md) — blocked
-- [S-016 · Display and refresh the live public ranking](../entities/S-016-display-and-refresh-the-live-public-ranking.md) — blocked · waiting on S-015
-- [S-017 · Persist and display complete immutable audit history](../entities/S-017-persist-and-display-complete-immutable-audit-history.md) — blocked · waiting on S-016
+- [S-017 · Persist and display complete immutable audit history](../entities/S-017-persist-and-display-complete-immutable-audit-history.md) — blocked
 - [S-018 · Undo an isolated change with a compensating revision](../entities/S-018-undo-an-isolated-change-with-a-compensating-revision.md) — blocked · waiting on S-017
 - [S-019 · Warn, confirm, or reject complex undo safely](../entities/S-019-warn-confirm-or-reject-complex-undo-safely.md) — blocked · waiting on S-018
 - [S-020 · Protect audit and undo operations](../entities/S-020-protect-audit-and-undo-operations.md) — blocked · waiting on S-017
@@ -24,10 +21,6 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [T-033 · Implement and verify deterministic ranking algorithm](../entities/T-033-implement-and-verify-deterministic-ranking-algorithm.md) — blocked · waiting on T-032
-- [T-034 · Specify live ranking presentation with failing automated tests](../entities/T-034-specify-live-ranking-presentation-with-failing-automated-tests.md) — blocked · waiting on T-033
-- [T-035 · Implement and verify live ranking presentation](../entities/T-035-implement-and-verify-live-ranking-presentation.md) — blocked · waiting on T-034
-- [T-036 · Specify immutable audit persistence and history view with failing automated tests](../entities/T-036-specify-immutable-audit-persistence-and-history-view-with-failing-automated-tests.md) — blocked · waiting on T-035
 - [T-037 · Implement and verify immutable audit persistence and history view](../entities/T-037-implement-and-verify-immutable-audit-persistence-and-history-view.md) — blocked · waiting on T-036
 - [T-038 · Specify ordinary compensating undo with failing automated tests](../entities/T-038-specify-ordinary-compensating-undo-with-failing-automated-tests.md) — blocked · waiting on T-037
 - [T-039 · Implement and verify ordinary compensating undo](../entities/T-039-implement-and-verify-ordinary-compensating-undo.md) — blocked · waiting on T-038
