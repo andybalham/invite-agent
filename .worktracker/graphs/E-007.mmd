@@ -6,7 +6,7 @@ graph LR
   classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
   subgraph Stories
     S021["S-021 Review attendance and close in one atomic action"]:::done
-    S022["S-022 Enforce closed read-only state and frozen ranking"]:::blocked
+    S022["S-022 Enforce closed read-only state and frozen ranking"]:::inprogress
     S023["S-023 Maintain safe location details in every lifecycle state"]:::blocked
     S024["S-024 Reopen collaboration and close again with preserved history"]:::blocked
     S021 --> S022
@@ -17,8 +17,8 @@ graph LR
   subgraph Tasks
     T044["T-044 Specify close preview and atomic final selection with failing automated tests"]:::done
     T045["T-045 Implement and verify close preview and atomic final selection"]:::done
-    T046["T-046 Specify closed-state enforcement and frozen results with failing automated tests"]:::todo
-    T047["T-047 Implement and verify closed-state enforcement and frozen results"]:::blocked
+    T046["T-046 Specify closed-state enforcement and frozen results with failing automated tests"]:::done
+    T047["T-047 Implement and verify closed-state enforcement and frozen results"]:::todo
     T048["T-048 Specify location maintenance across lifecycle states with failing automated tests"]:::blocked
     T049["T-049 Implement and verify location maintenance across lifecycle states"]:::blocked
     T050["T-050 Specify reopen and close-again lifecycle with failing automated tests"]:::blocked

@@ -3,13 +3,13 @@ id: T-046
 type: task
 title: Specify closed-state enforcement and frozen results with failing automated tests
 parent: S-022
-status: todo
+status: done
 dependsOn: [T-045]
 estimate: 1
 tags: [red, S-022, test-first]
 archived: false
 created: 2026-09-27T18:08:42.320Z
-updated: 2026-09-27T18:19:41.057Z
+updated: 2026-10-01T18:42:21.741Z
 ---
 Purpose:
 Lock the parent story's behavior before implementation.

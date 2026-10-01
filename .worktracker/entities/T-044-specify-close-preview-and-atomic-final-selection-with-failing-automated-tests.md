@@ -9,7 +9,7 @@ estimate: 1
 tags: [red, S-021, test-first]
 archived: false
 created: 2026-09-27T18:08:42.191Z
-updated: 2026-10-01T17:37:05.639Z
+updated: 2026-10-01T17:53:34.250Z
 ---
 Purpose:
 Lock the parent story's behavior before implementation.

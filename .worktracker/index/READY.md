@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-046 · Specify closed-state enforcement and frozen results with failing automated tests](../entities/T-046-specify-closed-state-enforcement-and-frozen-results-with-failing-automated-tests.md) — todo
+- [ ] [T-047 · Implement and verify closed-state enforcement and frozen results](../entities/T-047-implement-and-verify-closed-state-enforcement-and-frozen-results.md) — todo

@@ -5,7 +5,6 @@ _Generated. Do not edit by hand._
 - [E-007 · E7 — Final decision and reversible poll lifecycle](../entities/E-007-e7-final-decision-and-reversible-poll-lifecycle.md) — blocked
 - [E-008 · E8 — Production AWS platform](../entities/E-008-e8-production-aws-platform.md) — blocked · waiting on E-007
 - [E-009 · E9 — Tested production release and operations](../entities/E-009-e9-tested-production-release-and-operations.md) — blocked · waiting on E-008
-- [S-022 · Enforce closed read-only state and frozen ranking](../entities/S-022-enforce-closed-read-only-state-and-frozen-ranking.md) — blocked
 - [S-023 · Maintain safe location details in every lifecycle state](../entities/S-023-maintain-safe-location-details-in-every-lifecycle-state.md) — blocked · waiting on S-022
 - [S-024 · Reopen collaboration and close again with preserved history](../entities/S-024-reopen-collaboration-and-close-again-with-preserved-history.md) — blocked · waiting on S-022, S-023
 - [S-025 · Provision durable DynamoDB application and audit data](../entities/S-025-provision-durable-dynamodb-application-and-audit-data.md) — blocked · waiting on S-024
@@ -15,7 +14,6 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [T-047 · Implement and verify closed-state enforcement and frozen results](../entities/T-047-implement-and-verify-closed-state-enforcement-and-frozen-results.md) — blocked · waiting on T-046
 - [T-048 · Specify location maintenance across lifecycle states with failing automated tests](../entities/T-048-specify-location-maintenance-across-lifecycle-states-with-failing-automated-tests.md) — blocked · waiting on T-047
 - [T-049 · Implement and verify location maintenance across lifecycle states](../entities/T-049-implement-and-verify-location-maintenance-across-lifecycle-states.md) — blocked · waiting on T-048
 - [T-050 · Specify reopen and close-again lifecycle with failing automated tests](../entities/T-050-specify-reopen-and-close-again-lifecycle-with-failing-automated-tests.md) — blocked · waiting on T-047, T-049

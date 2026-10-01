@@ -84,9 +84,9 @@ _Generated. Do not edit by hand._
 - [x] **S-021 · Review attendance and close in one atomic action** — done
   - [x] [T-044 · Specify close preview and atomic final selection with failing automated tests](../entities/T-044-specify-close-preview-and-atomic-final-selection-with-failing-automated-tests.md) — done
   - [x] [T-045 · Implement and verify close preview and atomic final selection](../entities/T-045-implement-and-verify-close-preview-and-atomic-final-selection.md) — done
-- [ ] **S-022 · Enforce closed read-only state and frozen ranking** — blocked
-  - [ ] [T-046 · Specify closed-state enforcement and frozen results with failing automated tests](../entities/T-046-specify-closed-state-enforcement-and-frozen-results-with-failing-automated-tests.md) — todo
-  - [ ] [T-047 · Implement and verify closed-state enforcement and frozen results](../entities/T-047-implement-and-verify-closed-state-enforcement-and-frozen-results.md) — blocked · waiting on T-046
+- [ ] **S-022 · Enforce closed read-only state and frozen ranking** — in-progress
+  - [x] [T-046 · Specify closed-state enforcement and frozen results with failing automated tests](../entities/T-046-specify-closed-state-enforcement-and-frozen-results-with-failing-automated-tests.md) — done
+  - [ ] [T-047 · Implement and verify closed-state enforcement and frozen results](../entities/T-047-implement-and-verify-closed-state-enforcement-and-frozen-results.md) — todo
 - [ ] **S-023 · Maintain safe location details in every lifecycle state** — blocked · waiting on S-022
   - [ ] [T-048 · Specify location maintenance across lifecycle states with failing automated tests](../entities/T-048-specify-location-maintenance-across-lifecycle-states-with-failing-automated-tests.md) — blocked · waiting on T-047
   - [ ] [T-049 · Implement and verify location maintenance across lifecycle states](../entities/T-049-implement-and-verify-location-maintenance-across-lifecycle-states.md) — blocked · waiting on T-048
