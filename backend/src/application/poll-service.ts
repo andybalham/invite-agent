@@ -3,6 +3,8 @@ import type {
   AuditHistoryEvent,
   AuditHistoryPage,
   Availability,
+  ClosePollRequest,
+  ClosePollResult,
   CreatePollRequest,
   PublicPollResponse,
   UndoPreview,
@@ -125,6 +127,7 @@ function auditSummary(event: AuditEvent): string {
     case "POLL_CREATED": return "Created the draft poll";
     case "POLL_DETAILS_UPDATED": return "Updated poll details, dates, or location";
     case "POLL_PUBLISHED": return "Published the poll";
+    case "POLL_CLOSED": return "Selected the final date and closed the poll";
     case "PARTICIPANT_ADDED": return `Added participant ${String(after?.displayName ?? "")}`.trim();
     case "PARTICIPANT_RENAMED": return `Renamed participant ${String(before?.displayName ?? "")} to ${String(after?.displayName ?? "")}`;
     case "PARTICIPANT_DELETED": return `Deleted participant ${String(before?.displayName ?? "")}`.trim();
@@ -456,6 +459,57 @@ export class PollService {
     };
   }
 
+  public async close(id: string, input: unknown, organiserId: string): Promise<ClosePollResult> {
+    const existing = await this.repository.getPoll(id);
+    if (!existing) throw new ApplicationError("NOT_FOUND", "Poll not found");
+    if (existing.organiserId !== organiserId) {
+      throw new ApplicationError("FORBIDDEN", "The organiser does not own this poll");
+    }
+    if (!isRecord(input) || !hasExactlyKeys(input, ["selectedDateId", "confirmed"]) ||
+      typeof input.selectedDateId !== "string" || input.selectedDateId.length === 0 ||
+      input.confirmed !== true) {
+      throw new ApplicationError("VALIDATION_ERROR", "Choose a proposed date and confirm closure.");
+    }
+    if (existing.status !== "open") {
+      throw new ApplicationError("CONFLICT", "The poll is no longer open. Refresh and try again.");
+    }
+    const request = input as unknown as ClosePollRequest;
+    if (!dateIds(existing).includes(request.selectedDateId)) {
+      throw new ApplicationError("VALIDATION_ERROR", "Choose a date proposed for this poll.");
+    }
+    const participants = await this.repository.listParticipants(id);
+    const frozenRanking = calculateTopFiveRanking(dateIds(existing), participants);
+    const closed: PollRecord = {
+      ...existing,
+      status: "closed",
+      selectedDateId: request.selectedDateId,
+      frozenRanking,
+      version: existing.version + 1
+    };
+    const occurredAt = new Date().toISOString();
+    try {
+      await this.repository.closePoll(closed, {
+        pollId: id,
+        id: randomUUID(),
+        action: "POLL_CLOSED",
+        actorId: organiserId,
+        actorCategory: "organiser",
+        occurredAt,
+        revision: closed.version,
+        entityType: "poll",
+        entityId: id,
+        before: { status: existing.status },
+        after: { status: closed.status, selectedDateId: closed.selectedDateId, ranking: frozenRanking }
+      });
+    } catch (error) {
+      if (isTransactionContention(error)) {
+        throw new ApplicationError("CONFLICT", "The poll changed while it was being closed. Refresh and try again.");
+      }
+      throw error;
+    }
+    return { poll: await this.publicView(closed) as ClosePollResult["poll"] };
+  }
+
   public async getPublic(token: string): Promise<PublicPollResponse> {
     const poll = await this.resolvePublicPoll(token);
     return this.publicView(poll);
@@ -713,7 +767,10 @@ export class PollService {
         displayName,
         availability: { ...availability }
       })),
-      ranking: calculateTopFiveRanking(proposedDateIds, participants),
+      ranking: poll.status === "closed" && poll.frozenRanking
+        ? poll.frozenRanking.map((entry) => ({ ...entry }))
+        : calculateTopFiveRanking(proposedDateIds, participants),
+      ...(poll.selectedDateId === undefined ? {} : { selectedDateId: poll.selectedDateId }),
       ...(poll.description === undefined ? {} : { description: poll.description }),
       ...(poll.instructions === undefined ? {} : { instructions: poll.instructions }),
       ...(poll.location === undefined

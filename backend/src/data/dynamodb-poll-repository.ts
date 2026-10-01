@@ -440,6 +440,12 @@ export class DynamoPollRepository {
     );
   }
 
+  public async closePoll(poll: PollRecord, audit: AuditEvent): Promise<void> {
+    await this.client.send(new TransactWriteItemsCommand({
+      TransactItems: [versionedPollPut(this.config.appTableName, poll), auditPut(this.config.auditTableName, audit)]
+    }));
+  }
+
   public async getPublicToken(tokenHash: string): Promise<PublicTokenRecord | undefined> {
     const result = await this.client.send(
       new GetItemCommand({

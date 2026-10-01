@@ -3,13 +3,13 @@ id: T-044
 type: task
 title: Specify close preview and atomic final selection with failing automated tests
 parent: S-021
-status: todo
+status: done
 dependsOn: [T-041]
 estimate: 1
 tags: [red, S-021, test-first]
 archived: false
 created: 2026-09-27T18:08:42.191Z
-updated: 2026-09-27T18:19:40.992Z
+updated: 2026-10-01T17:37:05.639Z
 ---
 Purpose:
 Lock the parent story's behavior before implementation.

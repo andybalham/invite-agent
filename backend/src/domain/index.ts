@@ -36,5 +36,7 @@ export type {
 } from "./location-markdown.js";
 export { calculateTopFiveRanking, MAX_RANKED_CHOICES } from "./ranking.js";
 export type { RankingEntry, RankingParticipant } from "./ranking.js";
+export { projectClosingAttendance } from "./closing-attendance.js";
+export type { ClosingAttendance, ClosingParticipant } from "./closing-attendance.js";
 export { planIsolatedUndo, UndoPlanError } from "./undo.js";
 export type { IsolatedUndoPlan } from "./undo.js";

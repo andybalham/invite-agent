@@ -33,6 +33,7 @@ interface PublicPollDetails extends PollDetails {
     choiceId: string;
     yesTotal: number;
   }>;
+  selectedDateId?: string;
 }
 
 interface AuditHistoryEvent {
@@ -168,12 +169,21 @@ app.innerHTML = `
     <p>Sign in as the poll organiser to view history and undo changes.</p>
   </main>
   <main class="public-poll" hidden aria-labelledby="public-poll-heading">
+    <section class="organiser-toolbar" hidden aria-label="Organiser controls">
+      <strong class="kicker">ORGANISER</strong>
+      <span>Pick a date below to close the poll</span>
+    </section>
     <section class="public-title">
       <p class="tag tag-open" data-testid="public-state">Open</p>
       <h1 id="public-poll-heading" tabindex="-1"></h1>
       <p data-testid="public-description"></p>
       <p data-testid="public-instructions"></p>
       <div class="public-meta"><span class="public-location"></span><strong class="public-time-zone"></strong></div>
+    </section>
+    <section class="final-date-poster" hidden aria-labelledby="final-date-heading">
+      <p class="kicker">IT'S DECIDED</p>
+      <h2 id="final-date-heading"></h2>
+      <p class="final-date-summary"></p>
     </section>
     <section class="ranking" aria-labelledby="ranking-heading">
       <div class="ranking__header">
@@ -184,6 +194,7 @@ app.innerHTML = `
     </section>
     <section class="answers" aria-labelledby="answers-heading">
       <div class="collaboration-notice"><strong>This is a shared table.</strong> Anyone with the link can add, rename, delete or change any row. Every change saves automatically.</div>
+      <div class="closed-notice" hidden><strong>This poll is closed.</strong> Responses are read-only.</div>
       <div class="section-rule"><h2 id="answers-heading">Everyone's answers</h2><button class="btn btn-primary add-participant" type="button">+ Add a row</button></div>
       <div class="public-table-wrap"><table class="table public-table"><thead><tr><th>Name</th></tr></thead><tbody><tr><td>No one has answered yet.</td></tr></tbody><tfoot><tr><th>Yes total</th></tr></tfoot></table></div>
       <p class="table-help">Click a cell to switch between Yes and No, or Tab to it and press Space.</p>
@@ -196,6 +207,20 @@ app.innerHTML = `
       <div class="field"><label class="participant-input-label" for="participant-name">Display name</label><input class="input" id="participant-name" autocomplete="off" maxlength="100"></div>
       <p class="dialog-error" role="alert" hidden></p>
       <div class="dialog-actions"><button class="btn btn-primary participant-submit" type="submit">Add row</button><button class="btn btn-ghost participant-cancel" type="button">Cancel</button></div>
+    </form>
+  </dialog>
+  <dialog class="dialog close-dialog" aria-labelledby="close-dialog-heading">
+    <form method="dialog" class="dialog-form">
+      <p class="kicker">FINAL DATE</p>
+      <h2 id="close-dialog-heading">Final date</h2>
+      <p class="close-dialog-date"></p>
+      <div class="close-attendance">
+        <section><h3 class="close-yes-heading"></h3><ul class="close-yes-list"></ul></section>
+        <section><h3 class="close-no-heading"></h3><ul class="close-no-list"></ul></section>
+      </div>
+      <p class="alert close-warning">Confirming <strong>closes the poll</strong>. Dates and responses become read-only until you reopen it.</p>
+      <p class="dialog-error close-dialog-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button class="btn btn-primary close-confirm" type="submit">Confirm &amp; close poll</button><button class="btn btn-ghost close-cancel" type="button">Cancel</button></div>
     </form>
   </dialog>
   <dialog class="dialog undo-dialog" aria-labelledby="undo-dialog-heading">
@@ -288,6 +313,10 @@ const publicInstructions = requireElement<HTMLElement>("[data-testid='public-ins
 const publicLocation = requireElement<HTMLElement>(".public-location");
 const publicTimeZone = requireElement<HTMLElement>(".public-time-zone");
 const publicState = requireElement<HTMLElement>("[data-testid='public-state']");
+const organiserToolbar = requireElement<HTMLElement>(".organiser-toolbar");
+const finalDatePoster = requireElement<HTMLElement>(".final-date-poster");
+const finalDateHeading = requireElement<HTMLElement>("#final-date-heading");
+const finalDateSummary = requireElement<HTMLElement>(".final-date-summary");
 const rankingHeading = requireElement<HTMLElement>("#ranking-heading");
 const rankingNote = requireElement<HTMLElement>(".ranking__note");
 const rankingList = requireElement<HTMLOListElement>(".ranking__list");
@@ -295,6 +324,9 @@ const publicTableHead = requireElement<HTMLTableRowElement>(".public-table thead
 const publicTableBody = requireElement<HTMLTableSectionElement>(".public-table tbody");
 const publicTableFoot = requireElement<HTMLTableRowElement>(".public-table tfoot tr");
 const addParticipantButton = requireElement<HTMLButtonElement>(".add-participant");
+const collaborationNotice = requireElement<HTMLElement>(".collaboration-notice");
+const closedNotice = requireElement<HTMLElement>(".closed-notice");
+const tableHelp = requireElement<HTMLElement>(".table-help");
 const participantDialog = requireElement<HTMLDialogElement>(".participant-dialog");
 const participantForm = requireElement<HTMLFormElement>(".participant-dialog form");
 const participantDialogHeading = requireElement<HTMLElement>("#participant-dialog-heading");
@@ -304,10 +336,20 @@ const participantName = requireElement<HTMLInputElement>("#participant-name");
 const participantDialogError = requireElement<HTMLElement>(".dialog-error");
 const participantSubmit = requireElement<HTMLButtonElement>(".participant-submit");
 const participantCancel = requireElement<HTMLButtonElement>(".participant-cancel");
+const closeDialog = requireElement<HTMLDialogElement>(".close-dialog");
+const closeDialogDate = requireElement<HTMLElement>(".close-dialog-date");
+const closeYesHeading = requireElement<HTMLElement>(".close-yes-heading");
+const closeNoHeading = requireElement<HTMLElement>(".close-no-heading");
+const closeYesList = requireElement<HTMLUListElement>(".close-yes-list");
+const closeNoList = requireElement<HTMLUListElement>(".close-no-list");
+const closeDialogError = requireElement<HTMLElement>(".close-dialog-error");
+const closeConfirm = requireElement<HTMLButtonElement>(".close-confirm");
+const closeCancel = requireElement<HTMLButtonElement>(".close-cancel");
 const publicToast = requireElement<HTMLElement>(".public-toast");
 const invalidLinkScreen = requireElement<HTMLElement>(".public-invalid-link");
 const invalidLinkHeading = requireElement<HTMLElement>("#invalid-link-heading");
 const url = new URL(window.location.href);
+const organiserView = url.searchParams.get("organiser") === "1";
 const testRunId = url.searchParams.get("testRunId") ?? "browser";
 const organiserId = `local-organiser-${testRunId.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
 let pollId = url.searchParams.get("pollId");
@@ -516,6 +558,16 @@ function choiceLabel(choice: ProposedDate): string {
   return time ? `${formatted} ${time}` : formatted;
 }
 
+function longChoiceLabel(choice: ProposedDate): string {
+  const value = choice.kind === "date" ? choice.localDate : choice.localDateTime;
+  const [date = "", time] = value.split("T");
+  const [year = 0, month = 1, day = 1] = date.split("-").map(Number);
+  const formatted = new Intl.DateTimeFormat("en-GB", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric"
+  }).format(new Date(Date.UTC(year, month - 1, day))).replace(",", "");
+  return time ? `${formatted}, ${time}` : formatted;
+}
+
 function openPreview(): void {
   previewHeading.textContent = title.value.trim() || "New poll";
   previewDescription.textContent = description.value;
@@ -592,7 +644,10 @@ function showShareScreen(link: string): void {
   previewScreen.hidden = true;
   shareScreen.hidden = false;
   publicLink.value = link;
-  goToPoll.href = link;
+  const organiserPollUrl = new URL(link);
+  organiserPollUrl.searchParams.set("testRunId", testRunId);
+  organiserPollUrl.searchParams.set("organiser", "1");
+  goToPoll.href = organiserPollUrl.toString();
   openPublicLink.href = link;
   if (pollId) {
     openHistory.href = `/?pollId=${encodeURIComponent(pollId)}&testRunId=${encodeURIComponent(testRunId)}&view=history`;
@@ -624,6 +679,7 @@ function renderPublicPoll(poll: PublicPollDetails): void {
   document.querySelector<HTMLElement>(".account")!.textContent = "No account needed";
   headerSaveStatus.hidden = true;
   publicState.textContent = poll.status === "closed" ? "Closed" : "Open";
+  organiserToolbar.hidden = !organiserView || poll.status !== "open";
   publicPollHeading.textContent = poll.title;
   publicDescription.textContent = poll.description ?? "";
   publicDescription.hidden = !poll.description;
@@ -640,6 +696,13 @@ function renderPublicPoll(poll: PublicPollDetails): void {
   }
   publicTimeZone.textContent = `Times in ${poll.timeZone}`;
   const rankingIsFrozen = poll.status === "closed";
+  const selectedChoice = poll.proposedDates.find(({ id }) => id === poll.selectedDateId);
+  finalDatePoster.hidden = !rankingIsFrozen || !selectedChoice;
+  if (selectedChoice) {
+    finalDateHeading.textContent = longChoiceLabel(selectedChoice);
+    const yesTotal = poll.participants.filter(({ availability }) => availability[selectedChoice.id] === "yes").length;
+    finalDateSummary.textContent = `${yesTotal} of ${poll.participants.length} can make it`;
+  }
   rankingHeading.textContent = rankingIsFrozen ? "Final ranking" : "Most popular dates";
   rankingNote.textContent = rankingIsFrozen
     ? "Frozen when the poll closed · read-only"
@@ -662,7 +725,7 @@ function renderPublicPoll(poll: PublicPollDetails): void {
 
     const label = document.createElement("span");
     label.className = "ranking__date";
-    label.textContent = choiceLabel(choice);
+    label.textContent = `${choiceLabel(choice)}${entry.choiceId === poll.selectedDateId ? " ★" : ""}`;
 
     const bar = document.createElement("span");
     bar.className = "ranking__bar";
@@ -677,6 +740,14 @@ function renderPublicPoll(poll: PublicPollDetails): void {
     yes.textContent = `${entry.yesTotal} yes`;
 
     item.append(rank, label, bar, yes);
+    if (organiserView && !rankingIsFrozen) {
+      const pick = document.createElement("button");
+      pick.type = "button";
+      pick.className = "btn btn-secondary ranking__pick";
+      pick.textContent = "Pick…";
+      pick.dataset.closeChoiceId = entry.choiceId;
+      item.append(pick);
+    }
     rankingList.append(item);
   });
   publicTableHead.replaceChildren();
@@ -687,10 +758,15 @@ function renderPublicPoll(poll: PublicPollDetails): void {
   const totalLabel = document.createElement("th");
   totalLabel.textContent = "Yes total";
   publicTableFoot.append(totalLabel);
+  collaborationNotice.hidden = rankingIsFrozen;
+  closedNotice.hidden = !rankingIsFrozen;
+  addParticipantButton.hidden = rankingIsFrozen;
+  tableHelp.hidden = rankingIsFrozen;
   for (const choice of poll.proposedDates) {
     const headingCell = document.createElement("th");
     headingCell.scope = "col";
     headingCell.textContent = choiceLabel(choice);
+    headingCell.classList.toggle("final-date-cell", choice.id === poll.selectedDateId);
     publicTableHead.append(headingCell);
     const total = document.createElement("td");
     total.textContent = String(
@@ -698,17 +774,19 @@ function renderPublicPoll(poll: PublicPollDetails): void {
     );
     publicTableFoot.append(total);
   }
-  const actionsHeading = document.createElement("th");
-  actionsHeading.scope = "col";
-  actionsHeading.className = "row-actions-heading";
-  actionsHeading.textContent = "Actions";
-  publicTableHead.append(actionsHeading);
-  publicTableFoot.append(document.createElement("td"));
+  if (!rankingIsFrozen) {
+    const actionsHeading = document.createElement("th");
+    actionsHeading.scope = "col";
+    actionsHeading.className = "row-actions-heading";
+    actionsHeading.textContent = "Actions";
+    publicTableHead.append(actionsHeading);
+    publicTableFoot.append(document.createElement("td"));
+  }
   publicTableBody.replaceChildren();
   if (poll.participants.length === 0) {
     const row = document.createElement("tr");
     const empty = document.createElement("td");
-    empty.colSpan = poll.proposedDates.length + 2;
+    empty.colSpan = poll.proposedDates.length + (rankingIsFrozen ? 1 : 2);
     empty.textContent = "No one has answered yet.";
     row.append(empty);
     publicTableBody.append(row);
@@ -723,21 +801,27 @@ function renderPublicPoll(poll: PublicPollDetails): void {
       for (const choice of poll.proposedDates) {
         const cell = document.createElement("td");
         const value = participant.availability[choice.id] ?? "no";
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = `availability-toggle availability-toggle--${value}`;
-        button.dataset.dateId = choice.id;
-        button.dataset.participantId = participant.id;
-        button.dataset.availability = value;
-        button.textContent = value === "yes" ? "Yes" : "No";
-        button.setAttribute("aria-pressed", String(value === "yes"));
-        button.setAttribute(
-          "aria-label",
-          `${participant.displayName}, ${choiceLabel(choice)}: ${value === "yes" ? "Yes" : "No"}`
-        );
-        cell.append(button);
+        if (rankingIsFrozen) {
+          cell.textContent = value === "yes" ? "Yes" : "No";
+          cell.classList.toggle("final-date-cell", choice.id === poll.selectedDateId);
+        } else {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = `availability-toggle availability-toggle--${value}`;
+          button.dataset.dateId = choice.id;
+          button.dataset.participantId = participant.id;
+          button.dataset.availability = value;
+          button.textContent = value === "yes" ? "Yes" : "No";
+          button.setAttribute("aria-pressed", String(value === "yes"));
+          button.setAttribute(
+            "aria-label",
+            `${participant.displayName}, ${choiceLabel(choice)}: ${value === "yes" ? "Yes" : "No"}`
+          );
+          cell.append(button);
+        }
         row.append(cell);
       }
+      if (rankingIsFrozen) { publicTableBody.append(row); continue; }
       const actions = document.createElement("td");
       actions.className = "row-actions";
       const trigger = document.createElement("button");
@@ -777,6 +861,35 @@ function renderPublicPoll(poll: PublicPollDetails): void {
     }
   }
   if (firstRender) publicPollHeading.focus();
+}
+
+function namesList(names: string[]): DocumentFragment {
+  const fragment = document.createDocumentFragment();
+  for (const name of names.length > 0 ? names : ["Nobody"]) {
+    const item = document.createElement("li");
+    item.textContent = name;
+    fragment.append(item);
+  }
+  return fragment;
+}
+
+function openCloseDialog(choiceId: string): void {
+  if (!displayedPublicPoll || displayedPublicPoll.status !== "open") return;
+  const choice = displayedPublicPoll.proposedDates.find(({ id }) => id === choiceId);
+  if (!choice) return;
+  const yes = displayedPublicPoll.participants.filter(({ availability }) => availability[choiceId] === "yes").map(({ displayName }) => displayName);
+  const no = displayedPublicPoll.participants.filter(({ availability }) => availability[choiceId] !== "yes").map(({ displayName }) => displayName);
+  closeDialog.dataset.choiceId = choiceId;
+  closeDialogDate.textContent = longChoiceLabel(choice);
+  closeYesHeading.textContent = `Yes · ${yes.length}`;
+  closeNoHeading.textContent = `No · ${no.length}`;
+  closeYesList.replaceChildren(namesList(yes));
+  closeNoList.replaceChildren(namesList(no));
+  closeDialogError.hidden = true;
+  closeDialogError.textContent = "";
+  closeConfirm.disabled = false;
+  closeDialog.showModal();
+  closeConfirm.focus();
 }
 
 async function loadPublicPoll(token: string): Promise<void> {
@@ -1130,6 +1243,35 @@ copyLinkButton.addEventListener("click", () => {
 });
 
 addParticipantButton.addEventListener("click", () => openParticipantDialog("add"));
+rankingList.addEventListener("click", (event) => {
+  const button = (event.target as Element).closest<HTMLButtonElement>("button[data-close-choice-id]");
+  if (button?.dataset.closeChoiceId) openCloseDialog(button.dataset.closeChoiceId);
+});
+closeCancel.addEventListener("click", () => closeDialog.close());
+closeDialog.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const selectedDateId = closeDialog.dataset.choiceId;
+  const closingPollId = displayedPublicPoll?.id;
+  if (!closingPollId || !selectedDateId) return;
+  void (async () => {
+    closeConfirm.disabled = true;
+    closeConfirm.textContent = "Closing…";
+    const response = await request(`/api/organiser/polls/${encodeURIComponent(closingPollId)}/close`, {
+      method: "POST",
+      body: JSON.stringify({ selectedDateId, confirmed: true })
+    });
+    closeConfirm.disabled = false;
+    closeConfirm.textContent = "Confirm & close poll";
+    if (!response.ok) {
+      closeDialogError.hidden = false;
+      closeDialogError.textContent = await readError(response);
+      return;
+    }
+    const result = (await response.json()) as { poll: PublicPollDetails };
+    closeDialog.close();
+    renderPublicPoll(result.poll);
+  })();
+});
 publicTableBody.addEventListener("click", (event) => {
   const target = event.target as Element;
   const availabilityButton = target.closest<HTMLButtonElement>(".availability-toggle");

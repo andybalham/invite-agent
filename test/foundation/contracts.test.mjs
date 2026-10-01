@@ -159,3 +159,21 @@ test("undo contracts require an explicit confirmation and a linked compensating 
   assert.equal(result.safeParse({ poll: validPublicPollResponse, event: undoEvent }).success, true);
   assert.equal(result.safeParse({ poll: validPublicPollResponse, event: { ...undoEvent, undoOf: undefined } }).success, false);
 });
+
+test("close contracts require one proposed date and explicit confirmation", async () => {
+  const contracts = await loadContracts();
+  const request = expectSchema(contracts.closePollRequestSchema, "closePollRequestSchema");
+  const result = expectSchema(contracts.closePollResultSchema, "closePollResultSchema");
+  const closedPoll = {
+    ...validPublicPollResponse,
+    status: "closed",
+    selectedDateId: "date_1",
+    ranking: [{ choiceId: "date_1", yesTotal: 1 }]
+  };
+
+  assert.equal(request.safeParse({ selectedDateId: "date_1", confirmed: true }).success, true);
+  assert.equal(request.safeParse({ selectedDateId: "date_1", confirmed: false }).success, false);
+  assert.equal(request.safeParse({ selectedDateId: "date_1", confirmed: true, token: "secret" }).success, false);
+  assert.equal(result.safeParse({ poll: closedPoll }).success, true);
+  assert.equal(result.safeParse({ poll: { ...closedPoll, selectedDateId: undefined } }).success, false);
+});

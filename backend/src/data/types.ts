@@ -2,7 +2,8 @@ import type {
   Availability,
   CreatePollRequest,
   LifecycleState,
-  ProposedDate
+  ProposedDate,
+  PublicRankingEntry
 } from "@invite-a-gent/contracts";
 
 export interface PollRecord extends CreatePollRequest {
@@ -13,6 +14,8 @@ export interface PollRecord extends CreatePollRequest {
   readonly proposedDates: ProposedDate[];
   readonly createdAt: string;
   readonly publicTokenHash?: string;
+  readonly selectedDateId?: string;
+  readonly frozenRanking?: readonly PublicRankingEntry[];
 }
 
 export interface AuditEvent {
@@ -22,6 +25,7 @@ export interface AuditEvent {
     | "POLL_CREATED"
     | "POLL_DETAILS_UPDATED"
     | "POLL_PUBLISHED"
+    | "POLL_CLOSED"
     | "PARTICIPANT_ADDED"
     | "PARTICIPANT_RENAMED"
     | "PARTICIPANT_DELETED"

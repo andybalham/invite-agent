@@ -87,11 +87,21 @@ export interface PublicPollResponse {
   proposedDates: PublicProposedDate[];
   participants: PublicParticipant[];
   ranking: PublicRankingEntry[];
+  selectedDateId?: string;
   description?: string;
   instructions?: string;
   location?: string;
   locationHtml?: string;
   timeZone: string;
+}
+
+export interface ClosePollRequest {
+  selectedDateId: string;
+  confirmed: true;
+}
+
+export interface ClosePollResult {
+  poll: PublicPollResponse & { status: "closed"; selectedDateId: string };
 }
 
 export type AuditActorCategory = "organiser" | "anonymous-link-holder";
@@ -299,6 +309,7 @@ function isPublicPollResponse(input: unknown): input is PublicPollResponse {
       "proposedDates",
       "participants",
       "ranking",
+      "selectedDateId",
       "description",
       "instructions",
       "location",
@@ -317,12 +328,26 @@ function isPublicPollResponse(input: unknown): input is PublicPollResponse {
     Array.isArray(input.ranking) &&
     input.ranking.length <= 5 &&
     input.ranking.every(isPublicRankingEntry) &&
+    (input.status === "closed"
+      ? isNonBlankString(input.selectedDateId)
+      : input.selectedDateId === undefined) &&
     (input.description === undefined || typeof input.description === "string") &&
     (input.instructions === undefined || typeof input.instructions === "string") &&
     (input.location === undefined || typeof input.location === "string") &&
     (input.locationHtml === undefined || typeof input.locationHtml === "string") &&
     isValidIanaTimeZone(input.timeZone)
   );
+}
+
+function isClosePollRequest(input: unknown): input is ClosePollRequest {
+  return isRecord(input) && hasOnlyKeys(input, ["selectedDateId", "confirmed"]) &&
+    isNonBlankString(input.selectedDateId) && input.confirmed === true;
+}
+
+function isClosePollResult(input: unknown): input is ClosePollResult {
+  return isRecord(input) && hasOnlyKeys(input, ["poll"]) &&
+    isPublicPollResponse(input.poll) && input.poll.status === "closed" &&
+    isNonBlankString(input.poll.selectedDateId);
 }
 
 function isApiError(input: unknown): input is ApiError {
@@ -424,6 +449,14 @@ export const createPollRequestSchema = schema<CreatePollRequest>(
 export const publicPollResponseSchema = schema<PublicPollResponse>(
   isPublicPollResponse,
   "Invalid public-poll response"
+);
+export const closePollRequestSchema = schema<ClosePollRequest>(
+  isClosePollRequest,
+  "Closing requires a proposed date and explicit confirmation"
+);
+export const closePollResultSchema = schema<ClosePollResult>(
+  isClosePollResult,
+  "Invalid close-poll result"
 );
 export const apiErrorSchema = schema<ApiError>(isApiError, "Invalid API error");
 export const auditHistoryPageSchema = schema<AuditHistoryPage>(

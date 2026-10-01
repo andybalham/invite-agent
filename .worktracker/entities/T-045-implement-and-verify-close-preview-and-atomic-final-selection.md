@@ -3,13 +3,13 @@ id: T-045
 type: task
 title: Implement and verify close preview and atomic final selection
 parent: S-021
-status: todo
+status: done
 dependsOn: [T-044]
 estimate: 2
 tags: [green, implementation, S-021]
 archived: false
 created: 2026-09-27T18:08:42.252Z
-updated: 2026-09-27T18:19:38.887Z
+updated: 2026-10-01T17:48:04.270Z
 ---
 Implementation scope:
 Implement close preview plus one transaction for selected date, Closed status, frozen ranking, and combined audit event.
