@@ -361,10 +361,20 @@ export class PollService {
     if (!parsed.success) {
       throw new ApplicationError("VALIDATION_ERROR", parsed.issues.join("; "));
     }
+    const proposedDates = resolveChoices(parsed.data);
+    if (
+      existing.status === "closed" &&
+      JSON.stringify(proposedDates) !== JSON.stringify(existing.proposedDates)
+    ) {
+      throw new ApplicationError(
+        "INVALID_LIFECYCLE",
+        "Reopen the poll before changing proposed dates."
+      );
+    }
     const updated: PollRecord = {
       ...existing,
       ...parsed.data,
-      proposedDates: resolveChoices(parsed.data),
+      proposedDates,
       version: existing.version + 1
     };
     const occurredAt = new Date().toISOString();

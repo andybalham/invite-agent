@@ -3,13 +3,13 @@ id: T-047
 type: task
 title: Implement and verify closed-state enforcement and frozen results
 parent: S-022
-status: todo
+status: done
 dependsOn: [T-046]
 estimate: 2
 tags: [green, implementation, S-022]
 archived: false
 created: 2026-09-27T18:08:42.382Z
-updated: 2026-09-27T18:19:39.047Z
+updated: 2026-10-01T18:57:16.514Z
 ---
 Implementation scope:
 Implement closed public result, frozen-ranking reads, UI control removal, and server rejection of participant/date mutations.

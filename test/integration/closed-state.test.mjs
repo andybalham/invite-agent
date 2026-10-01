@@ -19,7 +19,7 @@ const baseConfig = {
 
 async function fixture(t, name) {
   const { createLocalComposition } = await import(compositionUrl);
-  const owner = { "x-local-organiser-id": `closed-state-owner-${name}` };
+  const owner = { "x-local-organiser-id": `local-organiser-closed-state-owner-${name}` };
   const app = await createLocalComposition({
     ...baseConfig,
     appTableName: `${baseConfig.appTableName}-${name}`,
@@ -147,7 +147,7 @@ test("closed proposed-date rejection preserves authorization boundaries and is n
   const wrongOwner = await context.app.http.handle({
     method: "PUT",
     path: `/api/organiser/polls/${context.pollId}`,
-    headers: { "x-local-organiser-id": "closed-state-other-owner" },
+    headers: { "x-local-organiser-id": "local-organiser-closed-state-other-owner" },
     body
   });
   const concurrent = await Promise.all(Array.from({ length: 2 }, () => context.app.http.handle({

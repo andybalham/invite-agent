@@ -762,6 +762,9 @@ function renderPublicPoll(poll: PublicPollDetails): void {
   closedNotice.hidden = !rankingIsFrozen;
   addParticipantButton.hidden = rankingIsFrozen;
   tableHelp.hidden = rankingIsFrozen;
+  tableHelp.textContent = rankingIsFrozen
+    ? ""
+    : "Click a cell to switch between Yes and No, or Tab to it and press Space.";
   for (const choice of poll.proposedDates) {
     const headingCell = document.createElement("th");
     headingCell.scope = "col";

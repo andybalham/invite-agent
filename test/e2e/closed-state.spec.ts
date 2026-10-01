@@ -2,7 +2,7 @@ import type { APIRequestContext } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 async function closeNonLeadingDate(request: APIRequestContext, testRunId: string) {
-  const headers = { "x-local-organiser-id": `closed-ui-owner-${testRunId}` };
+  const headers = { "x-local-organiser-id": `local-organiser-closed-ui-owner-${testRunId}` };
   const created = await request.post("/api/organiser/polls", { headers, data: {
     title: "Frozen autumn result",
     timeZone: "Europe/London",
