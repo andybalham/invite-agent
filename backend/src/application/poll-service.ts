@@ -23,6 +23,7 @@ import {
   resolveProposedDate,
   validateCreatePollRequest,
   validateDraftPublication,
+  validateLocationMarkdown,
   validateParticipantName
 } from "../domain/index.js";
 import { ApplicationError } from "./errors.js";
@@ -126,6 +127,7 @@ function auditSummary(event: AuditEvent): string {
   switch (event.action) {
     case "POLL_CREATED": return "Created the draft poll";
     case "POLL_DETAILS_UPDATED": return "Updated poll details, dates, or location";
+    case "LOCATION_CHANGED": return !after?.location ? "Location cleared" : before?.location ? "Location edited" : "Location set";
     case "POLL_PUBLISHED": return "Published the poll";
     case "POLL_CLOSED": return "Selected the final date and closed the poll";
     case "PARTICIPANT_ADDED": return `Added participant ${String(after?.displayName ?? "")}`.trim();
@@ -392,6 +394,34 @@ export class PollService {
       after: parsed.data
     });
     return publicResponse(updated);
+  }
+
+  public async updateLocation(id: string, input: unknown, organiserId: string): Promise<PollResponse> {
+    for (let attempt = 0; attempt < PUBLIC_MUTATION_ATTEMPTS; attempt += 1) {
+      const existing = await this.repository.getPoll(id);
+      if (!existing) throw new ApplicationError("NOT_FOUND", "Poll not found");
+      if (existing.organiserId !== organiserId) {
+        throw new ApplicationError("FORBIDDEN", "The organiser does not own this poll");
+      }
+      if (!isRecord(input) || !hasExactlyKeys(input, ["location"]) || typeof input.location !== "string") {
+        throw new ApplicationError("VALIDATION_ERROR", "Enter location details as plain text or safe Markdown.");
+      }
+      const issue = validateLocationMarkdown(input.location);
+      if (issue) throw new ApplicationError("VALIDATION_ERROR", issue.message);
+      const updated = { ...existing, location: input.location, version: existing.version + 1 };
+      try {
+        await this.repository.updateLocation(updated, {
+          pollId: id, id: randomUUID(), action: "LOCATION_CHANGED", actorId: organiserId,
+          actorCategory: "organiser", occurredAt: new Date().toISOString(), revision: updated.version,
+          entityType: "poll", entityId: id,
+          before: { location: existing.location ?? "" }, after: { location: input.location }
+        });
+        return publicResponse(updated);
+      } catch (error) {
+        if (!isTransactionContention(error)) throw error;
+      }
+    }
+    throw new ApplicationError("CONFLICT", "The poll changed while saving location. Refresh and try again.");
   }
 
   public async assertPublicationReady(

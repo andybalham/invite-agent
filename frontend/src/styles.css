@@ -145,6 +145,7 @@ textarea.input { display: block; resize: vertical; }
 .public-poll { display: grid; gap: 28px; }
 .public-poll[hidden], .invalid-link[hidden] { display: none; }
 .organiser-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 2px solid var(--color-text); background: var(--color-neutral-100); padding: 12px 14px; }
+.organiser-toolbar[hidden] { display: none; }
 .organiser-toolbar .kicker { margin: 0; }
 .organiser-toolbar span { color: var(--color-neutral-700); font-size: 13px; font-weight: 600; }
 .public-title { display: grid; gap: 8px; border-top: 2px solid var(--color-text); padding-top: 16px; }

@@ -24,6 +24,7 @@ export interface AuditEvent {
   readonly action:
     | "POLL_CREATED"
     | "POLL_DETAILS_UPDATED"
+    | "LOCATION_CHANGED"
     | "POLL_PUBLISHED"
     | "POLL_CLOSED"
     | "PARTICIPANT_ADDED"

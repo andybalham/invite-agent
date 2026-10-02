@@ -171,7 +171,9 @@ app.innerHTML = `
   <main class="public-poll" hidden aria-labelledby="public-poll-heading">
     <section class="organiser-toolbar" hidden aria-label="Organiser controls">
       <strong class="kicker">ORGANISER</strong>
-      <span>Pick a date below to close the poll</span>
+      <a class="btn btn-secondary poll-history" href="#">History</a>
+      <button class="btn btn-secondary edit-location" type="button">Edit location</button>
+      <span class="organiser-close-hint">Pick a date below to close the poll</span>
     </section>
     <section class="public-title">
       <p class="tag tag-open" data-testid="public-state">Open</p>
@@ -200,6 +202,16 @@ app.innerHTML = `
       <p class="table-help">Click a cell to switch between Yes and No, or Tab to it and press Space.</p>
     </section>
   </main>
+  <dialog class="dialog location-dialog">
+    <form method="dialog" class="dialog-form" novalidate>
+      <h2 id="location-dialog-heading">Location</h2>
+      <p id="location-state-note" class="location-state-note"></p>
+      <div class="field"><label for="location-details">Plain text or Markdown links</label><textarea class="input input--code" id="location-details" rows="4" aria-describedby="location-state-note location-dialog-error"></textarea></div>
+      <div class="location-preview"><span>Shows as:</span><div class="markdown location-dialog-preview"></div></div>
+      <p id="location-dialog-error" class="dialog-error location-dialog-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button class="btn btn-primary location-save" type="submit">Save location</button><button class="btn btn-secondary location-clear" type="button">Clear location</button><button class="btn btn-ghost location-cancel" type="button">Cancel</button></div>
+    </form>
+  </dialog>
   <dialog class="dialog participant-dialog" aria-labelledby="participant-dialog-heading">
     <form method="dialog" class="dialog-form" novalidate>
       <h2 id="participant-dialog-heading">Add a row</h2>
@@ -314,6 +326,12 @@ const publicLocation = requireElement<HTMLElement>(".public-location");
 const publicTimeZone = requireElement<HTMLElement>(".public-time-zone");
 const publicState = requireElement<HTMLElement>("[data-testid='public-state']");
 const organiserToolbar = requireElement<HTMLElement>(".organiser-toolbar");
+const locationDialog = requireElement<HTMLDialogElement>(".location-dialog");
+const locationDialogField = requireElement<HTMLTextAreaElement>("#location-details");
+const locationDialogPreview = requireElement<HTMLElement>(".location-dialog-preview");
+const locationDialogError = requireElement<HTMLElement>(".location-dialog-error");
+const locationSave = requireElement<HTMLButtonElement>(".location-save");
+const locationClear = requireElement<HTMLButtonElement>(".location-clear");
 const finalDatePoster = requireElement<HTMLElement>(".final-date-poster");
 const finalDateHeading = requireElement<HTMLElement>("#final-date-heading");
 const finalDateSummary = requireElement<HTMLElement>(".final-date-summary");
@@ -333,7 +351,7 @@ const participantDialogHeading = requireElement<HTMLElement>("#participant-dialo
 const participantDialogCopy = requireElement<HTMLElement>(".participant-dialog-copy");
 const participantInputLabel = requireElement<HTMLLabelElement>(".participant-input-label");
 const participantName = requireElement<HTMLInputElement>("#participant-name");
-const participantDialogError = requireElement<HTMLElement>(".dialog-error");
+const participantDialogError = requireElement<HTMLElement>(".participant-dialog .dialog-error");
 const participantSubmit = requireElement<HTMLButtonElement>(".participant-submit");
 const participantCancel = requireElement<HTMLButtonElement>(".participant-cancel");
 const closeDialog = requireElement<HTMLDialogElement>(".close-dialog");
@@ -357,6 +375,7 @@ const historyView = url.searchParams.get("view") === "history";
 let proposedDates: ProposedDate[] = [];
 let publicToken: string | undefined;
 let displayedPublicPoll: PublicPollDetails | undefined;
+let ownerControlsAllowed = false;
 let participantDialogMode: "add" | "rename" | "delete" = "add";
 let selectedParticipantId: string | undefined;
 let publicRefreshInFlight = false;
@@ -679,7 +698,9 @@ function renderPublicPoll(poll: PublicPollDetails): void {
   document.querySelector<HTMLElement>(".account")!.textContent = "No account needed";
   headerSaveStatus.hidden = true;
   publicState.textContent = poll.status === "closed" ? "Closed" : "Open";
-  organiserToolbar.hidden = !organiserView || poll.status !== "open";
+  organiserToolbar.hidden = !ownerControlsAllowed;
+  requireElement<HTMLElement>(".organiser-close-hint").hidden = poll.status !== "open";
+  requireElement<HTMLAnchorElement>(".poll-history").href = `/?pollId=${encodeURIComponent(poll.id)}&testRunId=${encodeURIComponent(testRunId)}&view=history`;
   publicPollHeading.textContent = poll.title;
   publicDescription.textContent = poll.description ?? "";
   publicDescription.hidden = !poll.description;
@@ -740,7 +761,7 @@ function renderPublicPoll(poll: PublicPollDetails): void {
     yes.textContent = `${entry.yesTotal} yes`;
 
     item.append(rank, label, bar, yes);
-    if (organiserView && !rankingIsFrozen) {
+    if (ownerControlsAllowed && !rankingIsFrozen) {
       const pick = document.createElement("button");
       pick.type = "button";
       pick.className = "btn btn-secondary ranking__pick";
@@ -904,7 +925,53 @@ async function loadPublicPoll(token: string): Promise<void> {
     showInvalidLink();
     return;
   }
-  renderPublicPoll((await response.json()) as PublicPollDetails);
+  const poll = (await response.json()) as PublicPollDetails;
+  if (organiserView) {
+    const ownerResponse = await request(`/api/organiser/polls/${encodeURIComponent(poll.id)}`);
+    ownerControlsAllowed = ownerResponse.ok;
+  }
+  renderPublicPoll(poll);
+}
+
+function updateLocationDialogPreview(): void {
+  const issue = locationError(locationDialogField.value);
+  locationDialogPreview.replaceChildren();
+  if (issue) locationDialogPreview.textContent = "Preview paused until the location is safe.";
+  else renderLocation(locationDialogPreview, locationDialogField.value);
+  locationDialogField.setAttribute("aria-invalid", String(Boolean(issue)));
+}
+
+async function saveLocationDialog(): Promise<void> {
+  if (!displayedPublicPoll || !ownerControlsAllowed) return;
+  locationDialogError.hidden = true;
+  locationSave.disabled = true;
+  locationClear.disabled = true;
+  try {
+    const response = await request(`/api/organiser/polls/${encodeURIComponent(displayedPublicPoll.id)}/location`, {
+      method: "PUT", body: JSON.stringify({ location: locationDialogField.value })
+    });
+    if (!response.ok) {
+      locationDialogError.textContent = await readError(response);
+      locationDialogError.hidden = false;
+      locationDialogField.setAttribute("aria-invalid", "true");
+      return;
+    }
+    // Fetch a complete current projection even while background polling is in flight.
+    const current = await fetch(`/api/public/polls/${encodeURIComponent(publicToken as string)}`, {
+      headers: { accept: "application/json" }
+    });
+    if (current.ok) renderPublicPoll((await current.json()) as PublicPollDetails);
+    locationDialog.close();
+    publicToast.textContent = locationDialogField.value ? "Location saved — showing on the public poll now." : "Location cleared from the public poll.";
+    publicToast.hidden = false;
+    window.setTimeout(() => { publicToast.hidden = true; }, 3600);
+  } catch {
+    locationDialogError.textContent = "Location could not be saved. Try again.";
+    locationDialogError.hidden = false;
+  } finally {
+    locationSave.disabled = false;
+    locationClear.disabled = false;
+  }
 }
 
 async function refreshPublicPoll(): Promise<void> {
@@ -1164,6 +1231,26 @@ async function loadDraft(id: string): Promise<void> {
 }
 
 locationField.addEventListener("input", () => { updatePreview(); updatePublicationReadiness(); });
+requireElement<HTMLButtonElement>(".edit-location").addEventListener("click", () => {
+  if (!displayedPublicPoll || !ownerControlsAllowed) return;
+  locationDialogField.value = displayedPublicPoll.location ?? "";
+  requireElement<HTMLElement>(".location-state-note").textContent = `the poll stays ${displayedPublicPoll.status === "closed" ? "Closed" : "Open"}`;
+  locationDialogError.hidden = true;
+  updateLocationDialogPreview();
+  locationDialog.setAttribute("aria-labelledby", "location-dialog-heading");
+  locationDialog.showModal();
+  locationDialogField.focus();
+});
+locationDialogField.addEventListener("input", updateLocationDialogPreview);
+locationDialog.addEventListener("close", () => locationDialog.removeAttribute("aria-labelledby"));
+locationDialog.addEventListener("submit", (event) => { event.preventDefault(); void saveLocationDialog(); });
+locationClear.addEventListener("click", () => { locationDialogField.value = ""; void saveLocationDialog(); });
+requireElement<HTMLButtonElement>(".location-cancel").addEventListener("click", () => locationDialog.close());
+locationDialog.addEventListener("click", (event) => {
+  if (event.target !== locationDialog) return;
+  const box = locationDialog.getBoundingClientRect();
+  if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) locationDialog.close();
+});
 title.addEventListener("input", () => { heading.textContent = title.value.trim() || "New poll"; updatePublicationReadiness(); });
 timeZone.addEventListener("change", updatePublicationReadiness);
 previewButton.addEventListener("click", openPreview);

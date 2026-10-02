@@ -87,11 +87,11 @@ _Generated. Do not edit by hand._
 - [x] **S-022 · Enforce closed read-only state and frozen ranking** — done
   - [x] [T-046 · Specify closed-state enforcement and frozen results with failing automated tests](../entities/T-046-specify-closed-state-enforcement-and-frozen-results-with-failing-automated-tests.md) — done
   - [x] [T-047 · Implement and verify closed-state enforcement and frozen results](../entities/T-047-implement-and-verify-closed-state-enforcement-and-frozen-results.md) — done
-- [ ] **S-023 · Maintain safe location details in every lifecycle state** — blocked
-  - [ ] [T-048 · Specify location maintenance across lifecycle states with failing automated tests](../entities/T-048-specify-location-maintenance-across-lifecycle-states-with-failing-automated-tests.md) — todo
-  - [ ] [T-049 · Implement and verify location maintenance across lifecycle states](../entities/T-049-implement-and-verify-location-maintenance-across-lifecycle-states.md) — blocked · waiting on T-048
-- [ ] **S-024 · Reopen collaboration and close again with preserved history** — blocked · waiting on S-023
-  - [ ] [T-050 · Specify reopen and close-again lifecycle with failing automated tests](../entities/T-050-specify-reopen-and-close-again-lifecycle-with-failing-automated-tests.md) — blocked · waiting on T-049
+- [x] **S-023 · Maintain safe location details in every lifecycle state** — done
+  - [x] [T-048 · Specify location maintenance across lifecycle states with failing automated tests](../entities/T-048-specify-location-maintenance-across-lifecycle-states-with-failing-automated-tests.md) — done
+  - [x] [T-049 · Implement and verify location maintenance across lifecycle states](../entities/T-049-implement-and-verify-location-maintenance-across-lifecycle-states.md) — done
+- [ ] **S-024 · Reopen collaboration and close again with preserved history** — blocked
+  - [ ] [T-050 · Specify reopen and close-again lifecycle with failing automated tests](../entities/T-050-specify-reopen-and-close-again-lifecycle-with-failing-automated-tests.md) — todo
   - [ ] [T-051 · Implement and verify reopen and close-again lifecycle](../entities/T-051-implement-and-verify-reopen-and-close-again-lifecycle.md) — blocked · waiting on T-050
 
 ## [E-008 · E8 — Production AWS platform](./E-008.md) — blocked

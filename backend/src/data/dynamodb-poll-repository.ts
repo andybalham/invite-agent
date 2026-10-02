@@ -158,6 +158,12 @@ export class DynamoPollRepository {
     );
   }
 
+  public async updateLocation(poll: PollRecord, audit: AuditEvent): Promise<void> {
+    await this.client.send(new TransactWriteItemsCommand({
+      TransactItems: [versionedPollPut(this.config.appTableName, poll), auditPut(this.config.auditTableName, audit)]
+    }));
+  }
+
   public async getPoll(id: string): Promise<PollRecord | undefined> {
     const result = await this.client.send(
       new GetItemCommand({
