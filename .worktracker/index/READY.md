@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-050 · Specify reopen and close-again lifecycle with failing automated tests](../entities/T-050-specify-reopen-and-close-again-lifecycle-with-failing-automated-tests.md) — todo
+- [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — todo

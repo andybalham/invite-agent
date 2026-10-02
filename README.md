@@ -12,6 +12,8 @@ Invite-a-Gent helps a group choose a date for a get-together. An authenticated *
 
 The owning organiser can set, edit, or clear location in every state. In Draft, save the Location field and use Preview; on an Open or Closed poll, use **Edit location** in the organiser toolbar. The dialog keeps the poll's state unchanged, previews safe Markdown, and offers **Save location** and **Clear location**. Saved changes appear on the public page immediately and each creates one audit revision with the previous and new value. Invalid text stays available for correction without replacing saved content. Location supports up to 4,000 Unicode code points, paragraphs, line breaks, emphasis, lists, and HTTPS links; raw HTML and unsafe links are rejected.
 
+On a Closed poll, the owning organiser can choose **Reopen poll…** and confirm **Reopen poll**. Cancelling leaves the decision, responses, and history unchanged. Confirmation restores participant editing and live ranking, and the previous final date is shown as **Provisional** until the organiser picks the same or another date and confirms closure again. Each reopen and close creates a distinct audit revision; earlier decisions and responses remain in History. The public link continues to work throughout.
+
 ## Architecture
 
 The production target is a serverless AWS application in `eu-west-2`:

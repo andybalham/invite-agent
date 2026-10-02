@@ -80,7 +80,7 @@ _Generated. Do not edit by hand._
   - [x] [T-042 · Specify audit and undo authorization with failing automated tests](../entities/T-042-specify-audit-and-undo-authorization-with-failing-automated-tests.md) — done
   - [x] [T-043 · Implement and verify audit and undo authorization](../entities/T-043-implement-and-verify-audit-and-undo-authorization.md) — done
 
-## [E-007 · E7 — Final decision and reversible poll lifecycle](./E-007.md) — blocked
+## [E-007 · E7 — Final decision and reversible poll lifecycle](./E-007.md) — done
 - [x] **S-021 · Review attendance and close in one atomic action** — done
   - [x] [T-044 · Specify close preview and atomic final selection with failing automated tests](../entities/T-044-specify-close-preview-and-atomic-final-selection-with-failing-automated-tests.md) — done
   - [x] [T-045 · Implement and verify close preview and atomic final selection](../entities/T-045-implement-and-verify-close-preview-and-atomic-final-selection.md) — done
@@ -90,13 +90,13 @@ _Generated. Do not edit by hand._
 - [x] **S-023 · Maintain safe location details in every lifecycle state** — done
   - [x] [T-048 · Specify location maintenance across lifecycle states with failing automated tests](../entities/T-048-specify-location-maintenance-across-lifecycle-states-with-failing-automated-tests.md) — done
   - [x] [T-049 · Implement and verify location maintenance across lifecycle states](../entities/T-049-implement-and-verify-location-maintenance-across-lifecycle-states.md) — done
-- [ ] **S-024 · Reopen collaboration and close again with preserved history** — blocked
-  - [ ] [T-050 · Specify reopen and close-again lifecycle with failing automated tests](../entities/T-050-specify-reopen-and-close-again-lifecycle-with-failing-automated-tests.md) — todo
-  - [ ] [T-051 · Implement and verify reopen and close-again lifecycle](../entities/T-051-implement-and-verify-reopen-and-close-again-lifecycle.md) — blocked · waiting on T-050
+- [x] **S-024 · Reopen collaboration and close again with preserved history** — done
+  - [x] [T-050 · Specify reopen and close-again lifecycle with failing automated tests](../entities/T-050-specify-reopen-and-close-again-lifecycle-with-failing-automated-tests.md) — done
+  - [x] [T-051 · Implement and verify reopen and close-again lifecycle](../entities/T-051-implement-and-verify-reopen-and-close-again-lifecycle.md) — done
 
 ## [E-008 · E8 — Production AWS platform](./E-008.md) — blocked
-- [ ] **S-025 · Provision durable DynamoDB application and audit data** — blocked · waiting on S-024
-  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — blocked · waiting on T-051
+- [ ] **S-025 · Provision durable DynamoDB application and audit data** — blocked
+  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — todo
   - [ ] [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [ ] **S-026 · Deploy least-privilege Lambda APIs with Cognito authorization** — blocked · waiting on S-025
   - [ ] [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053

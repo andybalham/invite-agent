@@ -75,6 +75,11 @@ export function createSharedHttpHandler(dependencies: {
           const organiserId = dependencies.authenticate(request.headers);
           return { status: 200, body: await dependencies.polls.close(closeMatch[1], request.body, organiserId) };
         }
+        const reopenMatch = /^\/api\/organiser\/polls\/([^/]+)\/reopen$/.exec(request.path);
+        if (request.method === "POST" && reopenMatch?.[1]) {
+          const organiserId = dependencies.authenticate(request.headers);
+          return { status: 200, body: await dependencies.polls.reopen(reopenMatch[1], request.body, organiserId) };
+        }
         const publicMatch = /^\/api\/public\/polls\/([^/]+)$/.exec(request.path);
         if (request.method === "GET" && publicMatch?.[1]) {
           return { status: 200, body: await dependencies.polls.getPublic(publicMatch[1]) };

@@ -157,6 +157,11 @@ textarea.input { display: block; resize: vertical; }
 .final-date-poster .kicker { margin: 0 0 8px; }
 .final-date-poster h2 { max-width: 760px; font-size: clamp(30px, 6vw, 44px); line-height: 1.02; }
 .final-date-summary { margin: 12px 0 0; font-weight: 700; }
+.provisional-selection { border: 2px dashed var(--color-accent); padding: 14px 16px; display: grid; gap: 4px; }
+.provisional-selection[hidden] { display: none; }
+.provisional-selection > div { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--color-neutral-800); }
+.provisional-selection .tag { font-weight: 700; }
+.provisional-date { margin: 0; font-size: 24px; font-weight: 800; line-height: 1.1; }
 .kicker { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
 .ranking { display: grid; gap: 10px; border-top: 2px solid var(--color-text); padding-top: 14px; }
 .ranking__header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }

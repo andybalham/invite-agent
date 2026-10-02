@@ -15,6 +15,7 @@ export interface PollRecord extends CreatePollRequest {
   readonly createdAt: string;
   readonly publicTokenHash?: string;
   readonly selectedDateId?: string;
+  readonly provisional?: true;
   readonly frozenRanking?: readonly PublicRankingEntry[];
 }
 
@@ -27,6 +28,7 @@ export interface AuditEvent {
     | "LOCATION_CHANGED"
     | "POLL_PUBLISHED"
     | "POLL_CLOSED"
+    | "POLL_REOPENED"
     | "PARTICIPANT_ADDED"
     | "PARTICIPANT_RENAMED"
     | "PARTICIPANT_DELETED"

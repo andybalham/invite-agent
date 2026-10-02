@@ -88,6 +88,7 @@ export interface PublicPollResponse {
   participants: PublicParticipant[];
   ranking: PublicRankingEntry[];
   selectedDateId?: string;
+  provisional?: true;
   description?: string;
   instructions?: string;
   location?: string;
@@ -102,6 +103,14 @@ export interface ClosePollRequest {
 
 export interface ClosePollResult {
   poll: PublicPollResponse & { status: "closed"; selectedDateId: string };
+}
+
+export interface ReopenPollRequest {
+  confirmed: true;
+}
+
+export interface ReopenPollResult {
+  poll: PublicPollResponse & { status: "open"; selectedDateId: string; provisional: true };
 }
 
 export type AuditActorCategory = "organiser" | "anonymous-link-holder";
@@ -310,6 +319,7 @@ function isPublicPollResponse(input: unknown): input is PublicPollResponse {
       "participants",
       "ranking",
       "selectedDateId",
+      "provisional",
       "description",
       "instructions",
       "location",
@@ -329,8 +339,10 @@ function isPublicPollResponse(input: unknown): input is PublicPollResponse {
     input.ranking.length <= 5 &&
     input.ranking.every(isPublicRankingEntry) &&
     (input.status === "closed"
-      ? isNonBlankString(input.selectedDateId)
-      : input.selectedDateId === undefined) &&
+      ? isNonBlankString(input.selectedDateId) && input.provisional === undefined
+      : input.status === "open" && input.provisional === true
+        ? isNonBlankString(input.selectedDateId)
+        : input.selectedDateId === undefined && input.provisional === undefined) &&
     (input.description === undefined || typeof input.description === "string") &&
     (input.instructions === undefined || typeof input.instructions === "string") &&
     (input.location === undefined || typeof input.location === "string") &&
@@ -348,6 +360,16 @@ function isClosePollResult(input: unknown): input is ClosePollResult {
   return isRecord(input) && hasOnlyKeys(input, ["poll"]) &&
     isPublicPollResponse(input.poll) && input.poll.status === "closed" &&
     isNonBlankString(input.poll.selectedDateId);
+}
+
+function isReopenPollRequest(input: unknown): input is ReopenPollRequest {
+  return isRecord(input) && hasOnlyKeys(input, ["confirmed"]) && input.confirmed === true;
+}
+
+function isReopenPollResult(input: unknown): input is ReopenPollResult {
+  return isRecord(input) && hasOnlyKeys(input, ["poll"]) &&
+    isPublicPollResponse(input.poll) && input.poll.status === "open" &&
+    input.poll.provisional === true && isNonBlankString(input.poll.selectedDateId);
 }
 
 function isApiError(input: unknown): input is ApiError {
@@ -457,6 +479,14 @@ export const closePollRequestSchema = schema<ClosePollRequest>(
 export const closePollResultSchema = schema<ClosePollResult>(
   isClosePollResult,
   "Invalid close-poll result"
+);
+export const reopenPollRequestSchema = schema<ReopenPollRequest>(
+  isReopenPollRequest,
+  "Reopening requires explicit confirmation"
+);
+export const reopenPollResultSchema = schema<ReopenPollResult>(
+  isReopenPollResult,
+  "Invalid reopen-poll result"
 );
 export const apiErrorSchema = schema<ApiError>(isApiError, "Invalid API error");
 export const auditHistoryPageSchema = schema<AuditHistoryPage>(

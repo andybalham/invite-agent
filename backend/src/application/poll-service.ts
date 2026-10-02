@@ -7,6 +7,7 @@ import type {
   ClosePollResult,
   CreatePollRequest,
   PublicPollResponse,
+  ReopenPollResult,
   UndoPreview,
   UndoResult
 } from "@invite-a-gent/contracts";
@@ -130,6 +131,7 @@ function auditSummary(event: AuditEvent): string {
     case "LOCATION_CHANGED": return !after?.location ? "Location cleared" : before?.location ? "Location edited" : "Location set";
     case "POLL_PUBLISHED": return "Published the poll";
     case "POLL_CLOSED": return "Selected the final date and closed the poll";
+    case "POLL_REOPENED": return "Reopened the poll; the previous final date is provisional";
     case "PARTICIPANT_ADDED": return `Added participant ${String(after?.displayName ?? "")}`.trim();
     case "PARTICIPANT_RENAMED": return `Renamed participant ${String(before?.displayName ?? "")} to ${String(after?.displayName ?? "")}`;
     case "PARTICIPANT_DELETED": return `Deleted participant ${String(before?.displayName ?? "")}`.trim();
@@ -519,8 +521,9 @@ export class PollService {
     }
     const participants = await this.repository.listParticipants(id);
     const frozenRanking = calculateTopFiveRanking(dateIds(existing), participants);
+    const { provisional: _provisional, ...current } = existing;
     const closed: PollRecord = {
-      ...existing,
+      ...current,
       status: "closed",
       selectedDateId: request.selectedDateId,
       frozenRanking,
@@ -548,6 +551,39 @@ export class PollService {
       throw error;
     }
     return { poll: await this.publicView(closed) as ClosePollResult["poll"] };
+  }
+
+  public async reopen(id: string, input: unknown, organiserId: string): Promise<ReopenPollResult> {
+    const existing = await this.repository.getPoll(id);
+    if (!existing) throw new ApplicationError("NOT_FOUND", "Poll not found");
+    if (existing.organiserId !== organiserId) {
+      throw new ApplicationError("FORBIDDEN", "The organiser does not own this poll");
+    }
+    if (!isRecord(input) || !hasExactlyKeys(input, ["confirmed"]) || input.confirmed !== true) {
+      throw new ApplicationError("VALIDATION_ERROR", "Confirm reopening before enabling responses again.");
+    }
+    if (existing.status !== "closed" || !existing.selectedDateId) {
+      throw new ApplicationError("CONFLICT", "The poll is no longer closed. Refresh and try again.");
+    }
+    const { frozenRanking: _frozenRanking, ...current } = existing;
+    const reopened: PollRecord = {
+      ...current, status: "open", provisional: true, version: existing.version + 1
+    };
+    try {
+      await this.repository.reopenPoll(reopened, {
+        pollId: id, id: randomUUID(), action: "POLL_REOPENED", actorId: organiserId,
+        actorCategory: "organiser", occurredAt: new Date().toISOString(), revision: reopened.version,
+        entityType: "poll", entityId: id,
+        before: { status: existing.status, selectedDateId: existing.selectedDateId, ranking: existing.frozenRanking },
+        after: { status: reopened.status, selectedDateId: reopened.selectedDateId, provisional: true }
+      });
+    } catch (error) {
+      if (isTransactionContention(error)) {
+        throw new ApplicationError("CONFLICT", "The poll changed while it was being reopened. Refresh and try again.");
+      }
+      throw error;
+    }
+    return { poll: await this.publicView(reopened) as ReopenPollResult["poll"] };
   }
 
   public async getPublic(token: string): Promise<PublicPollResponse> {
@@ -811,6 +847,7 @@ export class PollService {
         ? poll.frozenRanking.map((entry) => ({ ...entry }))
         : calculateTopFiveRanking(proposedDateIds, participants),
       ...(poll.selectedDateId === undefined ? {} : { selectedDateId: poll.selectedDateId }),
+      ...(poll.provisional === true ? { provisional: true as const } : {}),
       ...(poll.description === undefined ? {} : { description: poll.description }),
       ...(poll.instructions === undefined ? {} : { instructions: poll.instructions }),
       ...(poll.location === undefined

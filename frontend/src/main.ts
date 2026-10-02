@@ -34,6 +34,7 @@ interface PublicPollDetails extends PollDetails {
     yesTotal: number;
   }>;
   selectedDateId?: string;
+  provisional?: true;
 }
 
 interface AuditHistoryEvent {
@@ -173,6 +174,7 @@ app.innerHTML = `
       <strong class="kicker">ORGANISER</strong>
       <a class="btn btn-secondary poll-history" href="#">History</a>
       <button class="btn btn-secondary edit-location" type="button">Edit location</button>
+      <button class="btn btn-primary reopen-poll" type="button" hidden>Reopen poll…</button>
       <span class="organiser-close-hint">Pick a date below to close the poll</span>
     </section>
     <section class="public-title">
@@ -186,6 +188,10 @@ app.innerHTML = `
       <p class="kicker">IT'S DECIDED</p>
       <h2 id="final-date-heading"></h2>
       <p class="final-date-summary"></p>
+    </section>
+    <section class="provisional-selection" hidden aria-label="Provisional selection">
+      <div><span class="tag tag-accent">Provisional</span><span>The poll was reopened — this date may change.</span></div>
+      <p class="provisional-date"></p>
     </section>
     <section class="ranking" aria-labelledby="ranking-heading">
       <div class="ranking__header">
@@ -233,6 +239,14 @@ app.innerHTML = `
       <p class="alert close-warning">Confirming <strong>closes the poll</strong>. Dates and responses become read-only until you reopen it.</p>
       <p class="dialog-error close-dialog-error" role="alert" hidden></p>
       <div class="dialog-actions"><button class="btn btn-primary close-confirm" type="submit">Confirm &amp; close poll</button><button class="btn btn-ghost close-cancel" type="button">Cancel</button></div>
+    </form>
+  </dialog>
+  <dialog class="dialog reopen-dialog" aria-labelledby="reopen-dialog-heading">
+    <form method="dialog" class="dialog-form">
+      <h2 id="reopen-dialog-heading">Reopen this poll?</h2>
+      <p>People with the link can change responses again. <span class="reopen-note"></span></p>
+      <p class="dialog-error reopen-dialog-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button class="btn btn-primary reopen-confirm" type="submit">Reopen poll</button><button class="btn btn-ghost reopen-cancel" type="button">Cancel</button></div>
     </form>
   </dialog>
   <dialog class="dialog undo-dialog" aria-labelledby="undo-dialog-heading">
@@ -363,6 +377,11 @@ const closeNoList = requireElement<HTMLUListElement>(".close-no-list");
 const closeDialogError = requireElement<HTMLElement>(".close-dialog-error");
 const closeConfirm = requireElement<HTMLButtonElement>(".close-confirm");
 const closeCancel = requireElement<HTMLButtonElement>(".close-cancel");
+const reopenButton = requireElement<HTMLButtonElement>(".reopen-poll");
+const reopenDialog = requireElement<HTMLDialogElement>(".reopen-dialog");
+const reopenConfirm = requireElement<HTMLButtonElement>(".reopen-confirm");
+const reopenError = requireElement<HTMLElement>(".reopen-dialog-error");
+const provisionalSelection = requireElement<HTMLElement>(".provisional-selection");
 const publicToast = requireElement<HTMLElement>(".public-toast");
 const invalidLinkScreen = requireElement<HTMLElement>(".public-invalid-link");
 const invalidLinkHeading = requireElement<HTMLElement>("#invalid-link-heading");
@@ -700,6 +719,7 @@ function renderPublicPoll(poll: PublicPollDetails): void {
   publicState.textContent = poll.status === "closed" ? "Closed" : "Open";
   organiserToolbar.hidden = !ownerControlsAllowed;
   requireElement<HTMLElement>(".organiser-close-hint").hidden = poll.status !== "open";
+  reopenButton.hidden = !ownerControlsAllowed || poll.status !== "closed";
   requireElement<HTMLAnchorElement>(".poll-history").href = `/?pollId=${encodeURIComponent(poll.id)}&testRunId=${encodeURIComponent(testRunId)}&view=history`;
   publicPollHeading.textContent = poll.title;
   publicDescription.textContent = poll.description ?? "";
@@ -719,6 +739,8 @@ function renderPublicPoll(poll: PublicPollDetails): void {
   const rankingIsFrozen = poll.status === "closed";
   const selectedChoice = poll.proposedDates.find(({ id }) => id === poll.selectedDateId);
   finalDatePoster.hidden = !rankingIsFrozen || !selectedChoice;
+  provisionalSelection.hidden = poll.status !== "open" || !poll.provisional || !selectedChoice;
+  requireElement<HTMLElement>(".provisional-date").textContent = selectedChoice ? longChoiceLabel(selectedChoice) : "";
   if (selectedChoice) {
     finalDateHeading.textContent = longChoiceLabel(selectedChoice);
     const yesTotal = poll.participants.filter(({ availability }) => availability[selectedChoice.id] === "yes").length;
@@ -790,7 +812,7 @@ function renderPublicPoll(poll: PublicPollDetails): void {
     const headingCell = document.createElement("th");
     headingCell.scope = "col";
     headingCell.textContent = choiceLabel(choice);
-    headingCell.classList.toggle("final-date-cell", choice.id === poll.selectedDateId);
+    headingCell.classList.toggle("final-date-cell", rankingIsFrozen && choice.id === poll.selectedDateId);
     publicTableHead.append(headingCell);
     const total = document.createElement("td");
     total.textContent = String(
@@ -1338,6 +1360,55 @@ rankingList.addEventListener("click", (event) => {
   if (button?.dataset.closeChoiceId) openCloseDialog(button.dataset.closeChoiceId);
 });
 closeCancel.addEventListener("click", () => closeDialog.close());
+reopenButton.addEventListener("click", () => {
+  if (!ownerControlsAllowed || displayedPublicPoll?.status !== "closed") return;
+  const choice = displayedPublicPoll.proposedDates.find(({ id }) => id === displayedPublicPoll?.selectedDateId);
+  if (!choice) return;
+  requireElement<HTMLElement>(".reopen-note").textContent = `${longChoiceLabel(choice)} will stay as a provisional pick until you close the poll again.`;
+  reopenError.hidden = true;
+  reopenError.textContent = "";
+  reopenConfirm.disabled = false;
+  reopenDialog.showModal();
+  reopenConfirm.focus();
+});
+requireElement<HTMLButtonElement>(".reopen-cancel").addEventListener("click", () => reopenDialog.close());
+reopenDialog.addEventListener("click", (event) => {
+  if (event.target !== reopenDialog) return;
+  const box = reopenDialog.getBoundingClientRect();
+  if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) reopenDialog.close();
+});
+reopenDialog.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const reopeningPollId = displayedPublicPoll?.id;
+  if (!reopeningPollId || !ownerControlsAllowed || reopenConfirm.disabled) return;
+  void (async () => {
+    reopenConfirm.disabled = true;
+    reopenConfirm.textContent = "Reopening…";
+    try {
+      const response = await request(`/api/organiser/polls/${encodeURIComponent(reopeningPollId)}/reopen`, {
+        method: "POST", body: JSON.stringify({ confirmed: true })
+      });
+      if (!response.ok) {
+        reopenError.hidden = false;
+        reopenError.textContent = await readError(response);
+        return;
+      }
+      const result = (await response.json()) as { poll: PublicPollDetails };
+      reopenDialog.close();
+      renderPublicPoll(result.poll);
+      publicPollHeading.focus();
+      publicToast.textContent = "Poll reopened. The previous final date is now provisional.";
+      publicToast.hidden = false;
+      window.setTimeout(() => { publicToast.hidden = true; }, 3600);
+    } catch {
+      reopenError.hidden = false;
+      reopenError.textContent = "Could not reopen the poll. Check your connection and try again.";
+    } finally {
+      reopenConfirm.disabled = false;
+      reopenConfirm.textContent = "Reopen poll";
+    }
+  })();
+});
 closeDialog.addEventListener("submit", (event) => {
   event.preventDefault();
   const selectedDateId = closeDialog.dataset.choiceId;
