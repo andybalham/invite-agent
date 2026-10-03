@@ -10,7 +10,7 @@ graph LR
     S039["S-039 Verify cleanup isolation, repeatability, and failure recovery"]:::done
     S040["S-040 Document ephemeral smoke data and local cleanup operations"]:::done
     S041["S-041 Clear down integration-test tables after every test"]:::done
-    S042["S-042 Provide a script to clear all local application data"]:::blocked
+    S042["S-042 Provide a script to clear all local application data"]:::done
     S037 --> S038
     S038 --> S039
     S039 --> S040
@@ -31,9 +31,9 @@ graph LR
     T092["T-092 Define integration-test table ownership and teardown boundaries"]:::done
     T093["T-093 Implement finally-path deletion for integration-test tables"]:::done
     T094["T-094 Verify integration-suite cleanup and failure reporting"]:::done
-    T095["T-095 Define the all-local-data clear-down scope and safety contract"]:::todo
-    T096["T-096 Implement the guarded all-local-data cleanup script"]:::blocked
-    T097["T-097 Verify and document complete local-data clear-down"]:::blocked
+    T095["T-095 Define the all-local-data clear-down scope and safety contract"]:::done
+    T096["T-096 Implement the guarded all-local-data cleanup script"]:::done
+    T097["T-097 Verify and document complete local-data clear-down"]:::done
     T080 --> T081
     T081 --> T082
     T082 --> T083

@@ -2,17 +2,15 @@
 
 _Generated. Do not edit by hand._
 
-- [E-008 · E8 — Production AWS platform](../entities/E-008-e8-production-aws-platform.md) — blocked · waiting on E-011
+- [E-008 · E8 — Production AWS platform](../entities/E-008-e8-production-aws-platform.md) — blocked
 - [E-009 · E9 — Tested production release and operations](../entities/E-009-e9-tested-production-release-and-operations.md) — blocked · waiting on E-008
-- [E-011 · E11 — Ephemeral smoke data and safe local cleanup](../entities/E-011-e11-ephemeral-smoke-data-and-safe-local-cleanup.md) — blocked
-- [S-025 · Provision durable DynamoDB application and audit data](../entities/S-025-provision-durable-dynamodb-application-and-audit-data.md) — blocked · waiting on E-008
+- [S-025 · Provision durable DynamoDB application and audit data](../entities/S-025-provision-durable-dynamodb-application-and-audit-data.md) — blocked
 - [S-026 · Deploy least-privilege Lambda APIs with Cognito authorization](../entities/S-026-deploy-least-privilege-lambda-apis-with-cognito-authorization.md) — blocked · waiting on S-025
 - [S-027 · Serve the SPA through private S3, CloudFront, DNS, and TLS](../entities/S-027-serve-the-spa-through-private-s3-cloudfront-dns-and-tls.md) — blocked · waiting on S-026
 - [S-028 · Add production observability, limits, and security safeguards](../entities/S-028-add-production-observability-limits-and-security-safeguards.md) — blocked · waiting on S-026
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [S-042 · Provide a script to clear all local application data](../entities/S-042-provide-a-script-to-clear-all-local-application-data.md) — blocked
 - [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053
 - [T-055 · Implement and verify Lambda, API Gateway, and Cognito stacks](../entities/T-055-implement-and-verify-lambda-api-gateway-and-cognito-stacks.md) — blocked · waiting on T-054
@@ -26,5 +24,3 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-096 · Implement the guarded all-local-data cleanup script](../entities/T-096-implement-the-guarded-all-local-data-cleanup-script.md) — blocked · waiting on T-095
-- [T-097 · Verify and document complete local-data clear-down](../entities/T-097-verify-and-document-complete-local-data-clear-down.md) — blocked · waiting on T-096

@@ -1,6 +1,6 @@
 # Local cleanup operations
 
-S-040 / T-089–T-091 documents the existing cleanup implementation. Start with the [README lifecycle](../README.md#local-smoke-test), [cleanup commands](../README.md#retained-local-data-cleanup), and [ports/evidence](../README.md#smoke-configuration-and-evidence). This supports the [smoke isolation contract](local-smoke-test-contract.md#isolation-repeatability-and-data-lifetime) and [local development architecture, section 16](architecture.md#16-local-development-and-testing). Other Epic 11 stories remain outside this change.
+S-040 / T-089–T-091 documents the scoped cleanup implementation. S-042 adds a separate [all-local clear-down contract and commands](all-local-data-cleanup.md). Start with the [README lifecycle](../README.md#local-smoke-test), [cleanup commands](../README.md#retained-local-data-cleanup), and [ports/evidence](../README.md#smoke-configuration-and-evidence). This supports the [smoke isolation contract](local-smoke-test-contract.md#isolation-repeatability-and-data-lifetime) and [local development architecture, section 16](architecture.md#16-local-development-and-testing).
 
 ## Flags and safeguards
 
@@ -36,12 +36,13 @@ npm run cleanup:local -- --run-id '<run-id>' --manifest 'C:\evidence\<run-id>\ma
 | Confirmed poll cleanup | Poll app partition, referenced current capability, paginated `EVENT#` audit history | Other polls, other audit key types, tables, evidence |
 | Confirmed run-record cleanup | Only manifest-recorded polls after both ownership checks | Unrecorded polls, markers, tables, evidence; manifest unchanged |
 | Internal table helper `cleanup` | Entire eligible owned tables immediately, including unrecorded records | Evidence and resources outside the validated run tables |
+| Confirmed `cleanup:all` (S-042) | Entire supported shared local, smoke-run, and UUID integration tables, after preview and name/schema checks | Unsupported tables and all files, including the shared DynamoDB database file and diagnostic evidence |
 
 The app partition includes embedded dates/current state, participants, and name indexes; source-record deletion also removes index entries. Capability resolution follows the metadata's current hash and verifies its poll mapping. Missing metadata/hash reports `unresolved` rather than scanning or guessing, so old orphan capabilities may remain. Run-record cleanup never discovers lost-response/unrecorded polls; whole-table teardown discovers poll IDs only inside its owned app table before deleting it.
 
 Inspect JSON `counts`, `missing`, `unresolved`, `status`, `deleted`, `dryRun`, and `confirmationRequired`. Counts are inspection/deletion requests, not an atomic post-delete proof. Exit 0 can include unresolved capabilities or an empty manifest poll list. Missing-only poll cleanup may report `dryRun: true` even when confirmed, because no write was needed. Failures return nonzero; run mode reports failed polls and continues other recorded polls. stdout/stderr are not automatically saved and record cleanup does not update the manifest.
 
-Pre-S-037/S-036 evidence has no ownership manifest and may use uppercase timestamp IDs invalid in current run mode. Use explicit poll IDs from summaries with the actual shared table configuration; never synthesize manifests or infer ownership from titles/prefixes. Direct Playwright and ordinary dev data also persist. Cleanup permanently removes selected audit history; append-only audit behavior applies to normal application use, not disposable local maintenance. Evidence is not a backup. No all-local reset utility exists; architecture reset wording describes design intent. S-041 integration teardown and S-042 all-local clear-down are not implemented here.
+Pre-S-037/S-036 evidence has no ownership manifest and may use uppercase timestamp IDs invalid in current run mode. Use explicit poll IDs from summaries with the actual shared table configuration; never synthesize manifests or infer ownership from titles/prefixes. Direct Playwright and ordinary dev data also persist. Cleanup permanently removes selected audit history; append-only audit behavior applies to normal application use, not disposable local maintenance. Evidence is not a backup. For an intentional complete reset of supported local tables, use the separate [S-042 clear-down command](all-local-data-cleanup.md); its whole-table scope does not depend on manifests or recorded poll IDs.
 
 ## Interrupted-run recovery
 

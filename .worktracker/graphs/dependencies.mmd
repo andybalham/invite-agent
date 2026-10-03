@@ -15,7 +15,7 @@ graph LR
     E008["E-008 E8 — Production AWS platform"]:::blocked
     E009["E-009 E9 — Tested production release and operations"]:::blocked
     E010["E-010 E10 — Local onboarding and full-journey smoke testing"]:::done
-    E011["E-011 E11 — Ephemeral smoke data and safe local cleanup"]:::blocked
+    E011["E-011 E11 — Ephemeral smoke data and safe local cleanup"]:::done
     E001 --> E002
     E002 --> E003
     E003 --> E004
@@ -71,7 +71,7 @@ graph LR
     S039["S-039 Verify cleanup isolation, repeatability, and failure recovery"]:::done
     S040["S-040 Document ephemeral smoke data and local cleanup operations"]:::done
     S041["S-041 Clear down integration-test tables after every test"]:::done
-    S042["S-042 Provide a script to clear all local application data"]:::blocked
+    S042["S-042 Provide a script to clear all local application data"]:::done
     S001 --> S002
     S002 --> S003
     S003 --> S004
@@ -212,9 +212,9 @@ graph LR
     T092["T-092 Define integration-test table ownership and teardown boundaries"]:::done
     T093["T-093 Implement finally-path deletion for integration-test tables"]:::done
     T094["T-094 Verify integration-suite cleanup and failure reporting"]:::done
-    T095["T-095 Define the all-local-data clear-down scope and safety contract"]:::todo
-    T096["T-096 Implement the guarded all-local-data cleanup script"]:::blocked
-    T097["T-097 Verify and document complete local-data clear-down"]:::blocked
+    T095["T-095 Define the all-local-data clear-down scope and safety contract"]:::done
+    T096["T-096 Implement the guarded all-local-data cleanup script"]:::done
+    T097["T-097 Verify and document complete local-data clear-down"]:::done
     T001 --> T002
     T002 --> T003
     T003 --> T004

@@ -95,8 +95,8 @@ _Generated. Do not edit by hand._
   - [x] [T-051 · Implement and verify reopen and close-again lifecycle](../entities/T-051-implement-and-verify-reopen-and-close-again-lifecycle.md) — done
 
 ## [E-008 · E8 — Production AWS platform](./E-008.md) — blocked
-- [ ] **S-025 · Provision durable DynamoDB application and audit data** — blocked · waiting on E-008
-  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — todo · waiting on E-008
+- [ ] **S-025 · Provision durable DynamoDB application and audit data** — blocked
+  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — todo
   - [ ] [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [ ] **S-026 · Deploy least-privilege Lambda APIs with Cognito authorization** — blocked · waiting on S-025
   - [ ] [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053
@@ -137,7 +137,7 @@ _Generated. Do not edit by hand._
   - [x] [T-078 · Verify smoke-test repeatability, failure diagnostics, and port overrides](../entities/T-078-verify-smoke-test-repeatability-failure-diagnostics-and-port-overrides.md) — done
   - [x] [T-079 · Finalize the local guide and acceptance traceability evidence](../entities/T-079-finalize-the-local-guide-and-acceptance-traceability-evidence.md) — done
 
-## [E-011 · E11 — Ephemeral smoke data and safe local cleanup](./E-011.md) — blocked
+## [E-011 · E11 — Ephemeral smoke data and safe local cleanup](./E-011.md) — done
 - [x] **S-037 · Run smoke tests against ephemeral per-run DynamoDB tables** — done
   - [x] [T-080 · Specify per-run table ownership and smoke-run manifest format](../entities/T-080-specify-per-run-table-ownership-and-smoke-run-manifest-format.md) — done
   - [x] [T-081 · Provision unique application and audit tables for each smoke run](../entities/T-081-provision-unique-application-and-audit-tables-for-each-smoke-run.md) — done
@@ -158,7 +158,7 @@ _Generated. Do not edit by hand._
   - [x] [T-092 · Define integration-test table ownership and teardown boundaries](../entities/T-092-define-integration-test-table-ownership-and-teardown-boundaries.md) — done
   - [x] [T-093 · Implement finally-path deletion for integration-test tables](../entities/T-093-implement-finally-path-deletion-for-integration-test-tables.md) — done
   - [x] [T-094 · Verify integration-suite cleanup and failure reporting](../entities/T-094-verify-integration-suite-cleanup-and-failure-reporting.md) — done
-- [ ] **S-042 · Provide a script to clear all local application data** — blocked
-  - [ ] [T-095 · Define the all-local-data clear-down scope and safety contract](../entities/T-095-define-the-all-local-data-clear-down-scope-and-safety-contract.md) — todo
-  - [ ] [T-096 · Implement the guarded all-local-data cleanup script](../entities/T-096-implement-the-guarded-all-local-data-cleanup-script.md) — blocked · waiting on T-095
-  - [ ] [T-097 · Verify and document complete local-data clear-down](../entities/T-097-verify-and-document-complete-local-data-clear-down.md) — blocked · waiting on T-096
+- [x] **S-042 · Provide a script to clear all local application data** — done
+  - [x] [T-095 · Define the all-local-data clear-down scope and safety contract](../entities/T-095-define-the-all-local-data-clear-down-scope-and-safety-contract.md) — done
+  - [x] [T-096 · Implement the guarded all-local-data cleanup script](../entities/T-096-implement-the-guarded-all-local-data-cleanup-script.md) — done
+  - [x] [T-097 · Verify and document complete local-data clear-down](../entities/T-097-verify-and-document-complete-local-data-clear-down.md) — done

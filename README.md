@@ -242,7 +242,25 @@ The record CLI permits unset `APP_ENV` as well as `local`/`test`. Endpoints requ
 
 Historical pre-S-037 smoke runs have no ownership manifest and retain their polls in shared tables; use explicit poll IDs from their summaries and the actual local table configuration. Ordinary development and direct Playwright data also remain until explicitly selected. Confirmed deletion removes history permanently; retry recovery finishes deletion and cannot restore data. Evidence is not a database backup. The CLI prints JSON/errors to stdout/stderr without saving a report or updating the manifest. Exit 0 can include unresolved capabilities or an empty recorded poll list; inspect the result.
 
-The internal `node scripts/smoke-run-resources.mjs cleanup '<manifest-path>'` operation **immediately deletes whole owned tables**, including unrecorded data, with no dry run, confirmation, or `APP_ENV` gate. It is the wrapper's teardown mechanism. Follow the [interrupted-run recovery procedure](.docs/local-cleanup-operations.md#interrupted-run-recovery), and never forge markers or edit manifest identity/flags to bypass refusal. No all-local reset command is implemented; removing `.dynamodb/` discards data beyond this scope.
+The internal `node scripts/smoke-run-resources.mjs cleanup '<manifest-path>'` operation **immediately deletes whole owned tables**, including unrecorded data, with no dry run, confirmation, or `APP_ENV` gate. It is the wrapper's teardown mechanism. Follow the [interrupted-run recovery procedure](.docs/local-cleanup-operations.md#interrupted-run-recovery), and never forge markers or edit manifest identity/flags to bypass refusal.
+
+### Clear all local application data
+
+`cleanup:all` is a separate, explicitly invoked reset for S-042. It discovers the exact shared `invite-agent-local-app` / `invite-agent-local-audit` tables, correctly formed smoke-run tables, and current UUID-named integration-test tables on one loopback DynamoDB Local endpoint. **Confirmed cleanup permanently deletes entire supported tables, indexes, polls, capabilities, and audit history**, including orphan/unrecorded data and empty tables. Stop writers and test runners first; keep the intended DynamoDB Local instance reachable.
+
+```powershell
+$env:APP_ENV = 'local'
+npm run cleanup:all -- --endpoint http://127.0.0.1:18000 --dry-run
+npm run cleanup:all -- --endpoint http://127.0.0.1:18000 --confirm 'DELETE ALL LOCAL DATA'
+# Alternative for deliberate noninteractive execution:
+npm run cleanup:all -- --endpoint http://127.0.0.1:18000 --force
+```
+
+Omitting authorization previews only. `--confirm` requires that exact phrase; there is no prompt. `--force` bypasses no safety checks. These flags cannot be combined with each other or `--dry-run`. `APP_ENV` must explicitly be `local` or `test`; endpoint comes from `--endpoint` or `DYNAMODB_ENDPOINT`, with no `.env.local` loading or port-derived default. Only literal HTTP `127.0.0.1`/`localhost` with a non-default explicit port is allowed; `localhost` is pinned to IPv4 loopback and redirects are not followed. Custom `APP_TABLE_NAME`/`AUDIT_TABLE_NAME` settings are refused. Verify the selected local service is not a tunnel to another environment.
+
+The CLI emits JSON lines: a preview before writes, followed by per-table successes/skips/failures when authorized. It validates schemas and rechecks creation identity before deletion. Inspection failures prevent all deletion; later failures can leave a partial reset and return exit 1. Exit 0 can include excluded tables: inspect the report. Custom names, legacy non-UUID integration names, and prefix lookalikes are excluded. All files remain, including `.dynamodb/`, smoke manifests/logs, reports, configuration, and backups. Removing `.dynamodb/` would also discard unrelated data and is not part of this command.
+
+After cleanup, supported tables are absent. Run `npm run tables:init` with the intended local configuration to recreate empty shared tables, then `npm run dev`; test fixtures create fresh tables on their next run. On failure, correct the cause, preview again, and repeat authorization. Recovery finishes deletion; restoration requires an independent backup. Reports and manifests are not backups, and this command does not update manifests or securely erase evidence. See the [full scope, exclusions, reporting and recovery contract](.docs/all-local-data-cleanup.md).
 
 ### Smoke configuration and evidence
 
@@ -292,6 +310,7 @@ This command runs, in order: format check, lint, type check, `npm test` (foundat
 | `npm run security:check` | Security checks |
 | `npm run tables:init` | Idempotently create local DynamoDB tables |
 | `npm run cleanup:local -- ...` | Preview or confirm explicit poll / manifest-recorded smoke poll deletion |
+| `npm run cleanup:all -- ...` | Preview or deliberately delete all supported local application/audit/smoke/test tables |
 
 ## Configuration
 
