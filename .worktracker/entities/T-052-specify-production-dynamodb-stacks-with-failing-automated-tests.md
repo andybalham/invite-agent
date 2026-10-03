@@ -4,12 +4,12 @@ type: task
 title: Specify production DynamoDB stacks with failing automated tests
 parent: S-025
 status: todo
-dependsOn: [T-051]
+dependsOn: [T-051, T-127]
 estimate: 1
 tags: [red, S-025, test-first]
 archived: false
 created: 2026-09-27T18:08:42.743Z
-updated: 2026-09-27T18:19:41.382Z
+updated: 2026-10-03T16:45:40.342Z
 ---
 Purpose:
 Lock the parent story's behavior before implementation.

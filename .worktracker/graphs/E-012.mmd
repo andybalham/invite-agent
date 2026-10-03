@@ -1,0 +1,127 @@
+graph LR
+  classDef done fill:#14532d,stroke:#86efac,color:#f0fdf4;
+  classDef blocked fill:#7f1d1d,stroke:#fca5a5,color:#fff7f7;
+  classDef inprogress fill:#78350f,stroke:#fbbf24,color:#fffbeb;
+  classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
+  classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
+  subgraph Stories
+    S043["S-043 Resolve My polls decisions and define tested dashboard contracts"]:::blocked
+    S044["S-044 Query organiser-owned poll summaries through a secure list API"]:::blocked
+    S045["S-045 Make My polls the organiser landing page and provide return navigation"]:::blocked
+    S046["S-046 Render equivalent My polls summaries as desktop tables and mobile cards"]:::blocked
+    S047["S-047 Find owned polls with lifecycle filters title search and creation ordering"]:::blocked
+    S048["S-048 Reflect create publish close and reopen workflows in My polls"]:::blocked
+    S049["S-049 Document My polls operation and verify acceptance and regression coverage"]:::blocked
+    S043 --> S044
+    S043 --> S045
+    S044 --> S046
+    S045 --> S046
+    S046 --> S047
+    S046 --> S048
+    S047 --> S049
+    S048 --> S049
+  end
+  subgraph Tasks
+    T098["T-098 Resolve dashboard search date pagination and state-copy decisions"]:::todo
+    T099["T-099 Define the owned-summary API and creation-ordered query strategy"]:::blocked
+    T100["T-100 Specify dashboard schemas and pure query rules with foundation and domain tests"]:::blocked
+    T101["T-101 Implement shared dashboard contracts and pure summary query helpers"]:::blocked
+    T102["T-102 Build isolated two-organiser dashboard fixtures and verify teardown"]:::blocked
+    T103["T-103 Specify owner-scoped summary queries with DynamoDB integration tests"]:::blocked
+    T104["T-104 Implement creation-ordered owned-summary persistence queries"]:::blocked
+    T105["T-105 Specify organiser list authorization and transport contracts with API tests"]:::blocked
+    T106["T-106 Expose the protected poll-list service through local and Lambda adapters"]:::blocked
+    T107["T-107 Verify list-query integration and production boundary readiness"]:::blocked
+    T108["T-108 Specify organiser entry return and public route behavior with unit tests"]:::blocked
+    T109["T-109 Implement My polls entry routes create action and return links"]:::blocked
+    T110["T-110 Add browser tests for organiser landing create return and public-link isolation"]:::blocked
+    T111["T-111 Verify navigation guards and existing poll-route regressions"]:::blocked
+    T112["T-112 Specify equivalent desktop and mobile summaries with component tests"]:::blocked
+    T113["T-113 Build the responsive My polls table and card presentation"]:::blocked
+    T114["T-114 Connect owned-list loading and approved pagination and state feedback"]:::blocked
+    T115["T-115 Verify real dashboard summaries and title navigation on desktop and mobile"]:::blocked
+    T116["T-116 Specify filter search and paginated result state with frontend unit tests"]:::blocked
+    T117["T-117 Implement lifecycle filters and title-search controls against the owned-list API"]:::blocked
+    T118["T-118 Verify filtering search and creation-date order across browser viewports"]:::blocked
+    T119["T-119 Verify API and browser discovery behavior together without read mutations"]:::blocked
+    T120["T-120 Specify dashboard summary refresh and immutable creation time with unit tests"]:::blocked
+    T121["T-121 Integrate saved poll and lifecycle results with dashboard refresh"]:::blocked
+    T122["T-122 Verify lifecycle summaries and read-only list behavior with server integration tests"]:::blocked
+    T123["T-123 Verify complete dashboard lifecycle journeys and public-link isolation in browsers"]:::blocked
+    T124["T-124 Update dashboard requirements acceptance traceability and architecture documentation"]:::blocked
+    T125["T-125 Document My polls user navigation and local operational guidance in README"]:::blocked
+    T126["T-126 Integrate My polls into the isolated local smoke journey and its contract"]:::blocked
+    T127["T-127 Run dashboard acceptance and regression checks and record implementation evidence"]:::blocked
+    T098 --> T099
+    T099 --> T100
+    T100 --> T101
+    T101 --> T102
+    T101 --> T108
+    T102 --> T103
+    T102 --> T105
+    T103 --> T104
+    T104 --> T106
+    T105 --> T106
+    T106 --> T107
+    T106 --> T110
+    T107 --> T112
+    T108 --> T109
+    T109 --> T110
+    T110 --> T111
+    T111 --> T112
+    T112 --> T113
+    T113 --> T114
+    T114 --> T115
+    T115 --> T116
+    T115 --> T120
+    T116 --> T117
+    T117 --> T118
+    T117 --> T123
+    T118 --> T119
+    T119 --> T124
+    T120 --> T121
+    T121 --> T122
+    T122 --> T123
+    T123 --> T124
+    T124 --> T125
+    T124 --> T126
+    T125 --> T127
+    T126 --> T127
+  end
+  click S043 "../entities/S-043-resolve-my-polls-decisions-and-define-tested-dashboard-contracts.md"
+  click S044 "../entities/S-044-query-organiser-owned-poll-summaries-through-a-secure-list-api.md"
+  click S045 "../entities/S-045-make-my-polls-the-organiser-landing-page-and-provide-return-navigation.md"
+  click S046 "../entities/S-046-render-equivalent-my-polls-summaries-as-desktop-tables-and-mobile-cards.md"
+  click S047 "../entities/S-047-find-owned-polls-with-lifecycle-filters-title-search-and-creation-ordering.md"
+  click S048 "../entities/S-048-reflect-create-publish-close-and-reopen-workflows-in-my-polls.md"
+  click S049 "../entities/S-049-document-my-polls-operation-and-verify-acceptance-and-regression-coverage.md"
+  click T098 "../entities/T-098-resolve-dashboard-search-date-pagination-and-state-copy-decisions.md"
+  click T099 "../entities/T-099-define-the-owned-summary-api-and-creation-ordered-query-strategy.md"
+  click T100 "../entities/T-100-specify-dashboard-schemas-and-pure-query-rules-with-foundation-and-domain-tests.md"
+  click T101 "../entities/T-101-implement-shared-dashboard-contracts-and-pure-summary-query-helpers.md"
+  click T102 "../entities/T-102-build-isolated-two-organiser-dashboard-fixtures-and-verify-teardown.md"
+  click T103 "../entities/T-103-specify-owner-scoped-summary-queries-with-dynamodb-integration-tests.md"
+  click T104 "../entities/T-104-implement-creation-ordered-owned-summary-persistence-queries.md"
+  click T105 "../entities/T-105-specify-organiser-list-authorization-and-transport-contracts-with-api-tests.md"
+  click T106 "../entities/T-106-expose-the-protected-poll-list-service-through-local-and-lambda-adapters.md"
+  click T107 "../entities/T-107-verify-list-query-integration-and-production-boundary-readiness.md"
+  click T108 "../entities/T-108-specify-organiser-entry-return-and-public-route-behavior-with-unit-tests.md"
+  click T109 "../entities/T-109-implement-my-polls-entry-routes-create-action-and-return-links.md"
+  click T110 "../entities/T-110-add-browser-tests-for-organiser-landing-create-return-and-public-link-isolation.md"
+  click T111 "../entities/T-111-verify-navigation-guards-and-existing-poll-route-regressions.md"
+  click T112 "../entities/T-112-specify-equivalent-desktop-and-mobile-summaries-with-component-tests.md"
+  click T113 "../entities/T-113-build-the-responsive-my-polls-table-and-card-presentation.md"
+  click T114 "../entities/T-114-connect-owned-list-loading-and-approved-pagination-and-state-feedback.md"
+  click T115 "../entities/T-115-verify-real-dashboard-summaries-and-title-navigation-on-desktop-and-mobile.md"
+  click T116 "../entities/T-116-specify-filter-search-and-paginated-result-state-with-frontend-unit-tests.md"
+  click T117 "../entities/T-117-implement-lifecycle-filters-and-title-search-controls-against-the-owned-list-api.md"
+  click T118 "../entities/T-118-verify-filtering-search-and-creation-date-order-across-browser-viewports.md"
+  click T119 "../entities/T-119-verify-api-and-browser-discovery-behavior-together-without-read-mutations.md"
+  click T120 "../entities/T-120-specify-dashboard-summary-refresh-and-immutable-creation-time-with-unit-tests.md"
+  click T121 "../entities/T-121-integrate-saved-poll-and-lifecycle-results-with-dashboard-refresh.md"
+  click T122 "../entities/T-122-verify-lifecycle-summaries-and-read-only-list-behavior-with-server-integration-tests.md"
+  click T123 "../entities/T-123-verify-complete-dashboard-lifecycle-journeys-and-public-link-isolation-in-browsers.md"
+  click T124 "../entities/T-124-update-dashboard-requirements-acceptance-traceability-and-architecture-documentation.md"
+  click T125 "../entities/T-125-document-my-polls-user-navigation-and-local-operational-guidance-in-readme.md"
+  click T126 "../entities/T-126-integrate-my-polls-into-the-isolated-local-smoke-journey-and-its-contract.md"
+  click T127 "../entities/T-127-run-dashboard-acceptance-and-regression-checks-and-record-implementation-evidence.md"
