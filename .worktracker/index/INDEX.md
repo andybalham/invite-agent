@@ -128,11 +128,11 @@ _Generated. Do not edit by hand._
   - [x] [T-071 · Map smoke-test checkpoints to the critical application facets](../entities/T-071-map-smoke-test-checkpoints-to-the-critical-application-facets.md) — done
   - [x] [T-072 · Define scripted initial data and test isolation rules](../entities/T-072-define-scripted-initial-data-and-test-isolation-rules.md) — done
   - [x] [T-073 · Specify smoke assertions, diagnostics, and coverage boundaries](../entities/T-073-specify-smoke-assertions-diagnostics-and-coverage-boundaries.md) — done
-- [ ] **S-035 · Implement the executable full-journey local smoke test** — blocked
-  - [ ] [T-074 · Implement deterministic smoke-test bootstrap and cleanup helpers](../entities/T-074-implement-deterministic-smoke-test-bootstrap-and-cleanup-helpers.md) — todo
-  - [ ] [T-075 · Implement the core draft publication and participation smoke journey](../entities/T-075-implement-the-core-draft-publication-and-participation-smoke-journey.md) — blocked · waiting on T-074
-  - [ ] [T-076 · Implement lifecycle, audit, undo, and access-control smoke assertions](../entities/T-076-implement-lifecycle-audit-undo-and-access-control-smoke-assertions.md) — blocked · waiting on T-075
-- [ ] **S-036 · Operationalize and verify local smoke-test execution** — blocked · waiting on S-035
-  - [ ] [T-077 · Add a dedicated developer command for the local smoke test](../entities/T-077-add-a-dedicated-developer-command-for-the-local-smoke-test.md) — blocked · waiting on T-076
+- [x] **S-035 · Implement the executable full-journey local smoke test** — done
+  - [x] [T-074 · Implement deterministic smoke-test bootstrap and cleanup helpers](../entities/T-074-implement-deterministic-smoke-test-bootstrap-and-cleanup-helpers.md) — done
+  - [x] [T-075 · Implement the core draft publication and participation smoke journey](../entities/T-075-implement-the-core-draft-publication-and-participation-smoke-journey.md) — done
+  - [x] [T-076 · Implement lifecycle, audit, undo, and access-control smoke assertions](../entities/T-076-implement-lifecycle-audit-undo-and-access-control-smoke-assertions.md) — done
+- [ ] **S-036 · Operationalize and verify local smoke-test execution** — blocked
+  - [ ] [T-077 · Add a dedicated developer command for the local smoke test](../entities/T-077-add-a-dedicated-developer-command-for-the-local-smoke-test.md) — todo
   - [ ] [T-078 · Verify smoke-test repeatability, failure diagnostics, and port overrides](../entities/T-078-verify-smoke-test-repeatability-failure-diagnostics-and-port-overrides.md) — blocked · waiting on T-077
   - [ ] [T-079 · Finalize the local guide and acceptance traceability evidence](../entities/T-079-finalize-the-local-guide-and-acceptance-traceability-evidence.md) — blocked · waiting on T-078

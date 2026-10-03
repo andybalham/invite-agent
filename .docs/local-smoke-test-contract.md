@@ -4,7 +4,7 @@
 
 Epic E-010 / Story S-034 defines a repeatable local smoke journey across the application's critical facets. This contract completes T-071 (coverage), T-072 (scripted data and isolation), and T-073 (assertions, diagnostics, commands, and regression boundaries).
 
-This is a specification for subsequent implementation. No smoke spec, seed script, or `test:smoke` npm command exists yet. S-035 implements the browser journey; S-036 integrates its command and verifies repeatability. A passing smoke run will demonstrate the checkpoints below, not certify all acceptance scenarios.
+S-035 now provides the executable browser journey in `test/e2e/smoke.spec.ts`, with scripted UI inputs and isolated fixtures. There is no separate seed script or `test:smoke` npm command. S-036 integrates the command and verifies repeatability. A passing smoke run demonstrates the checkpoints below, subject to the implementation limitations recorded at the end, not all acceptance scenarios.
 
 Authoritative behaviour: [user requirements](user-requirements.md) and [acceptance use cases](acceptance-use-cases.md). Local installation, ports, startup, shutdown, and troubleshooting remain in the [README](../README.md). Local authentication is a test adapter; this journey cannot verify Cognito or deployed AWS services.
 
@@ -122,9 +122,9 @@ Current outputs are `test-results/` and `playwright-report/`; inspect with `npx 
 
 ## Command expectations
 
-Current supported commands are documented in README: `npm run dev`, `npm run test:e2e`, and `npm run dev:stop`. Playwright does not start services. There is no executable smoke command in S-034.
+Current supported commands are documented in README: `npm run dev`, `npm run test:e2e`, and `npm run dev:stop`. Playwright does not start services. The targeted S-035 spec is executable; dedicated npm command integration remains in S-036.
 
-S-035 should provide `test/e2e/smoke.spec.ts`, runnable against an already-running stack with `npx playwright test test/e2e/smoke.spec.ts --project=chromium --workers=1 --retries=0`. This is a future invocation, not a command that can currently validate the contract.
+S-035 provides `test/e2e/smoke.spec.ts`, runnable against an already-running stack with `npx playwright test test/e2e/smoke.spec.ts --project=chromium --workers=1 --retries=0`.
 
 S-036 should expose `npm run test:smoke` for that targeted suite. Its initial contract expects an already-running stack, leaves that stack running, propagates failure exit codes, and never resets data. The documented complete workflow should start with `npm run dev` and stop with `npm run dev:stop`, using `try/finally` when scripted so failures still stop only the caller-owned stack. Automated stack management can be an additional explicitly documented wrapper; it must not stop somebody else's reused stack.
 
@@ -158,3 +158,18 @@ The smoke contract samples every critical facet through one lifecycle. The broad
 Production AWS deployment, Cognito login, CloudFront routing, throttling/load behaviour, and network fault resilience are outside the local smoke assurance. `npm test`, `npm run test:integration`, `npm run test:e2e`, and `npm run test:foundation` retain their current meanings; the future smoke command complements them.
 
 S-034 completion means the contract is reviewable, traced to acceptance stories, concrete enough to implement, and candid about unsupported coverage. Execution evidence and executable fixtures belong to S-035/S-036.
+
+## S-035 implementation notes
+
+`test/e2e/smoke-data.ts` holds the fixed inputs. `test/e2e/smoke-fixtures.ts` extends the existing fixtures with a random invocation identity, owner read assertions, complete history pagination, mutation/rejection assertions, and resource cleanup. `test/e2e/smoke.spec.ts` runs all eleven named checkpoints on one poll created through the UI. It records generated poll, participant, date, and audit identities from responses. Publication currently performs a draft save followed by publication; both requests must append exactly one revision each. The draft save may repeat unchanged values.
+
+All accepted writes verify action, entity, actor, operation-window timestamp, revision order, and unchanged prior history. Participant/availability/location edits also assert their concrete before/after values. Rejected and cancelled operations compare owner state, history, and the public projection when available. Observer convergence uses Playwright assertions rather than sleeps.
+
+Two implementation boundaries remain explicit:
+
+- **History value cells:** The current history UI shows `Changed values` in the Before/After cells for structured availability values. Its action summary does show `Changed availability from yes to no`. SM-07 asserts that summary and the existing placeholders, verifies exact `{ value: "yes" }` / `{ value: "no" }` through the authenticated history API, then undoes the captured revision through the UI. Detailed value-cell rendering is an application gap, not added in S-035.
+- **Revocation versus regeneration:** SM-11 uses the repository-only hook described above. It requires `.devstack/processes.json` from the normal local startup script, matches its web/DynamoDB ports, permits only a loopback DynamoDB endpoint, and verifies the poll owner, stored hash, and capability-to-poll mapping before revoking this attempt's capability. Run it with the same table/region/hash environment as startup when overriding those settings. Configuration mismatch fails the checkpoint; it does not silently skip it. No production route, token rotation, or regeneration audit event is created.
+
+The suite retains its uniquely tagged polls, including partial failed attempts. There is no supported deletion workflow. It closes both public contexts and the separate unauthenticated API context after success or failure. It does not start, stop, or reset the stack.
+
+Failure attachments include redacted browser/API-probe logs, all four service logs (or an unavailable-log note), role-labelled screenshots and public videos, and a sanitized summary containing the run ID, retained poll ID, checkpoint, browser role, last action, completed checkpoints, assertion differences, and last authoritative snapshot. The existing Playwright retention policy captures traces for the owner, both public contexts, and API contexts. Browser media/traces remain local and may contain capability URLs; sanitize before sharing. A successful run also attaches the checkpoint summary. A 180-second whole-journey ceiling and 15-second action/navigation limits are provisional; S-036 owns measured repeatability, restart/port-override evidence, and developer command integration.

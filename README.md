@@ -198,6 +198,8 @@ npx playwright test --workers=1
 
 Playwright uses `http://127.0.0.1:${WEB_PORT:-15173}` as its base URL, so if you changed `WEB_PORT` for the stack, set the same value when you run the tests. On failure it keeps traces, screenshots and videos in `test-results/`, and it writes the HTML report to `playwright-report/`. The service logs are in `.devstack/service-logs/`.
 
+The executable local smoke journey is in [test/e2e/smoke.spec.ts](test/e2e/smoke.spec.ts). Its [contract and implementation notes](.docs/local-smoke-test-contract.md) describe the scripted data, eleven checkpoints, targeted invocation, failure diagnostics, retained test polls, and current history/revocation coverage limitations. It expects the existing local stack; a dedicated `test:smoke` npm command is planned under S-036.
+
 ### Full quality gate
 
 ```sh
