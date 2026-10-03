@@ -214,27 +214,39 @@ Each wrapper run provisions `invite-agent-smoke-app-<runId>` and `invite-agent-s
 
 `manifest.json` in the evidence directory records schema version, run ID, local endpoint/region, both table names, creation/ownership and cleanup results, and every created poll ID. The fixture records IDs immediately; teardown also discovers any polls whose create response was lost, using a paginated scan confined to the owned application table. Ownership requires exact names derived from the run ID plus a matching metadata marker containing the run ID, table role, project owner, and random nonce. Table collisions are rejected rather than reused. Only explicit loopback HTTP DynamoDB endpoints are allowed. Cleanup failure returns nonzero and records the reason in the manifest; an ownership mismatch preserves the table for inspection. Abrupt process termination or an unavailable database can leave tables behind.
 
+Success requires passing tests and successful teardown. Cleanup failure changes a passing test's exit to 1; a browser failure retains its nonzero exit and records cleanup separately. Diagnostic-copy errors are recorded but do not themselves fail a passing run. Inspect both table `cleanup` states (`pending`, `deleted`, `absent`, `failed`) and `cleanupError`, plus `summary.json.cleanupFailure`: missing process state alone does not prove deletion. A foreign manifest path in recorded stack state makes the wrapper refuse shutdown and retain that state. The manifest is created without overwrite and updated atomically during provisioning, poll recording, and teardown; preserve its identity, targets, and nonce for recovery.
+
 ### Retained local-data cleanup
 
 The cleanup utility is local-only and defaults to a dry run. It requires an explicit loopback HTTP DynamoDB endpoint, refuses `APP_ENV` values other than `local` or `test`, never performs a broad table scan, and requires `--confirm` before deleting anything. Use an explicit poll ID for retained data in the shared local tables:
 
 ```powershell
-node scripts/cleanup-local-data.mjs --poll-id <poll-id> --endpoint http://127.0.0.1:18000 --app-table invite-agent-local-app --audit-table invite-agent-local-audit
-node scripts/cleanup-local-data.mjs --poll-id <poll-id> --endpoint http://127.0.0.1:18000 --app-table invite-agent-local-app --audit-table invite-agent-local-audit --confirm
+npm run cleanup:local -- --poll-id '<poll-id>' --endpoint http://127.0.0.1:18000 --app-table invite-agent-local-app --audit-table invite-agent-local-audit --dry-run
+npm run cleanup:local -- --poll-id '<poll-id>' --endpoint http://127.0.0.1:18000 --app-table invite-agent-local-app --audit-table invite-agent-local-audit --confirm
 ```
 
-For an ephemeral smoke run, use its immutable manifest. The utility previews the manifest's exact tables and recorded poll IDs, then deletes only those polls after confirmation; it does not discover unrelated data:
+For an ephemeral smoke run, use its saved manifest at `.devstack/smoke-runs/<run-id>/manifest.json`. The utility previews the manifest's exact tables and recorded poll IDs, then deletes only those polls after confirmation; it leaves tables, ownership markers, unrecorded polls, and evidence in place:
 
 ```powershell
-node scripts/cleanup-local-data.mjs --run-id <run-id>
-node scripts/cleanup-local-data.mjs --run-id <run-id> --confirm
+npm run cleanup:local -- --run-id '<run-id>' --dry-run
+npm run cleanup:local -- --run-id '<run-id>' --confirm
 ```
 
 Poll cleanup removes metadata, participants, participant-name indexes, the public-token capability, and all paginated audit events with bounded DynamoDB batch writes. Missing records are reported as already missing; an incomplete poll record reports the capability as unresolved rather than guessing a token key. Run cleanup validates the manifest and, before mutation, its per-table ownership markers. A mismatched marker, non-loopback endpoint, invalid manifest, missing table name, or conflicting mode is a hard refusal. Table teardown remains the smoke wrapper's responsibility; use the manifest's recorded evidence and cleanup status for recovery when a process stops unexpectedly.
 
 Cleanup keeps poll metadata until dependent deletes succeed, so rerunning the same confirmed command can recover from a partial failure. Missing application or audit tables are handled independently. Capability ownership must match the requested poll. Run cleanup reports each poll's result, continues with other recorded polls after a poll failure, and exits nonzero if any fail; inspect the reported error and rerun after correcting its cause. Existing tables require matching ownership markers even when the manifest says they were previously deleted.
 
-The command accepts the same port environment variables as `npm run dev`, or explicit PowerShell parameters (parameters take precedence):
+Run these cleanup examples from the repository root with DynamoDB Local reachable, replacing quoted placeholders with actual recorded IDs. Review endpoint, tables, counts, `missing`, and `unresolved` before confirming. There is no interactive prompt. Stop writers to the selected polls: deletion is not transactional and does not lock the API. Poll mode trusts supplied table names without smoke markers, so a mistaken selection can permanently delete developer data. It deletes the poll partition (including embedded dates/state), its current capability, and paginated `EVENT#` audit records; other audit key types survive.
+
+The record CLI permits unset `APP_ENV` as well as `local`/`test`. Endpoints require HTTP with hostname exactly `127.0.0.1` or `localhost`, an explicit port, and no credentials, extra path, query, or fragment; HTTPS and IPv6 loopback are rejected. Poll mode can use `DYNAMODB_ENDPOINT`, `APP_TABLE_NAME`, and `AUDIT_TABLE_NAME`, but does not derive an endpoint from `DYNAMODB_PORT`. Run mode uses manifest targets; an optional `--endpoint` must match, and table-name flags do not override them. `--manifest` selects an archived manifest in run mode, still named `manifest.json` inside a directory matching the run ID. `--dry-run --confirm` is rejected. See the [complete flag and recovery guide](.docs/local-cleanup-operations.md).
+
+Historical pre-S-037 smoke runs have no ownership manifest and retain their polls in shared tables; use explicit poll IDs from their summaries and the actual local table configuration. Ordinary development and direct Playwright data also remain until explicitly selected. Confirmed deletion removes history permanently; retry recovery finishes deletion and cannot restore data. Evidence is not a database backup. The CLI prints JSON/errors to stdout/stderr without saving a report or updating the manifest. Exit 0 can include unresolved capabilities or an empty recorded poll list; inspect the result.
+
+The internal `node scripts/smoke-run-resources.mjs cleanup '<manifest-path>'` operation **immediately deletes whole owned tables**, including unrecorded data, with no dry run, confirmation, or `APP_ENV` gate. It is the wrapper's teardown mechanism. Follow the [interrupted-run recovery procedure](.docs/local-cleanup-operations.md#interrupted-run-recovery), and never forge markers or edit manifest identity/flags to bypass refusal. No all-local reset command is implemented; removing `.dynamodb/` discards data beyond this scope.
+
+### Smoke configuration and evidence
+
+The smoke wrapper accepts the same port environment variables as `npm run dev`, or explicit PowerShell parameters (parameters take precedence):
 
 ```powershell
 $env:WEB_PORT = '15174'
@@ -279,6 +291,7 @@ This command runs, in order: format check, lint, type check, `npm test` (foundat
 | `npm run format:check` | Formatting check |
 | `npm run security:check` | Security checks |
 | `npm run tables:init` | Idempotently create local DynamoDB tables |
+| `npm run cleanup:local -- ...` | Preview or confirm explicit poll / manifest-recorded smoke poll deletion |
 
 ## Configuration
 

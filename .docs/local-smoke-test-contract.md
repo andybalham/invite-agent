@@ -2,6 +2,8 @@
 
 ## Purpose and delivery status
 
+S-040 documents the existing S-037–S-039 disposable-table and scoped-cleanup implementation in the [README lifecycle/commands](../README.md#local-smoke-test) and [cleanup operations, acceptance traceability, and verification](local-cleanup-operations.md). The guide distinguishes confirmed poll/run-record deletion from immediate whole-table teardown, retained historical data, and failure recovery.
+
 Epic E-010 / Story S-034 defines a repeatable local smoke journey across the application's critical facets. This contract completes T-071 (coverage), T-072 (scripted data and isolation), and T-073 (assertions, diagnostics, commands, and regression boundaries).
 
 S-035 provides the executable browser journey in `test/e2e/smoke.spec.ts`, with scripted UI inputs and isolated fixtures. S-036 adds `npm run test:smoke`, which manages startup, execution, evidence collection, and shutdown using the existing local scripts. There is no separate seed script. A passing smoke run demonstrates the checkpoints below, subject to the implementation limitations recorded at the end, not all acceptance scenarios.
