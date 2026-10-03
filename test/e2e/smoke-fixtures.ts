@@ -1,7 +1,7 @@
 import type { APIRequestContext, Browser, BrowserContext, Page, TestInfo } from "@playwright/test";
 import type { AuditHistoryEvent, AuditHistoryPage, PublicPollResponse } from "@invite-a-gent/contracts";
 import { randomUUID } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { expect, test as existingTest } from "./fixtures";
@@ -241,7 +241,7 @@ export class SmokeHarness {
     }
     await Promise.allSettled(this.pendingLogs);
     if (failed) await safeAttach("smoke-api.log", sanitize(`${this.apiLog.join("\n")}\n`), "text/plain");
-    await safeAttach("smoke-summary.json", sanitize(JSON.stringify({
+    const summary = sanitize(JSON.stringify({
       runId: this.runId, retainedPollId: this.pollId || null, checkpoint: this.checkpoint,
       browserRole: this.browserRole, lastAction: this.lastAction, completed: this.completed,
       result: this.info.status, errors: this.info.errors.map(({ message }) => message),
@@ -251,7 +251,12 @@ export class SmokeHarness {
         "History availability Before/After cells show Changed values; exact values are asserted in the action summary and owner API.",
         "Smoke poll retained; no deletion workflow."
       ]
-    }, null, 2)), "application/json");
+    }, null, 2));
+    // Keep an inspectable file on successful runs as well as an HTML attachment.
+    const summaryPath = this.info.outputPath("smoke-summary.json");
+    await writeFile(summaryPath, `${summary}\n`, "utf8")
+      .then(() => this.info.attach("smoke-summary.json", { path: summaryPath, contentType: "application/json" }))
+      .catch(() => {});
   }
 }
 

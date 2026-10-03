@@ -95,8 +95,8 @@ _Generated. Do not edit by hand._
   - [x] [T-051 · Implement and verify reopen and close-again lifecycle](../entities/T-051-implement-and-verify-reopen-and-close-again-lifecycle.md) — done
 
 ## [E-008 · E8 — Production AWS platform](./E-008.md) — blocked
-- [ ] **S-025 · Provision durable DynamoDB application and audit data** — blocked · waiting on E-008
-  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — todo · waiting on E-008
+- [ ] **S-025 · Provision durable DynamoDB application and audit data** — blocked
+  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — todo
   - [ ] [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [ ] **S-026 · Deploy least-privilege Lambda APIs with Cognito authorization** — blocked · waiting on S-025
   - [ ] [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053
@@ -119,7 +119,7 @@ _Generated. Do not edit by hand._
   - [ ] [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
   - [ ] [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
 
-## [E-010 · E10 — Local onboarding and full-journey smoke testing](./E-010.md) — blocked
+## [E-010 · E10 — Local onboarding and full-journey smoke testing](./E-010.md) — done
 - [x] **S-033 · Document the verified local development workflow** — done
   - [x] [T-068 · Inventory and validate local prerequisites and service topology](../entities/T-068-inventory-and-validate-local-prerequisites-and-service-topology.md) — done
   - [x] [T-069 · Document installation, configuration, and stack lifecycle commands](../entities/T-069-document-installation-configuration-and-stack-lifecycle-commands.md) — done
@@ -132,7 +132,7 @@ _Generated. Do not edit by hand._
   - [x] [T-074 · Implement deterministic smoke-test bootstrap and cleanup helpers](../entities/T-074-implement-deterministic-smoke-test-bootstrap-and-cleanup-helpers.md) — done
   - [x] [T-075 · Implement the core draft publication and participation smoke journey](../entities/T-075-implement-the-core-draft-publication-and-participation-smoke-journey.md) — done
   - [x] [T-076 · Implement lifecycle, audit, undo, and access-control smoke assertions](../entities/T-076-implement-lifecycle-audit-undo-and-access-control-smoke-assertions.md) — done
-- [ ] **S-036 · Operationalize and verify local smoke-test execution** — blocked
-  - [ ] [T-077 · Add a dedicated developer command for the local smoke test](../entities/T-077-add-a-dedicated-developer-command-for-the-local-smoke-test.md) — todo
-  - [ ] [T-078 · Verify smoke-test repeatability, failure diagnostics, and port overrides](../entities/T-078-verify-smoke-test-repeatability-failure-diagnostics-and-port-overrides.md) — blocked · waiting on T-077
-  - [ ] [T-079 · Finalize the local guide and acceptance traceability evidence](../entities/T-079-finalize-the-local-guide-and-acceptance-traceability-evidence.md) — blocked · waiting on T-078
+- [x] **S-036 · Operationalize and verify local smoke-test execution** — done
+  - [x] [T-077 · Add a dedicated developer command for the local smoke test](../entities/T-077-add-a-dedicated-developer-command-for-the-local-smoke-test.md) — done
+  - [x] [T-078 · Verify smoke-test repeatability, failure diagnostics, and port overrides](../entities/T-078-verify-smoke-test-repeatability-failure-diagnostics-and-port-overrides.md) — done
+  - [x] [T-079 · Finalize the local guide and acceptance traceability evidence](../entities/T-079-finalize-the-local-guide-and-acceptance-traceability-evidence.md) — done

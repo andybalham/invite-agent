@@ -22,6 +22,7 @@
     "test:unit": "npm run build && node --test test/foundation/contracts.test.mjs test/foundation/backend-validation.test.mjs",
     "test:integration": "npm run build && node --test test/integration/*.test.mjs",
     "test:e2e": "playwright test",
+    "test:smoke": "pwsh -NoProfile -File scripts/Run-SmokeTests.ps1",
     "test:foundation": "pwsh -NoProfile -File scripts/Run-FoundationTests.ps1",
     "tables:init": "npm run build && node scripts/initialize-local-tables.mjs",
     "test:boundaries": "node scripts/check-production-boundaries.mjs && node --test test/foundation/boundaries.test.mjs",

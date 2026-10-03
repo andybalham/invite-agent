@@ -4,7 +4,7 @@
 
 Epic E-010 / Story S-034 defines a repeatable local smoke journey across the application's critical facets. This contract completes T-071 (coverage), T-072 (scripted data and isolation), and T-073 (assertions, diagnostics, commands, and regression boundaries).
 
-S-035 now provides the executable browser journey in `test/e2e/smoke.spec.ts`, with scripted UI inputs and isolated fixtures. There is no separate seed script or `test:smoke` npm command. S-036 integrates the command and verifies repeatability. A passing smoke run demonstrates the checkpoints below, subject to the implementation limitations recorded at the end, not all acceptance scenarios.
+S-035 provides the executable browser journey in `test/e2e/smoke.spec.ts`, with scripted UI inputs and isolated fixtures. S-036 adds `npm run test:smoke`, which manages startup, execution, evidence collection, and shutdown using the existing local scripts. There is no separate seed script. A passing smoke run demonstrates the checkpoints below, subject to the implementation limitations recorded at the end, not all acceptance scenarios.
 
 Authoritative behaviour: [user requirements](user-requirements.md) and [acceptance use cases](acceptance-use-cases.md). Local installation, ports, startup, shutdown, and troubleshooting remain in the [README](../README.md). Local authentication is a test adapter; this journey cannot verify Cognito or deployed AWS services.
 
@@ -26,7 +26,7 @@ Run one ordered journey on a fresh poll, using an owning organiser and two indep
 | SM-10: Reopen and close again | Cancel reopening and prove no change. Confirm: state becomes Open, A is provisional, participant editing and live ranking return. Change Alice's C from No to Yes; totals become 2/3/2 and order B/A/C. Select C and confirm closure; C becomes final, responses freeze, previous close and reopen revisions persist. | UC-07 / US-28–US-30 (different-date scenario) | `reopening.spec.ts` |
 | SM-11: Public-link revocation | Exercise the server's revoked-link boundary as described under the coverage gap below. Old-link read and representative write return `410 / LINK_REVOKED`, without changing responses or audit history. Public UI renders a non-sensitive invalid-link state. | UC-08 / US-34, partial; US-33 remains a gap | `test/integration/publication.test.mjs` (repository revocation and read rejection only); `public-poll.spec.ts` (unknown-link UI only) |
 
-E2E filenames in the evidence column are relative to `test/e2e/` unless a full path is given. These are reuse/reference points, not a claim that the proposed combined journey already runs.
+E2E filenames in the evidence column are relative to `test/e2e/` unless a full path is given. These are the original reuse/reference points. The combined executable evidence for every row is the matching named step in `test/e2e/smoke.spec.ts` and its `smoke-summary.json` attachment; S-036 verification results are recorded below. Acceptance references describe selected examples, including the explicitly partial SM-11 coverage.
 
 ## Deterministic scripted initial data
 
@@ -87,7 +87,7 @@ Assertions at intermediate checkpoints:
 - Run with one worker initially. Coordinate the two public contexts sequentially, waiting for accepted responses and observer convergence before the next action. No sleeps as correctness checks and no deliberate update races in this smoke journey.
 - Keep existing local data intact. There is no supported poll deletion workflow identified in the current application; retained smoke polls are acceptable, uniquely tagged, and must not affect results. Do not delete shared tables, scan-and-delete records, or reset `.dynamodb/` for setup or teardown.
 - Close all browser/request contexts after success or failure. Preserve failure artifacts before stopping services. Report any retained poll IDs without exposing capabilities. Dedicated disposable tables may be added later only with explicit harness ownership and validated configuration; they are not required for this browser contract.
-- S-036 must verify two successive runs against the same persisted local database, a run after stop/start, and a run with overridden ports. Record actual durations and outcomes; no duration has been measured for the future smoke suite yet.
+- Verification requires two successive runs against the same persisted local database, a run after stop/start, and a run with overridden ports. Every managed run restarts the caller-owned stack; measured S-036 results are recorded below.
 
 ## Assertions and diagnostics
 
@@ -120,17 +120,29 @@ Reuse `test/e2e/fixtures.ts` diagnostics and `playwright.config.ts` retention se
 
 Current outputs are `test-results/` and `playwright-report/`; inspect with `npx playwright show-report`. Traces, screenshots, and videos can contain local public URLs, so retain them locally and sanitize before sharing. Existing API URL redaction is a useful starting point, not complete artifact sanitization.
 
-## Command expectations
+## Developer command and outcomes
 
-Current supported commands are documented in README: `npm run dev`, `npm run test:e2e`, and `npm run dev:stop`. Playwright does not start services. The targeted S-035 spec is executable; dedicated npm command integration remains in S-036.
+Install README's Node/npm, PowerShell, Docker, dependencies, and Chromium prerequisites, then run from the repository root with the recorded dev stack stopped:
 
-S-035 provides `test/e2e/smoke.spec.ts`, runnable against an already-running stack with `npx playwright test test/e2e/smoke.spec.ts --project=chromium --workers=1 --retries=0`.
+```sh
+npm run test:smoke
+```
 
-S-036 should expose `npm run test:smoke` for that targeted suite. Its initial contract expects an already-running stack, leaves that stack running, propagates failure exit codes, and never resets data. The documented complete workflow should start with `npm run dev` and stop with `npm run dev:stop`, using `try/finally` when scripted so failures still stop only the caller-owned stack. Automated stack management can be an additional explicitly documented wrapper; it must not stop somebody else's reused stack.
+`scripts/Run-SmokeTests.ps1` builds/starts via `Start-DevStack.ps1`, runs `node node_modules/@playwright/test/cli.js test test/e2e/smoke.spec.ts --project=chromium --workers=1 --retries=0`, preserves diagnostics, and calls `Stop-DevStack.ps1` in `finally` when recorded state remains. Success is `1 passed`, eleven completed checkpoint names in the smoke attachment, exit 0, and no remaining recorded stack state. Startup/test/cleanup failures return nonzero; browser failures preserve the Playwright exit code. A pre-existing state file is rejected before cleanup, preserving that stack. Reused DynamoDB is left running under the existing ownership rules. No database reset or poll deletion occurs.
 
-Prerequisites: README's Node/npm, PowerShell, Docker, dependencies, and installed Chromium. Respect `WEB_PORT` for Playwright base URL and the matching `API_PORT`/`DYNAMODB_PORT` used at startup; route browser/API requests through the configured web origin when possible. Do not hardcode `15173` in smoke helpers. Any direct DynamoDB revocation helper must use the same endpoint, tables, and hash configuration as the running local API.
+The original contract allowed an already-running-stack command with an optional wrapper. S-036's requested integrated startup/shutdown makes the wrapper the default command. The direct invocation for an already-running stack remains `npx playwright test test/e2e/smoke.spec.ts --project=chromium --workers=1 --retries=0`; it leaves that stack running and requires matching startup configuration in its shell. Other npm commands and the general Playwright configuration are unchanged.
 
-Use zero retries for repeatability evidence so a flaky first attempt cannot be reported as an unqualified pass. A CI retry, if later retained, gets fresh data and must expose the first failure. Publish actual timings in S-036 before setting a realistic whole-journey timeout. An absent checkpoint must be reported as a gap rather than a full-coverage success.
+`WEB_PORT`, `API_PORT`, and `DYNAMODB_PORT` are resolved by the existing start script and shared with Playwright in the same PowerShell process. Explicit `-WebPort`, `-ApiPort`, and `-DynamoDbPort` parameters take precedence over environment variables. Startup derives `PUBLIC_BASE_URL` and loopback `DYNAMODB_ENDPOINT` from these effective ports. Table names, region, and token-hash key are inherited consistently by the API and repository-only revocation helper. `.env.local` is not loaded. `-ReadinessTimeoutSeconds` changes the 90-second startup deadline. Example:
+
+```powershell
+npm run test:smoke -- -WebPort 15174 -ApiPort 14001 -DynamoDbPort 18001
+```
+
+Alternatively set all three port environment variables before the command as shown in README. Additional Playwright switches are not accepted by the wrapper. One worker and zero retries apply even under CI; the journey has a 180-second ceiling and 15-second action/navigation limits. An absent checkpoint is a coverage gap, never a passing result.
+
+Each invocation prints `.devstack/smoke-runs/<runId>/`. Its `summary.json` records startup versus smoke phase, timestamps/duration, effective ports after readiness, test and final exit codes, cleanup/diagnostic errors, and recorded-state cleanup. `startup.log`, `playwright.log` (when tests execute), `shutdown.log` (when wrapper cleanup executes), service logs, `test-results/`, and `playwright-report/` are preserved before shutdown. Startup failures do not archive stale browser reports; service logs can be stale if startup fails before launching services. A failed diagnostic copy is reported without replacing the original failure. The fixture's `smoke-summary.json` attachment contains the run/poll identities and completed checkpoints; failed runs add redacted API logs, authoritative state, role screenshots/videos, and traces.
+
+Top-level Playwright reports represent only the latest test run. View preserved reports with `npx playwright show-report .devstack/smoke-runs/<runId>/playwright-report`. Keep artifacts local and sanitize before sharing: media, traces, and raw runner/Playwright output can include capability URLs. Startup failure has no application checkpoint result; use the runner summary and service logs. After correcting the failure, rerun the same command with fresh browser/organiser/poll state and retained database contents.
 
 ## Coverage gap: public-link regeneration
 
@@ -155,7 +167,7 @@ The smoke contract samples every critical facet through one lifecycle. The broad
 | All location limits, Markdown constructs and unsafe payloads, set/edit/clear across every state | `test/foundation/location-markdown.test.mjs`, `test/integration/location-maintenance.test.mjs`, `test/e2e/location-maintenance.spec.ts` |
 | Responsive design, detailed visual fidelity, broader accessibility checks, diagnostic harness failures | `test/e2e/design-fidelity.spec.ts`, `shell.spec.ts`, `diagnostics.spec.ts` |
 
-Production AWS deployment, Cognito login, CloudFront routing, throttling/load behaviour, and network fault resilience are outside the local smoke assurance. `npm test`, `npm run test:integration`, `npm run test:e2e`, and `npm run test:foundation` retain their current meanings; the future smoke command complements them.
+Production AWS deployment, Cognito login, CloudFront routing, throttling/load behaviour, and network fault resilience are outside the local smoke assurance. `npm test`, `npm run test:integration`, `npm run test:e2e`, and `npm run test:foundation` retain their current meanings; the dedicated smoke command complements them.
 
 S-034 completion means the contract is reviewable, traced to acceptance stories, concrete enough to implement, and candid about unsupported coverage. Execution evidence and executable fixtures belong to S-035/S-036.
 
@@ -172,4 +184,36 @@ Two implementation boundaries remain explicit:
 
 The suite retains its uniquely tagged polls, including partial failed attempts. There is no supported deletion workflow. It closes both public contexts and the separate unauthenticated API context after success or failure. It does not start, stop, or reset the stack.
 
-Failure attachments include redacted browser/API-probe logs, all four service logs (or an unavailable-log note), role-labelled screenshots and public videos, and a sanitized summary containing the run ID, retained poll ID, checkpoint, browser role, last action, completed checkpoints, assertion differences, and last authoritative snapshot. The existing Playwright retention policy captures traces for the owner, both public contexts, and API contexts. Browser media/traces remain local and may contain capability URLs; sanitize before sharing. A successful run also attaches the checkpoint summary. A 180-second whole-journey ceiling and 15-second action/navigation limits are provisional; S-036 owns measured repeatability, restart/port-override evidence, and developer command integration.
+Failure attachments include redacted browser/API-probe logs, all four service logs (or an unavailable-log note), role-labelled screenshots and public videos, and a sanitized summary containing the run ID, retained poll ID, checkpoint, browser role, last action, completed checkpoints, assertion differences, and last authoritative snapshot. The existing Playwright retention policy captures traces for the owner, both public contexts, and API contexts. Browser media/traces remain local and may contain capability URLs; sanitize before sharing. A successful run also attaches the checkpoint summary. The 180-second whole-journey ceiling and 15-second action/navigation limits provide headroom over the S-036 measurements below.
+
+## S-036 verification evidence
+
+Verified on 3 October 2026 using Windows, Node 24.19.0, PowerShell 7.6.6, Docker Compose, and installed Playwright Chromium. Existing `.dynamodb/` contents were retained throughout. Every normal invocation started with no recorded stack, built through the normal startup script, created fresh browser/organiser/poll state, and completed SM-01–SM-11 with one worker and zero retries. All five invocations removed their recorded state and stopped the caller-owned API/Vite/Compose services, with no cleanup or diagnostic-copy errors.
+
+| Invocation / evidence directory under `.devstack/smoke-runs/` | Command/configuration | Browser result | Whole command | Exit |
+| --- | --- | --- | --- | --- |
+| `20261003T095007750Z-0db24d1cfcc944879a75901e32be59e8` | `npm run test:smoke`; default ports | 11 checkpoints passed, 42.6 s | 59.1 s | 0 |
+| `20261003T095138411Z-5fea5b0c603a4ef7801edbfe7944a8fe` | `npm run test:smoke`; same database, after automatic stop/start | 11 checkpoints passed, 38.7 s | 49.6 s | 0 |
+| `20261003T095413646Z-43d300f7fc26472db7cb81d9ec8632ac` | `npm run test:smoke -- -WebPort 15174 -ApiPort 14001 -DynamoDbPort 18001` | 11 checkpoints passed, 49.5 s | 59.9 s | 0 |
+| `20261003T095546639Z-26a9cc7dd5754dec88548137674d9a8d` | `npm run test:smoke` with temporary, deliberately incorrect title assertion in SM-06 | **Expected diagnostic failure**, five completed checkpoints; SM-06 identified | 41.9 s | 1 |
+| `20261003T100452287Z-798413237ca344e9afe9bf765e31ab50` | `npm run test:smoke`; environment ports web/API/DynamoDB = 15175/14002/18002 and local hash-key override | 11 checkpoints passed, 44.4 s | 60.7 s | 0 |
+
+The deliberate failure was a verification probe, not a product regression or successful smoke run. Its temporary assertion was removed before the final normal run. Evidence includes the SM-06 summary with expected/actual title, retained poll ID, five completed checkpoints, three screenshot files, videos for all browser roles, redacted API and all four service-log attachments, a trace ZIP, and a preserved HTML report. Runner exit 1 and cleanup were confirmed. Startup-error and already-recorded-stack branches were inspected but were not separately exercised in this verification batch.
+
+Default runs produced different organiser identities and poll IDs (`2584ab26-079a-488a-98d9-3928a731bb33` and `342ae1a1-7791-4473-89dd-7ae6f9a318ab`). The parameter-override poll is `c6bf5282-ffbf-4ec1-965d-904a5bd7f096`; the expected failed attempt retained `30b2ffd7-aecd-4621-bd6e-2d93ad2b1c14`. The final normal poll ID is recorded in its `test-results/**/smoke-summary.json`. Successful summaries from the first three runs are inline HTML attachments; the final fixture also writes an inspectable JSON file on success or failure. No data reset, table deletion, or scan-and-delete was used. Here, clean/reset behaviour means new browser storage and new test identities on a stopped/restarted stack, with the persisted database preserved.
+
+For the last run, the shell also deliberately supplied stale `DYNAMODB_ENDPOINT=http://127.0.0.1:19999` and `PUBLIC_BASE_URL=http://127.0.0.1:19998`; startup derived the correct 18002/15175 origins. A test-only `PUBLIC_TOKEN_HASH_KEY=s036-local-verification-hash-key` was inherited by both API and revocation helper. SM-11 passing confirms matching port/hash configuration. Table-name/region inheritance is preserved by the wrapper but custom table names and alternate regions were not separately exercised.
+
+Focused quality checks all passed (exit 0):
+
+```sh
+node node_modules/typescript/bin/tsc -b --pretty false
+node node_modules/typescript/bin/tsc --noEmit --strict --target ES2023 --module ESNext --moduleResolution bundler --types node test/e2e/smoke.spec.ts test/e2e/smoke-fixtures.ts test/e2e/smoke-data.ts
+node scripts/check-format.mjs
+node scripts/lint.mjs
+node scripts/check-production-boundaries.mjs
+node --test test/foundation/dev-harness.test.mjs
+git diff --check
+```
+
+The existing dev-harness suite passed all three tests. No broader integration/e2e suite was run for S-036. T-077 is delivered by the dedicated wrapper/command and shared effective configuration; T-078 by the repeated fresh journeys, restart/port evidence, deliberate failure artifacts, and confirmed shutdown; T-079 by the finalized README, this contract, SM-01–SM-11 acceptance matrix, measured evidence, and explicit coverage limitations. Kanban entities/statuses were not changed during this implementation.

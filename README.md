@@ -198,7 +198,44 @@ npx playwright test --workers=1
 
 Playwright uses `http://127.0.0.1:${WEB_PORT:-15173}` as its base URL, so if you changed `WEB_PORT` for the stack, set the same value when you run the tests. On failure it keeps traces, screenshots and videos in `test-results/`, and it writes the HTML report to `playwright-report/`. The service logs are in `.devstack/service-logs/`.
 
-The executable local smoke journey is in [test/e2e/smoke.spec.ts](test/e2e/smoke.spec.ts). Its [contract and implementation notes](.docs/local-smoke-test-contract.md) describe the scripted data, eleven checkpoints, targeted invocation, failure diagnostics, retained test polls, and current history/revocation coverage limitations. It expects the existing local stack; a dedicated `test:smoke` npm command is planned under S-036.
+### Local smoke test
+
+After installing the prerequisites, run this from a stopped dev stack:
+
+```sh
+npm run test:smoke
+```
+
+This builds and starts the normal local stack, runs only [smoke.spec.ts](test/e2e/smoke.spec.ts) in Chromium with one worker and zero retries, saves diagnostics, and stops the services it started in `finally`, including on test failure. It refuses to run if `.devstack/processes.json` already exists; it does not stop that existing stack. DynamoDB already answering on the selected port is reused and left running, following `npm run dev` ownership rules. The existing `dev`, `dev:stop`, `test:e2e`, and `test:foundation` commands keep their meanings.
+
+The journey creates a fresh private draft through the UI, prepares dates, publishes, exercises two public participants' views, availability and ranking, location validation, history and undo, access control, closure/reopening, and revoked-link rejection. Success reports `1 passed`, eleven completed SM-01–SM-11 checkpoints in the `smoke-summary.json` attachment, and exit code 0. Startup or assertion failure returns nonzero. Each attempt uses empty browser storage and a new organiser/poll identity; no separate seed command is needed. A rerun resets the test's browser state and inputs, not the database. Existing local data and uniquely tagged smoke polls are retained because there is no supported poll deletion workflow.
+
+The command accepts the same port environment variables as `npm run dev`, or explicit PowerShell parameters (parameters take precedence):
+
+```powershell
+$env:WEB_PORT = '15174'
+$env:API_PORT = '14001'
+$env:DYNAMODB_PORT = '18001'
+npm run test:smoke
+Remove-Item Env:WEB_PORT, Env:API_PORT, Env:DYNAMODB_PORT
+
+# Equivalent, without changing the calling shell's environment:
+npm run test:smoke -- -WebPort 15174 -ApiPort 14001 -DynamoDbPort 18001
+```
+
+The wrapper shares startup's effective `WEB_PORT`, `API_PORT`, `DYNAMODB_PORT`, derived `PUBLIC_BASE_URL` and loopback `DYNAMODB_ENDPOINT` with Playwright. Table names, `AWS_REGION`, and `PUBLIC_TOKEN_HASH_KEY` inherit the same shell configuration for the API and revocation helper. `.env.local` is not automatically loaded. `-ReadinessTimeoutSeconds` overrides the normal 90-second startup deadline. Additional Playwright switches are not forwarded; to debug against your own running stack, use:
+
+```sh
+npx playwright test test/e2e/smoke.spec.ts --project=chromium --workers=1 --retries=0
+```
+
+Keep the same configuration used at startup in that shell, especially `WEB_PORT` and table/hash overrides. This direct command leaves the stack running.
+
+The wrapper prints a unique evidence directory under `.devstack/smoke-runs/<runId>/`. It contains `summary.json` (phase, ports, exit codes, elapsed time, cleanup and diagnostic errors), `startup.log`, `playwright.log` once tests run, `shutdown.log` when the wrapper shuts down, and copies of service logs, `test-results/`, and `playwright-report/`. These copies survive subsequent runs; top-level Playwright reports are replaced by the next run. Startup failures are labelled `startup` and do not copy an older browser report; service logs may be from an earlier start if failure precedes service launch. Logs missing during collection do not hide the original failure.
+
+Inspect the latest report with `npx playwright show-report`, or a preserved report with `npx playwright show-report .devstack/smoke-runs/<runId>/playwright-report`. Failure attachments include the checkpoint/action summary, redacted API logs, service logs, traces, role screenshots, and videos. Browser artifacts and raw runner output can contain local capability URLs; sanitize before sharing. Use the summary's phase to distinguish startup trouble from a failed application checkpoint, fix the cause, then rerun `npm run test:smoke`.
+
+On the verified Windows setup, four successful runs took 38.7–49.5 seconds in Playwright and 49.6–60.7 seconds including startup, build, evidence collection, and shutdown. Allow longer on a cold Docker/browser setup; the browser journey has a 180-second ceiling. Measured results and checkpoint-to-acceptance traceability are in the [smoke contract](.docs/local-smoke-test-contract.md). Limitations: link revocation uses an isolated repository hook, organiser link regeneration has no supported route/UI, and structured history Before/After cells currently show `Changed values` (exact availability values are verified through the owner API and action summary). This local journey does not verify production AWS/Cognito or replace the broader regression suites.
 
 ### Full quality gate
 

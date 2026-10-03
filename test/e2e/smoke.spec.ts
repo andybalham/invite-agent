@@ -84,7 +84,7 @@ async function safeLocation(page: Page, name: string): Promise<void> {
 }
 
 test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, page, context }) => {
-  // Provisional ceiling for this full journey; measured repeatability/command integration belongs to S-036.
+  // Allows headroom over the measured local journey without hiding a stalled checkpoint.
   test.setTimeout(180_000);
   let first: Page;
   let second: Page;
