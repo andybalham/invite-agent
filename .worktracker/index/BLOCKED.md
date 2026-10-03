@@ -15,6 +15,8 @@ _Generated. Do not edit by hand._
 - [S-038 · Provide safe explicit-poll and smoke-run cleanup utilities](../entities/S-038-provide-safe-explicit-poll-and-smoke-run-cleanup-utilities.md) — blocked
 - [S-039 · Verify cleanup isolation, repeatability, and failure recovery](../entities/S-039-verify-cleanup-isolation-repeatability-and-failure-recovery.md) — blocked · waiting on S-038
 - [S-040 · Document ephemeral smoke data and local cleanup operations](../entities/S-040-document-ephemeral-smoke-data-and-local-cleanup-operations.md) — blocked · waiting on S-039
+- [S-041 · Clear down integration-test tables after every test](../entities/S-041-clear-down-integration-test-tables-after-every-test.md) — blocked
+- [S-042 · Provide a script to clear all local application data](../entities/S-042-provide-a-script-to-clear-all-local-application-data.md) — blocked
 - [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053
 - [T-055 · Implement and verify Lambda, API Gateway, and Cognito stacks](../entities/T-055-implement-and-verify-lambda-api-gateway-and-cognito-stacks.md) — blocked · waiting on T-054
@@ -36,3 +38,7 @@ _Generated. Do not edit by hand._
 - [T-089 · Document ephemeral table lifecycle in the README](../entities/T-089-document-ephemeral-table-lifecycle-in-the-readme.md) — blocked · waiting on T-088
 - [T-090 · Document explicit-poll and run-ID cleanup operations](../entities/T-090-document-explicit-poll-and-run-id-cleanup-operations.md) — blocked · waiting on T-089
 - [T-091 · Finalize cleanup acceptance traceability and operational verification](../entities/T-091-finalize-cleanup-acceptance-traceability-and-operational-verification.md) — blocked · waiting on T-090
+- [T-093 · Implement finally-path deletion for integration-test tables](../entities/T-093-implement-finally-path-deletion-for-integration-test-tables.md) — blocked · waiting on T-092
+- [T-094 · Verify integration-suite cleanup and failure reporting](../entities/T-094-verify-integration-suite-cleanup-and-failure-reporting.md) — blocked · waiting on T-093
+- [T-096 · Implement the guarded all-local-data cleanup script](../entities/T-096-implement-the-guarded-all-local-data-cleanup-script.md) — blocked · waiting on T-095
+- [T-097 · Verify and document complete local-data clear-down](../entities/T-097-verify-and-document-complete-local-data-clear-down.md) — blocked · waiting on T-096

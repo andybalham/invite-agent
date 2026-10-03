@@ -70,6 +70,8 @@ graph LR
     S038["S-038 Provide safe explicit-poll and smoke-run cleanup utilities"]:::blocked
     S039["S-039 Verify cleanup isolation, repeatability, and failure recovery"]:::blocked
     S040["S-040 Document ephemeral smoke data and local cleanup operations"]:::blocked
+    S041["S-041 Clear down integration-test tables after every test"]:::blocked
+    S042["S-042 Provide a script to clear all local application data"]:::blocked
     S001 --> S002
     S002 --> S003
     S003 --> S004
@@ -207,6 +209,12 @@ graph LR
     T089["T-089 Document ephemeral table lifecycle in the README"]:::blocked
     T090["T-090 Document explicit-poll and run-ID cleanup operations"]:::blocked
     T091["T-091 Finalize cleanup acceptance traceability and operational verification"]:::blocked
+    T092["T-092 Define integration-test table ownership and teardown boundaries"]:::todo
+    T093["T-093 Implement finally-path deletion for integration-test tables"]:::blocked
+    T094["T-094 Verify integration-suite cleanup and failure reporting"]:::blocked
+    T095["T-095 Define the all-local-data clear-down scope and safety contract"]:::todo
+    T096["T-096 Implement the guarded all-local-data cleanup script"]:::blocked
+    T097["T-097 Verify and document complete local-data clear-down"]:::blocked
     T001 --> T002
     T002 --> T003
     T003 --> T004
@@ -303,6 +311,10 @@ graph LR
     T088 --> T089
     T089 --> T090
     T090 --> T091
+    T092 --> T093
+    T093 --> T094
+    T095 --> T096
+    T096 --> T097
   end
   click E001 "../entities/E-001-e1-runnable-local-engineering-foundation.md"
   click E002 "../entities/E-002-e2-organiser-draft-builder-and-preview.md"
@@ -355,6 +367,8 @@ graph LR
   click S038 "../entities/S-038-provide-safe-explicit-poll-and-smoke-run-cleanup-utilities.md"
   click S039 "../entities/S-039-verify-cleanup-isolation-repeatability-and-failure-recovery.md"
   click S040 "../entities/S-040-document-ephemeral-smoke-data-and-local-cleanup-operations.md"
+  click S041 "../entities/S-041-clear-down-integration-test-tables-after-every-test.md"
+  click S042 "../entities/S-042-provide-a-script-to-clear-all-local-application-data.md"
   click T001 "../entities/T-001-specify-workspace-and-shared-contracts-with-failing-automated-tests.md"
   click T002 "../entities/T-002-implement-and-verify-workspace-and-shared-contracts.md"
   click T003 "../entities/T-003-specify-local-dynamodb-shared-services-and-guarded-auth-with-failing-automated-tests.md"
@@ -446,3 +460,9 @@ graph LR
   click T089 "../entities/T-089-document-ephemeral-table-lifecycle-in-the-readme.md"
   click T090 "../entities/T-090-document-explicit-poll-and-run-id-cleanup-operations.md"
   click T091 "../entities/T-091-finalize-cleanup-acceptance-traceability-and-operational-verification.md"
+  click T092 "../entities/T-092-define-integration-test-table-ownership-and-teardown-boundaries.md"
+  click T093 "../entities/T-093-implement-finally-path-deletion-for-integration-test-tables.md"
+  click T094 "../entities/T-094-verify-integration-suite-cleanup-and-failure-reporting.md"
+  click T095 "../entities/T-095-define-the-all-local-data-clear-down-scope-and-safety-contract.md"
+  click T096 "../entities/T-096-implement-the-guarded-all-local-data-cleanup-script.md"
+  click T097 "../entities/T-097-verify-and-document-complete-local-data-clear-down.md"
