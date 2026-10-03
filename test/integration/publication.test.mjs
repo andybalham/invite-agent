@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import test from "node:test";
+import { createIntegrationApp } from "../support/integration-fixture.mjs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -24,9 +25,7 @@ const validPoll = {
 
 test("publishing is atomic, stores only a token hash, and resolves a private public projection", async (t) => {
   const { createLocalComposition } = await import(compositionUrl);
-  const app = await createLocalComposition(config);
-  t.after(() => app.dispose());
-  await app.initializeTables();
+  const app = await createIntegrationApp(t, createLocalComposition, config);
 
   const created = await app.http.handle({ method: "POST", path: "/api/organiser/polls", headers, body: validPoll });
   const pollId = created.body.id;
@@ -67,9 +66,7 @@ test("publishing is atomic, stores only a token hash, and resolves a private pub
 
 test("invalid publication and rejected organiser calls have no data or audit effects", async (t) => {
   const { createLocalComposition } = await import(compositionUrl);
-  const app = await createLocalComposition({ ...config, appTableName: `${config.appTableName}-invalid`, auditTableName: `${config.auditTableName}-invalid` });
-  t.after(() => app.dispose());
-  await app.initializeTables();
+  const app = await createIntegrationApp(t, createLocalComposition, { ...config, appTableName: `${config.appTableName}-invalid`, auditTableName: `${config.auditTableName}-invalid` });
   const created = await app.http.handle({ method: "POST", path: "/api/organiser/polls", headers, body: { ...validPoll, proposedDates: validPoll.proposedDates.slice(0, 1) } });
   const pollId = created.body.id;
   const before = await app.repository.getPoll(pollId);
@@ -91,13 +88,11 @@ test("invalid publication and rejected organiser calls have no data or audit eff
 
 test("concurrent publication has exactly one winner and one publication audit event", async (t) => {
   const { createLocalComposition } = await import(compositionUrl);
-  const app = await createLocalComposition({
+  const app = await createIntegrationApp(t, createLocalComposition, {
     ...config,
     appTableName: `${config.appTableName}-concurrent`,
     auditTableName: `${config.auditTableName}-concurrent`
   });
-  t.after(() => app.dispose());
-  await app.initializeTables();
   const created = await app.http.handle({ method: "POST", path: "/api/organiser/polls", headers, body: validPoll });
   const path = `/api/organiser/polls/${created.body.id}/publish`;
   const results = await Promise.all([

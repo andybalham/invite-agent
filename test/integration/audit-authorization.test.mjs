@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import test from "node:test";
+import { createIntegrationApp } from "../support/integration-fixture.mjs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -19,7 +20,7 @@ const pollInput = {
 async function fixture(t) {
   const { createLocalComposition } = await import(compositionUrl);
   const suffix = `audit-auth-${process.pid}-${Date.now()}`;
-  const app = await createLocalComposition({
+  const app = await createIntegrationApp(t, createLocalComposition, {
     appEnv: "test",
     authMode: "local",
     awsRegion: "eu-west-2",
@@ -29,8 +30,6 @@ async function fixture(t) {
     publicBaseUrl: "http://127.0.0.1:15173",
     publicTokenHashKey: "audit-authorization-test-key"
   });
-  t.after(() => app.dispose());
-  await app.initializeTables();
   return app;
 }
 

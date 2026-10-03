@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import test from "node:test";
+import { createIntegrationApp } from "../support/integration-fixture.mjs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -28,13 +29,11 @@ const pollInput = {
 
 async function fixture(t, suffixName) {
   const { createLocalComposition } = await import(compositionUrl);
-  const app = await createLocalComposition({
+  const app = await createIntegrationApp(t, createLocalComposition, {
     ...config,
     appTableName: `${config.appTableName}-${suffixName}`,
     auditTableName: `${config.auditTableName}-${suffixName}`
   });
-  t.after(() => app.dispose());
-  await app.initializeTables();
   const created = await app.http.handle({ method: "POST", path: "/api/organiser/polls", headers, body: pollInput });
   const published = await app.http.handle({ method: "POST", path: `/api/organiser/polls/${created.body.id}/publish`, headers });
   const token = published.body.publicUrl.split("/").at(-1);

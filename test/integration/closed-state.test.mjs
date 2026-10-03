@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import test from "node:test";
+import { createIntegrationApp } from "../support/integration-fixture.mjs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -20,13 +21,11 @@ const baseConfig = {
 async function fixture(t, name) {
   const { createLocalComposition } = await import(compositionUrl);
   const owner = { "x-local-organiser-id": `local-organiser-closed-state-owner-${name}` };
-  const app = await createLocalComposition({
+  const app = await createIntegrationApp(t, createLocalComposition, {
     ...baseConfig,
     appTableName: `${baseConfig.appTableName}-${name}`,
     auditTableName: `${baseConfig.auditTableName}-${name}`
   });
-  t.after(() => app.dispose());
-  await app.initializeTables();
   const draftInput = {
     title: "Frozen autumn result",
     timeZone: "Europe/London",

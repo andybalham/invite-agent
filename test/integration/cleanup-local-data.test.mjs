@@ -2,21 +2,22 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
-import { BatchWriteItemCommand, DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
+import { BatchWriteItemCommand, ScanCommand } from "@aws-sdk/client-dynamodb";
 import { cleanupPoll, cleanupRun, validateLocalEndpoint } from "../../scripts/cleanup-local-data.mjs";
 import { cleanupTables, provisionTables, readManifest, recordPoll } from "../../scripts/smoke-run-resources.mjs";
 import { keyText, manifestFixture, pollItems } from "../support/cleanup-fixture.mjs";
+import { integrationClient, registerTeardown } from "../support/integration-fixture.mjs";
 
 const endpoint = validateLocalEndpoint(process.env.DYNAMODB_ENDPOINT ?? `http://127.0.0.1:${process.env.DYNAMODB_PORT ?? "18000"}`);
 
 async function fixture(t) {
   const { file, manifest, dispose } = await manifestFixture(t, endpoint, false);
-  const client = new DynamoDBClient({ endpoint, region: "eu-west-2", credentials: { accessKeyId: "local", secretAccessKey: "local" }, maxAttempts: 2 });
+  const client = integrationClient(endpoint);
   // Cleanup before the temporary manifest directory is removed, even on an assertion failure.
-  t.after(async () => {
-    try { await cleanupTables(file, client); await dispose(); }
-    finally { client.destroy(); }
-  });
+  registerTeardown(t, [async () => {
+    await cleanupTables(file, client);
+    await dispose();
+  }, () => client.destroy()]);
   await provisionTables(file, client);
   return { file, manifest, client, names: manifest.tables.map(({ name }) => name) };
 }

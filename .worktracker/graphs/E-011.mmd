@@ -9,7 +9,7 @@ graph LR
     S038["S-038 Provide safe explicit-poll and smoke-run cleanup utilities"]:::done
     S039["S-039 Verify cleanup isolation, repeatability, and failure recovery"]:::done
     S040["S-040 Document ephemeral smoke data and local cleanup operations"]:::done
-    S041["S-041 Clear down integration-test tables after every test"]:::blocked
+    S041["S-041 Clear down integration-test tables after every test"]:::done
     S042["S-042 Provide a script to clear all local application data"]:::blocked
     S037 --> S038
     S038 --> S039
@@ -28,9 +28,9 @@ graph LR
     T089["T-089 Document ephemeral table lifecycle in the README"]:::done
     T090["T-090 Document explicit-poll and run-ID cleanup operations"]:::done
     T091["T-091 Finalize cleanup acceptance traceability and operational verification"]:::done
-    T092["T-092 Define integration-test table ownership and teardown boundaries"]:::todo
-    T093["T-093 Implement finally-path deletion for integration-test tables"]:::blocked
-    T094["T-094 Verify integration-suite cleanup and failure reporting"]:::blocked
+    T092["T-092 Define integration-test table ownership and teardown boundaries"]:::done
+    T093["T-093 Implement finally-path deletion for integration-test tables"]:::done
+    T094["T-094 Verify integration-suite cleanup and failure reporting"]:::done
     T095["T-095 Define the all-local-data clear-down scope and safety contract"]:::todo
     T096["T-096 Implement the guarded all-local-data cleanup script"]:::blocked
     T097["T-097 Verify and document complete local-data clear-down"]:::blocked

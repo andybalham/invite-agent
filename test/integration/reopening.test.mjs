@@ -1,18 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createIntegrationApp } from "../support/integration-fixture.mjs";
 import { createLocalComposition } from "../../backend/dist/adapters/local/composition.js";
 
 const owner = { "x-local-organiser-id": "local-organiser-reopening" };
 const suffix = `reopening-${process.pid}-${Date.now()}`;
 async function fixture(t, name) {
-  const app = await createLocalComposition({
+  const app = await createIntegrationApp(t, createLocalComposition, {
     appEnv: "test", authMode: "local", awsRegion: "eu-west-2",
     dynamodbEndpoint: process.env.DYNAMODB_ENDPOINT ?? `http://127.0.0.1:${process.env.DYNAMODB_PORT ?? "18000"}`,
     appTableName: `invite-agent-test-app-${suffix}-${name}`, auditTableName: `invite-agent-test-audit-${suffix}-${name}`,
     publicBaseUrl: "http://127.0.0.1:15173", publicTokenHashKey: "reopening-test-key"
   });
-  t.after(() => app.dispose());
-  await app.initializeTables();
   const call = (method, path, body, headers = owner) => app.http.handle({ method, path, body, headers });
   const created = await call("POST", "/api/organiser/polls", {
     title: "Reopen and decide again", timeZone: "Europe/London",

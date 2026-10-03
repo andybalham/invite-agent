@@ -12,7 +12,6 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [S-041 · Clear down integration-test tables after every test](../entities/S-041-clear-down-integration-test-tables-after-every-test.md) — blocked
 - [S-042 · Provide a script to clear all local application data](../entities/S-042-provide-a-script-to-clear-all-local-application-data.md) — blocked
 - [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053
@@ -27,7 +26,5 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-093 · Implement finally-path deletion for integration-test tables](../entities/T-093-implement-finally-path-deletion-for-integration-test-tables.md) — blocked · waiting on T-092
-- [T-094 · Verify integration-suite cleanup and failure reporting](../entities/T-094-verify-integration-suite-cleanup-and-failure-reporting.md) — blocked · waiting on T-093
 - [T-096 · Implement the guarded all-local-data cleanup script](../entities/T-096-implement-the-guarded-all-local-data-cleanup-script.md) — blocked · waiting on T-095
 - [T-097 · Verify and document complete local-data clear-down](../entities/T-097-verify-and-document-complete-local-data-clear-down.md) — blocked · waiting on T-096

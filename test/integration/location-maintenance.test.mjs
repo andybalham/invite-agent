@@ -1,17 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createIntegrationApp } from "../support/integration-fixture.mjs";
 import { createLocalComposition } from "../../backend/dist/adapters/local/composition.js";
 
 const run = `location-${process.pid}-${Date.now()}`;
 async function fixture(t, state, name) {
-  const app = await createLocalComposition({
+  const app = await createIntegrationApp(t, createLocalComposition, {
     appEnv: "test", authMode: "local", awsRegion: "eu-west-2",
     dynamodbEndpoint: process.env.DYNAMODB_ENDPOINT ?? "http://127.0.0.1:18000",
     appTableName: `${run}-${state}-${name}-app`, auditTableName: `${run}-${state}-${name}-audit`,
     publicBaseUrl: "http://127.0.0.1:15173", publicTokenHashKey: "location-test-key"
   });
-  t.after(() => app.dispose());
-  await app.initializeTables();
   const owner = { "x-local-organiser-id": "local-organiser-location-owner" };
   const created = await app.http.handle({ method: "POST", path: "/api/organiser/polls", headers: owner, body: {
     title: "Venue planning", timeZone: "Europe/London",

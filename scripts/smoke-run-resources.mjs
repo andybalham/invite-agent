@@ -152,6 +152,21 @@ async function collectPollIds(client, table, manifest) {
   } while (cursor);
 }
 
+// Callers must establish ownership before using this deletion primitive.
+export async function deleteOwnedTable(client, name) {
+  try {
+    await client.send(new DeleteTableCommand({ TableName: name }));
+    for (let attempt = 0; ; attempt += 1) {
+      try { await client.send(new DescribeTableCommand({ TableName: name })); }
+      catch (error) { if (error.name === "ResourceNotFoundException") return; throw error; }
+      if (attempt >= 49) throw new Error(`Timed out deleting ${name}`);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  } catch (error) {
+    if (error.name !== "ResourceNotFoundException") throw error;
+  }
+}
+
 export async function cleanupTables(file, client) {
   const manifest = await readManifest(file);
   const actualClient = client ?? clientFor(manifest);
@@ -167,13 +182,7 @@ export async function cleanupTables(file, client) {
           await collectPollIds(actualClient, table, manifest);
           await saveManifest(file, manifest);
         }
-        await actualClient.send(new DeleteTableCommand({ TableName: table.name }));
-        for (let attempt = 0; ; attempt += 1) {
-          try { await actualClient.send(new DescribeTableCommand({ TableName: table.name })); }
-          catch (error) { if (error.name === "ResourceNotFoundException") break; throw error; }
-          if (attempt >= 49) throw new Error(`Timed out deleting ${table.name}`);
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
+        await deleteOwnedTable(actualClient, table.name);
         table.cleanup = "deleted";
         delete table.cleanupError;
       } catch (error) {

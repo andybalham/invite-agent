@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import test from "node:test";
+import { createIntegrationApp } from "../support/integration-fixture.mjs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -36,14 +37,13 @@ async function loadLocalComposition() {
 
 test("local DynamoDB tables are isolated, deterministic, and reachable without AWS credentials", async (t) => {
   const { createLocalComposition } = await loadLocalComposition();
-  const app = await createLocalComposition(config);
-  t.after(async () => app.dispose());
+  const app = await createIntegrationApp(t, createLocalComposition, config);
 
   await app.initializeTables();
   await app.initializeTables();
 
-  assert.equal(app.config.appTableName, config.appTableName);
-  assert.equal(app.config.auditTableName, config.auditTableName);
+  assert.match(app.config.appTableName, /^invite-agent-test-app-/);
+  assert.match(app.config.auditTableName, /^invite-agent-test-audit-/);
   assert.notEqual(app.config.appTableName, app.config.auditTableName);
   assert.deepEqual(await app.repository.health(), {
     appTable: "reachable",
@@ -53,8 +53,7 @@ test("local DynamoDB tables are isolated, deterministic, and reachable without A
 
 test("local HTTP uses shared validation, authorization, persistence, audit, and error mapping", async (t) => {
   const { createLocalComposition } = await loadLocalComposition();
-  const app = await createLocalComposition(config);
-  t.after(async () => app.dispose());
+  const app = await createIntegrationApp(t, createLocalComposition, config);
   await app.initializeTables();
 
   const health = await app.http.handle({ method: "GET", path: "/health", headers: {} });

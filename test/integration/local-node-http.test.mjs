@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import test from "node:test";
+import { createIntegrationApp } from "../support/integration-fixture.mjs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -11,7 +12,8 @@ const localAdapterUrl = pathToFileURL(
 test("the Node HTTP adapter translates requests through the shared handler", async (t) => {
   const { createLocalComposition, createLocalNodeServer } = await import(localAdapterUrl);
   const suffix = `http-${process.pid}-${Date.now()}`;
-  const app = await createLocalComposition({
+  let server;
+  const app = await createIntegrationApp(t, createLocalComposition, {
     appEnv: "test",
     authMode: "local",
     awsRegion: "eu-west-2",
@@ -21,19 +23,18 @@ test("the Node HTTP adapter translates requests through the shared handler", asy
     appTableName: `invite-agent-test-app-${suffix}`,
     auditTableName: `invite-agent-test-audit-${suffix}`,
     publicBaseUrl: `http://127.0.0.1:${process.env.WEB_PORT ?? "15173"}`
-  });
-  await app.initializeTables();
+  }, { beforeCleanup: [async () => {
+    if (!server?.listening) return;
+    await new Promise((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+      server.closeAllConnections();
+    });
+  }] });
 
-  const server = createLocalNodeServer(app.http);
+  server = createLocalNodeServer(app.http);
   await new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(0, "127.0.0.1", resolve);
-  });
-  t.after(async () => {
-    await new Promise((resolve, reject) =>
-      server.close((error) => (error ? reject(error) : resolve()))
-    );
-    await app.dispose();
   });
 
   const address = server.address();
