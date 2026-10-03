@@ -12,8 +12,7 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [S-034 · Define the deterministic application smoke-test contract](../entities/S-034-define-the-deterministic-application-smoke-test-contract.md) — blocked
-- [S-035 · Implement the executable full-journey local smoke test](../entities/S-035-implement-the-executable-full-journey-local-smoke-test.md) — blocked · waiting on S-034
+- [S-035 · Implement the executable full-journey local smoke test](../entities/S-035-implement-the-executable-full-journey-local-smoke-test.md) — blocked
 - [S-036 · Operationalize and verify local smoke-test execution](../entities/S-036-operationalize-and-verify-local-smoke-test-execution.md) — blocked · waiting on S-035
 - [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053
@@ -28,9 +27,6 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-072 · Define scripted initial data and test isolation rules](../entities/T-072-define-scripted-initial-data-and-test-isolation-rules.md) — blocked · waiting on T-071
-- [T-073 · Specify smoke assertions, diagnostics, and coverage boundaries](../entities/T-073-specify-smoke-assertions-diagnostics-and-coverage-boundaries.md) — blocked · waiting on T-072
-- [T-074 · Implement deterministic smoke-test bootstrap and cleanup helpers](../entities/T-074-implement-deterministic-smoke-test-bootstrap-and-cleanup-helpers.md) — blocked · waiting on T-073
 - [T-075 · Implement the core draft publication and participation smoke journey](../entities/T-075-implement-the-core-draft-publication-and-participation-smoke-journey.md) — blocked · waiting on T-074
 - [T-076 · Implement lifecycle, audit, undo, and access-control smoke assertions](../entities/T-076-implement-lifecycle-audit-undo-and-access-control-smoke-assertions.md) — blocked · waiting on T-075
 - [T-077 · Add a dedicated developer command for the local smoke test](../entities/T-077-add-a-dedicated-developer-command-for-the-local-smoke-test.md) — blocked · waiting on T-076

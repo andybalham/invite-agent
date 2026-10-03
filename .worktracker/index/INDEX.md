@@ -124,12 +124,12 @@ _Generated. Do not edit by hand._
   - [x] [T-068 · Inventory and validate local prerequisites and service topology](../entities/T-068-inventory-and-validate-local-prerequisites-and-service-topology.md) — done
   - [x] [T-069 · Document installation, configuration, and stack lifecycle commands](../entities/T-069-document-installation-configuration-and-stack-lifecycle-commands.md) — done
   - [x] [T-070 · Document troubleshooting and verify the clean local walkthrough](../entities/T-070-document-troubleshooting-and-verify-the-clean-local-walkthrough.md) — done
-- [ ] **S-034 · Define the deterministic application smoke-test contract** — blocked
-  - [ ] [T-071 · Map smoke-test checkpoints to the critical application facets](../entities/T-071-map-smoke-test-checkpoints-to-the-critical-application-facets.md) — todo
-  - [ ] [T-072 · Define scripted initial data and test isolation rules](../entities/T-072-define-scripted-initial-data-and-test-isolation-rules.md) — blocked · waiting on T-071
-  - [ ] [T-073 · Specify smoke assertions, diagnostics, and coverage boundaries](../entities/T-073-specify-smoke-assertions-diagnostics-and-coverage-boundaries.md) — blocked · waiting on T-072
-- [ ] **S-035 · Implement the executable full-journey local smoke test** — blocked · waiting on S-034
-  - [ ] [T-074 · Implement deterministic smoke-test bootstrap and cleanup helpers](../entities/T-074-implement-deterministic-smoke-test-bootstrap-and-cleanup-helpers.md) — blocked · waiting on T-073
+- [x] **S-034 · Define the deterministic application smoke-test contract** — done
+  - [x] [T-071 · Map smoke-test checkpoints to the critical application facets](../entities/T-071-map-smoke-test-checkpoints-to-the-critical-application-facets.md) — done
+  - [x] [T-072 · Define scripted initial data and test isolation rules](../entities/T-072-define-scripted-initial-data-and-test-isolation-rules.md) — done
+  - [x] [T-073 · Specify smoke assertions, diagnostics, and coverage boundaries](../entities/T-073-specify-smoke-assertions-diagnostics-and-coverage-boundaries.md) — done
+- [ ] **S-035 · Implement the executable full-journey local smoke test** — blocked
+  - [ ] [T-074 · Implement deterministic smoke-test bootstrap and cleanup helpers](../entities/T-074-implement-deterministic-smoke-test-bootstrap-and-cleanup-helpers.md) — todo
   - [ ] [T-075 · Implement the core draft publication and participation smoke journey](../entities/T-075-implement-the-core-draft-publication-and-participation-smoke-journey.md) — blocked · waiting on T-074
   - [ ] [T-076 · Implement lifecycle, audit, undo, and access-control smoke assertions](../entities/T-076-implement-lifecycle-audit-undo-and-access-control-smoke-assertions.md) — blocked · waiting on T-075
 - [ ] **S-036 · Operationalize and verify local smoke-test execution** — blocked · waiting on S-035
