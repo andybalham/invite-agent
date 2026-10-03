@@ -14,6 +14,7 @@ graph LR
     E007["E-007 E7 — Final decision and reversible poll lifecycle"]:::done
     E008["E-008 E8 — Production AWS platform"]:::blocked
     E009["E-009 E9 — Tested production release and operations"]:::blocked
+    E010["E-010 E10 — Local onboarding and full-journey smoke testing"]:::blocked
     E001 --> E002
     E002 --> E003
     E003 --> E004
@@ -21,7 +22,9 @@ graph LR
     E005 --> E006
     E006 --> E007
     E007 --> E008
+    E007 --> E010
     E008 --> E009
+    E010 --> E008
   end
   subgraph Stories
     S001["S-001 Establish the TypeScript workspace and shared contracts"]:::done
@@ -56,6 +59,10 @@ graph LR
     S030["S-030 Prove the deployed critical journey with production smoke tests"]:::blocked
     S031["S-031 Complete operational handoff and MVP traceability"]:::blocked
     S032["S-032 Align the application UI with the primary Gather design"]:::done
+    S033["S-033 Document the verified local development workflow"]:::done
+    S034["S-034 Define the deterministic application smoke-test contract"]:::blocked
+    S035["S-035 Implement the executable full-journey local smoke test"]:::blocked
+    S036["S-036 Operationalize and verify local smoke-test execution"]:::blocked
     S001 --> S002
     S002 --> S003
     S003 --> S004
@@ -94,6 +101,9 @@ graph LR
     S029 --> S030
     S030 --> S031
     S032 --> S006
+    S033 --> S035
+    S034 --> S035
+    S035 --> S036
   end
   subgraph Tasks
     T001["T-001 Specify workspace and shared contracts with failing automated tests"]:::done
@@ -163,6 +173,18 @@ graph LR
     T065["T-065 Complete and verify operational handoff and MVP traceability"]:::blocked
     T066["T-066 Specify primary-design fidelity with failing browser tests"]:::done
     T067["T-067 Implement and verify the primary Gather design foundation"]:::done
+    T068["T-068 Inventory and validate local prerequisites and service topology"]:::done
+    T069["T-069 Document installation, configuration, and stack lifecycle commands"]:::done
+    T070["T-070 Document troubleshooting and verify the clean local walkthrough"]:::done
+    T071["T-071 Map smoke-test checkpoints to the critical application facets"]:::todo
+    T072["T-072 Define scripted initial data and test isolation rules"]:::blocked
+    T073["T-073 Specify smoke assertions, diagnostics, and coverage boundaries"]:::blocked
+    T074["T-074 Implement deterministic smoke-test bootstrap and cleanup helpers"]:::blocked
+    T075["T-075 Implement the core draft publication and participation smoke journey"]:::blocked
+    T076["T-076 Implement lifecycle, audit, undo, and access-control smoke assertions"]:::blocked
+    T077["T-077 Add a dedicated developer command for the local smoke test"]:::blocked
+    T078["T-078 Verify smoke-test repeatability, failure diagnostics, and port overrides"]:::blocked
+    T079["T-079 Finalize the local guide and acceptance traceability evidence"]:::blocked
     T001 --> T002
     T002 --> T003
     T003 --> T004
@@ -235,6 +257,17 @@ graph LR
     T064 --> T065
     T066 --> T067
     T067 --> T011
+    T068 --> T069
+    T069 --> T070
+    T070 --> T079
+    T071 --> T072
+    T072 --> T073
+    T073 --> T074
+    T074 --> T075
+    T075 --> T076
+    T076 --> T077
+    T077 --> T078
+    T078 --> T079
   end
   click E001 "../entities/E-001-e1-runnable-local-engineering-foundation.md"
   click E002 "../entities/E-002-e2-organiser-draft-builder-and-preview.md"
@@ -245,6 +278,7 @@ graph LR
   click E007 "../entities/E-007-e7-final-decision-and-reversible-poll-lifecycle.md"
   click E008 "../entities/E-008-e8-production-aws-platform.md"
   click E009 "../entities/E-009-e9-tested-production-release-and-operations.md"
+  click E010 "../entities/E-010-e10-local-onboarding-and-full-journey-smoke-testing.md"
   click S001 "../entities/S-001-establish-the-typescript-workspace-and-shared-contracts.md"
   click S002 "../entities/S-002-run-shared-services-locally-with-dynamodb-and-guarded-authentication.md"
   click S003 "../entities/S-003-provide-one-command-local-startup-and-browser-test-harness.md"
@@ -277,6 +311,10 @@ graph LR
   click S030 "../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md"
   click S031 "../entities/S-031-complete-operational-handoff-and-mvp-traceability.md"
   click S032 "../entities/S-032-align-the-application-ui-with-the-primary-gather-design.md"
+  click S033 "../entities/S-033-document-the-verified-local-development-workflow.md"
+  click S034 "../entities/S-034-define-the-deterministic-application-smoke-test-contract.md"
+  click S035 "../entities/S-035-implement-the-executable-full-journey-local-smoke-test.md"
+  click S036 "../entities/S-036-operationalize-and-verify-local-smoke-test-execution.md"
   click T001 "../entities/T-001-specify-workspace-and-shared-contracts-with-failing-automated-tests.md"
   click T002 "../entities/T-002-implement-and-verify-workspace-and-shared-contracts.md"
   click T003 "../entities/T-003-specify-local-dynamodb-shared-services-and-guarded-auth-with-failing-automated-tests.md"
@@ -344,3 +382,15 @@ graph LR
   click T065 "../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md"
   click T066 "../entities/T-066-specify-primary-design-fidelity-with-failing-browser-tests.md"
   click T067 "../entities/T-067-implement-and-verify-the-primary-gather-design-foundation.md"
+  click T068 "../entities/T-068-inventory-and-validate-local-prerequisites-and-service-topology.md"
+  click T069 "../entities/T-069-document-installation-configuration-and-stack-lifecycle-commands.md"
+  click T070 "../entities/T-070-document-troubleshooting-and-verify-the-clean-local-walkthrough.md"
+  click T071 "../entities/T-071-map-smoke-test-checkpoints-to-the-critical-application-facets.md"
+  click T072 "../entities/T-072-define-scripted-initial-data-and-test-isolation-rules.md"
+  click T073 "../entities/T-073-specify-smoke-assertions-diagnostics-and-coverage-boundaries.md"
+  click T074 "../entities/T-074-implement-deterministic-smoke-test-bootstrap-and-cleanup-helpers.md"
+  click T075 "../entities/T-075-implement-the-core-draft-publication-and-participation-smoke-journey.md"
+  click T076 "../entities/T-076-implement-lifecycle-audit-undo-and-access-control-smoke-assertions.md"
+  click T077 "../entities/T-077-add-a-dedicated-developer-command-for-the-local-smoke-test.md"
+  click T078 "../entities/T-078-verify-smoke-test-repeatability-failure-diagnostics-and-port-overrides.md"
+  click T079 "../entities/T-079-finalize-the-local-guide-and-acceptance-traceability-evidence.md"

@@ -1,0 +1,56 @@
+graph LR
+  classDef done fill:#14532d,stroke:#86efac,color:#f0fdf4;
+  classDef blocked fill:#7f1d1d,stroke:#fca5a5,color:#fff7f7;
+  classDef inprogress fill:#78350f,stroke:#fbbf24,color:#fffbeb;
+  classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
+  classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
+  subgraph Stories
+    S033["S-033 Document the verified local development workflow"]:::done
+    S034["S-034 Define the deterministic application smoke-test contract"]:::blocked
+    S035["S-035 Implement the executable full-journey local smoke test"]:::blocked
+    S036["S-036 Operationalize and verify local smoke-test execution"]:::blocked
+    S033 --> S035
+    S034 --> S035
+    S035 --> S036
+  end
+  subgraph Tasks
+    T068["T-068 Inventory and validate local prerequisites and service topology"]:::done
+    T069["T-069 Document installation, configuration, and stack lifecycle commands"]:::done
+    T070["T-070 Document troubleshooting and verify the clean local walkthrough"]:::done
+    T071["T-071 Map smoke-test checkpoints to the critical application facets"]:::todo
+    T072["T-072 Define scripted initial data and test isolation rules"]:::blocked
+    T073["T-073 Specify smoke assertions, diagnostics, and coverage boundaries"]:::blocked
+    T074["T-074 Implement deterministic smoke-test bootstrap and cleanup helpers"]:::blocked
+    T075["T-075 Implement the core draft publication and participation smoke journey"]:::blocked
+    T076["T-076 Implement lifecycle, audit, undo, and access-control smoke assertions"]:::blocked
+    T077["T-077 Add a dedicated developer command for the local smoke test"]:::blocked
+    T078["T-078 Verify smoke-test repeatability, failure diagnostics, and port overrides"]:::blocked
+    T079["T-079 Finalize the local guide and acceptance traceability evidence"]:::blocked
+    T068 --> T069
+    T069 --> T070
+    T070 --> T079
+    T071 --> T072
+    T072 --> T073
+    T073 --> T074
+    T074 --> T075
+    T075 --> T076
+    T076 --> T077
+    T077 --> T078
+    T078 --> T079
+  end
+  click S033 "../entities/S-033-document-the-verified-local-development-workflow.md"
+  click S034 "../entities/S-034-define-the-deterministic-application-smoke-test-contract.md"
+  click S035 "../entities/S-035-implement-the-executable-full-journey-local-smoke-test.md"
+  click S036 "../entities/S-036-operationalize-and-verify-local-smoke-test-execution.md"
+  click T068 "../entities/T-068-inventory-and-validate-local-prerequisites-and-service-topology.md"
+  click T069 "../entities/T-069-document-installation-configuration-and-stack-lifecycle-commands.md"
+  click T070 "../entities/T-070-document-troubleshooting-and-verify-the-clean-local-walkthrough.md"
+  click T071 "../entities/T-071-map-smoke-test-checkpoints-to-the-critical-application-facets.md"
+  click T072 "../entities/T-072-define-scripted-initial-data-and-test-isolation-rules.md"
+  click T073 "../entities/T-073-specify-smoke-assertions-diagnostics-and-coverage-boundaries.md"
+  click T074 "../entities/T-074-implement-deterministic-smoke-test-bootstrap-and-cleanup-helpers.md"
+  click T075 "../entities/T-075-implement-the-core-draft-publication-and-participation-smoke-journey.md"
+  click T076 "../entities/T-076-implement-lifecycle-audit-undo-and-access-control-smoke-assertions.md"
+  click T077 "../entities/T-077-add-a-dedicated-developer-command-for-the-local-smoke-test.md"
+  click T078 "../entities/T-078-verify-smoke-test-repeatability-failure-diagnostics-and-port-overrides.md"
+  click T079 "../entities/T-079-finalize-the-local-guide-and-acceptance-traceability-evidence.md"

@@ -58,9 +58,10 @@ compose.yaml         DynamoDB Local container
 
 ## Prerequisites
 
-- **Node.js 24** (the version CI uses) and **npm 11**
+- **Node.js 24** and **npm 11.6.0** (the versions declared by CI and `package.json`)
 - **PowerShell 7+** (`pwsh`), which runs the dev-stack scripts on Windows, macOS and Linux
-- **Docker** with Docker Compose, which runs DynamoDB Local
+- **Docker Engine** with the Docker Compose plugin, running and available to your user; it runs DynamoDB Local
+- A supported browser runtime for Playwright. Install Chromium with the command below; on Linux, install its OS dependencies with `npx playwright install --with-deps chromium` if they are not already present.
 - No AWS account or credentials are needed to run locally
 
 Install dependencies and the Playwright browser:
@@ -70,6 +71,8 @@ npm ci
 npx playwright install chromium
 ```
 
+The CI workflow currently uses Node.js 24, runs `npm ci`, installs Chromium (and Linux browser dependencies), then runs `npm run test:foundation`. `npm ci` uses the committed lockfile and expects it to match `package.json`.
+
 ## Running the application locally
 
 ```sh
@@ -77,7 +80,7 @@ npm run dev        # build, start DynamoDB Local, the API and Vite
 npm run dev:stop   # stop only the processes/containers the start script launched
 ```
 
-When `npm run dev` finishes it prints the URL. By default the app is at <http://127.0.0.1:15173>.
+When `npm run dev` finishes it prints the URL. By default the app is at <http://127.0.0.1:15173>. The start script builds the TypeScript workspaces, starts DynamoDB Local if it is not already answering on the configured port, waits for DynamoDB readiness, starts the API and waits for `/health`, then starts Vite and waits for its HTTP response. The API initializes the local tables during startup; `npm run tables:init` is available when you want to create them separately.
 
 | Service | Default port | Override |
 | --- | --- | --- |
@@ -85,7 +88,21 @@ When `npm run dev` finishes it prints the URL. By default the app is at <http://
 | API | `14000` (health check: `/health`) | `API_PORT` |
 | DynamoDB Local | `18000` | `DYNAMODB_PORT` |
 
-`npm run dev` writes its process state to `.devstack/processes.json` and its logs to `.devstack/service-logs/`. It refuses to start while a recorded stack exists, so if it reports that a stack is already running, run `npm run dev:stop` first. If DynamoDB is already listening on the configured port, the script reuses it and leaves it running on stop.
+`npm run dev` writes its process state to `.devstack/processes.json` and its logs to `.devstack/service-logs/` (`api.out.log`, `api.error.log`, `vite.out.log`, and `vite.error.log`). It refuses to start while a recorded stack exists, so if it reports that a stack is already running, run `npm run dev:stop` first. Shutdown stops only the recorded API/Vite processes and removes the DynamoDB container only when this start script created it. If DynamoDB was already answering on the configured port, the script reuses it and leaves it running on stop. DynamoDB data persists under `.dynamodb/`; stopping the stack does not erase it.
+
+To use alternate ports in PowerShell, set the environment variables before starting the stack. Keep `WEB_PORT` set in the same shell when running Playwright so its base URL matches:
+
+```powershell
+$env:DYNAMODB_PORT = '18001'
+$env:API_PORT = '14001'
+$env:WEB_PORT = '15174'
+npm run dev
+npm run test:e2e
+npm run dev:stop
+Remove-Item Env:DYNAMODB_PORT, Env:API_PORT, Env:WEB_PORT
+```
+
+The startup script also accepts `-DynamoDbPort`, `-ApiPort`, and `-WebPort` when invoked directly through `pwsh -File scripts/Start-DevStack.ps1`; environment variables are easier when the browser tests need the matching web port.
 
 To create the local tables without starting the whole stack, run `npm run tables:init`.
 
@@ -202,4 +219,14 @@ This command runs, in order: format check, lint, type check, `npm test` (foundat
 
 ## Configuration
 
-`.env.example` lists the backend variables (`APP_ENV`, `PORT`, `AWS_REGION`, `DYNAMODB_ENDPOINT`, `APP_TABLE_NAME`, `AUDIT_TABLE_NAME`, `PUBLIC_BASE_URL`, `AUTH_MODE`). Put local overrides in an ignored `.env.local`, and never commit real secrets. The dev-stack script sets `DYNAMODB_ENDPOINT`, `API_PORT`, `WEB_PORT` and `PUBLIC_BASE_URL` itself, based on the ports it resolves.
+`.env.example` documents backend configuration. The PowerShell dev-stack scripts do not automatically load `.env.local`: set overrides in the shell before `npm run dev` (for example, the port settings above). The start script derives `DYNAMODB_ENDPOINT` and `PUBLIC_BASE_URL` and sets `API_PORT`, `WEB_PORT`, and `DYNAMODB_PORT` for its child services. Do not put real secrets in local configuration or commit them.
+
+## Troubleshooting local development
+
+- **A recorded stack already exists:** Run `npm run dev:stop`, then retry `npm run dev`. The stop command reports when there is no recorded stack. If startup was interrupted before cleanup, inspect `.devstack/processes.json` and the service logs before taking any manual process action.
+- **A port is already in use:** Choose another port by setting `DYNAMODB_PORT`, `API_PORT`, or `WEB_PORT` in PowerShell before startup. For browser tests, retain the same `WEB_PORT` in that shell. If DynamoDB is already listening on the selected DynamoDB port, startup treats it as an existing service and will not stop it later.
+- **Docker or DynamoDB does not start:** Confirm Docker Engine is running and `docker compose version` succeeds for your user. Check `.devstack/service-logs/` and the Compose output from `npm run dev`. Startup uses a 90-second readiness deadline for DynamoDB, the API, and Vite; Docker may report a successful container start before DynamoDB itself is ready.
+- **The API or web server times out:** Check `api.out.log`, `api.error.log`, `vite.out.log`, and `vite.error.log` in `.devstack/service-logs/`. Confirm the selected ports are free and that the API health URL (`http://127.0.0.1:<API_PORT>/health`) responds. A failed startup attempts to stop the processes it recorded; fix the underlying build, port, or service issue and retry.
+- **Playwright cannot reach the app:** Start the stack first; `npm run test:e2e` does not start or stop services. Confirm the browser-test shell has the same `WEB_PORT` used by the stack. If Chromium is missing, run `npx playwright install chromium` (on Linux, `npx playwright install --with-deps chromium`).
+- **A browser test fails:** Inspect the HTML report with `npx playwright show-report`, plus traces, screenshots, and videos in `test-results/`. For a less contended local run, use `npx playwright test --workers=1`.
+- **Local data looks unexpected:** DynamoDB Local stores data in `.dynamodb/`, which survives `npm run dev:stop`. The startup flow initializes tables but does not reset their contents. Do not delete `.dynamodb/` unless you deliberately intend to discard local data.
