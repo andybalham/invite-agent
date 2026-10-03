@@ -85,6 +85,13 @@ async function assertOwnership(client, manifest, table) {
   }
 }
 
+export async function assertManifestOwnership(client, manifest) {
+  for (const table of manifest.tables.filter(({ creationAttempted, cleanup }) =>
+    creationAttempted && cleanup !== "deleted" && cleanup !== "absent")) {
+    await assertOwnership(client, manifest, table);
+  }
+}
+
 export async function provisionTables(file, client) {
   // Startup builds first; manifest initialization must also work on a fresh checkout.
   const { initializeTables } = await import("../backend/dist/data/initialize-tables.js");

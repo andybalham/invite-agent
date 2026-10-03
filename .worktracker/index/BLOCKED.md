@@ -12,8 +12,7 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [S-038 · Provide safe explicit-poll and smoke-run cleanup utilities](../entities/S-038-provide-safe-explicit-poll-and-smoke-run-cleanup-utilities.md) — blocked
-- [S-039 · Verify cleanup isolation, repeatability, and failure recovery](../entities/S-039-verify-cleanup-isolation-repeatability-and-failure-recovery.md) — blocked · waiting on S-038
+- [S-039 · Verify cleanup isolation, repeatability, and failure recovery](../entities/S-039-verify-cleanup-isolation-repeatability-and-failure-recovery.md) — blocked
 - [S-040 · Document ephemeral smoke data and local cleanup operations](../entities/S-040-document-ephemeral-smoke-data-and-local-cleanup-operations.md) — blocked · waiting on S-039
 - [S-041 · Clear down integration-test tables after every test](../entities/S-041-clear-down-integration-test-tables-after-every-test.md) — blocked
 - [S-042 · Provide a script to clear all local application data](../entities/S-042-provide-a-script-to-clear-all-local-application-data.md) — blocked
@@ -30,10 +29,6 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-084 · Implement complete deletion of one local poll and its audit history](../entities/T-084-implement-complete-deletion-of-one-local-poll-and-its-audit-history.md) — blocked · waiting on T-083
-- [T-085 · Implement smoke-run clear-down by run manifest](../entities/T-085-implement-smoke-run-clear-down-by-run-manifest.md) — blocked · waiting on T-084
-- [T-086 · Verify repeated smoke runs use isolated tables and leave no owned data](../entities/T-086-verify-repeated-smoke-runs-use-isolated-tables-and-leave-no-owned-data.md) — blocked · waiting on T-085
-- [T-087 · Verify explicit-poll and run-ID cleanup across paginated data](../entities/T-087-verify-explicit-poll-and-run-id-cleanup-across-paginated-data.md) — blocked · waiting on T-085
 - [T-088 · Verify cleanup safeguards and recovery diagnostics](../entities/T-088-verify-cleanup-safeguards-and-recovery-diagnostics.md) — blocked · waiting on T-086, T-087
 - [T-089 · Document ephemeral table lifecycle in the README](../entities/T-089-document-ephemeral-table-lifecycle-in-the-readme.md) — blocked · waiting on T-088
 - [T-090 · Document explicit-poll and run-ID cleanup operations](../entities/T-090-document-explicit-poll-and-run-id-cleanup-operations.md) — blocked · waiting on T-089

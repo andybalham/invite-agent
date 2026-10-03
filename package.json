@@ -25,6 +25,7 @@
     "test:smoke": "pwsh -NoProfile -File scripts/Run-SmokeTests.ps1",
     "test:foundation": "pwsh -NoProfile -File scripts/Run-FoundationTests.ps1",
     "tables:init": "npm run build && node scripts/initialize-local-tables.mjs",
+    "cleanup:local": "node scripts/cleanup-local-data.mjs",
     "test:boundaries": "node scripts/check-production-boundaries.mjs && node --test test/foundation/boundaries.test.mjs",
     "security:check": "node scripts/check-security.mjs",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run security:check"

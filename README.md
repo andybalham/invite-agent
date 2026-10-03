@@ -212,7 +212,25 @@ The journey creates a fresh private draft through the UI, prepares dates, publis
 
 Each wrapper run provisions `invite-agent-smoke-app-<runId>` and `invite-agent-smoke-audit-<runId>` with the normal application/audit schemas. It overrides inherited `APP_TABLE_NAME` and `AUDIT_TABLE_NAME` for the API and test helpers. Shared development tables and earlier retained smoke polls are preserved. After collecting diagnostics, shutdown stops the API/web processes, deletes only this run's tables while DynamoDB is reachable, and then stops DynamoDB if it started it. This also applies to failed startup or browser tests. Deleting these disposable tables permanently removes that run's poll, participant, capability, index, and audit records; the evidence remains.
 
-`manifest.json` in the evidence directory records schema version, run ID, local endpoint/region, both table names, creation/ownership and cleanup results, and every created poll ID. The fixture records IDs immediately; teardown also discovers any polls whose create response was lost, using a paginated scan confined to the owned application table. Ownership requires exact names derived from the run ID plus a matching metadata marker containing the run ID, table role, project owner, and random nonce. Table collisions are rejected rather than reused. Only explicit loopback HTTP DynamoDB endpoints are allowed. Cleanup failure returns nonzero and records the reason in the manifest; an ownership mismatch preserves the table for inspection. Abrupt process termination or an unavailable database can leave tables behind. The manual cleanup utility is deferred to S-038.
+`manifest.json` in the evidence directory records schema version, run ID, local endpoint/region, both table names, creation/ownership and cleanup results, and every created poll ID. The fixture records IDs immediately; teardown also discovers any polls whose create response was lost, using a paginated scan confined to the owned application table. Ownership requires exact names derived from the run ID plus a matching metadata marker containing the run ID, table role, project owner, and random nonce. Table collisions are rejected rather than reused. Only explicit loopback HTTP DynamoDB endpoints are allowed. Cleanup failure returns nonzero and records the reason in the manifest; an ownership mismatch preserves the table for inspection. Abrupt process termination or an unavailable database can leave tables behind.
+
+### Retained local-data cleanup
+
+The cleanup utility is local-only and defaults to a dry run. It requires an explicit loopback HTTP DynamoDB endpoint, refuses `APP_ENV` values other than `local` or `test`, never performs a broad table scan, and requires `--confirm` before deleting anything. Use an explicit poll ID for retained data in the shared local tables:
+
+```powershell
+node scripts/cleanup-local-data.mjs --poll-id <poll-id> --endpoint http://127.0.0.1:18000 --app-table invite-agent-local-app --audit-table invite-agent-local-audit
+node scripts/cleanup-local-data.mjs --poll-id <poll-id> --endpoint http://127.0.0.1:18000 --app-table invite-agent-local-app --audit-table invite-agent-local-audit --confirm
+```
+
+For an ephemeral smoke run, use its immutable manifest. The utility previews the manifest's exact tables and recorded poll IDs, then deletes only those polls after confirmation; it does not discover unrelated data:
+
+```powershell
+node scripts/cleanup-local-data.mjs --run-id <run-id>
+node scripts/cleanup-local-data.mjs --run-id <run-id> --confirm
+```
+
+Poll cleanup removes metadata, participants, participant-name indexes, the public-token capability, and all paginated audit events with bounded DynamoDB batch writes. Missing records are reported as already missing; an incomplete poll record reports the capability as unresolved rather than guessing a token key. Run cleanup validates the manifest and, before mutation, its per-table ownership markers. A mismatched marker, non-loopback endpoint, invalid manifest, missing table name, or conflicting mode is a hard refusal. Table teardown remains the smoke wrapper's responsibility; use the manifest's recorded evidence and cleanup status for recovery when a process stops unexpectedly.
 
 The command accepts the same port environment variables as `npm run dev`, or explicit PowerShell parameters (parameters take precedence):
 

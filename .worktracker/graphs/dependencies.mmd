@@ -67,7 +67,7 @@ graph LR
     S035["S-035 Implement the executable full-journey local smoke test"]:::done
     S036["S-036 Operationalize and verify local smoke-test execution"]:::done
     S037["S-037 Run smoke tests against ephemeral per-run DynamoDB tables"]:::done
-    S038["S-038 Provide safe explicit-poll and smoke-run cleanup utilities"]:::blocked
+    S038["S-038 Provide safe explicit-poll and smoke-run cleanup utilities"]:::done
     S039["S-039 Verify cleanup isolation, repeatability, and failure recovery"]:::blocked
     S040["S-040 Document ephemeral smoke data and local cleanup operations"]:::blocked
     S041["S-041 Clear down integration-test tables after every test"]:::blocked
@@ -200,11 +200,11 @@ graph LR
     T080["T-080 Specify per-run table ownership and smoke-run manifest format"]:::done
     T081["T-081 Provision unique application and audit tables for each smoke run"]:::done
     T082["T-082 Persist smoke-run manifests and tear down only owned tables"]:::done
-    T083["T-083 Define safe explicit-poll and smoke-run cleanup contracts"]:::todo
-    T084["T-084 Implement complete deletion of one local poll and its audit history"]:::blocked
-    T085["T-085 Implement smoke-run clear-down by run manifest"]:::blocked
-    T086["T-086 Verify repeated smoke runs use isolated tables and leave no owned data"]:::blocked
-    T087["T-087 Verify explicit-poll and run-ID cleanup across paginated data"]:::blocked
+    T083["T-083 Define safe explicit-poll and smoke-run cleanup contracts"]:::done
+    T084["T-084 Implement complete deletion of one local poll and its audit history"]:::done
+    T085["T-085 Implement smoke-run clear-down by run manifest"]:::done
+    T086["T-086 Verify repeated smoke runs use isolated tables and leave no owned data"]:::todo
+    T087["T-087 Verify explicit-poll and run-ID cleanup across paginated data"]:::todo
     T088["T-088 Verify cleanup safeguards and recovery diagnostics"]:::blocked
     T089["T-089 Document ephemeral table lifecycle in the README"]:::blocked
     T090["T-090 Document explicit-poll and run-ID cleanup operations"]:::blocked
