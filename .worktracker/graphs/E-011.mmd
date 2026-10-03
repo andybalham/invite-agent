@@ -1,0 +1,58 @@
+graph LR
+  classDef done fill:#14532d,stroke:#86efac,color:#f0fdf4;
+  classDef blocked fill:#7f1d1d,stroke:#fca5a5,color:#fff7f7;
+  classDef inprogress fill:#78350f,stroke:#fbbf24,color:#fffbeb;
+  classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
+  classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
+  subgraph Stories
+    S037["S-037 Run smoke tests against ephemeral per-run DynamoDB tables"]:::blocked
+    S038["S-038 Provide safe explicit-poll and smoke-run cleanup utilities"]:::blocked
+    S039["S-039 Verify cleanup isolation, repeatability, and failure recovery"]:::blocked
+    S040["S-040 Document ephemeral smoke data and local cleanup operations"]:::blocked
+    S037 --> S038
+    S038 --> S039
+    S039 --> S040
+  end
+  subgraph Tasks
+    T080["T-080 Specify per-run table ownership and smoke-run manifest format"]:::todo
+    T081["T-081 Provision unique application and audit tables for each smoke run"]:::blocked
+    T082["T-082 Persist smoke-run manifests and tear down only owned tables"]:::blocked
+    T083["T-083 Define safe explicit-poll and smoke-run cleanup contracts"]:::blocked
+    T084["T-084 Implement complete deletion of one local poll and its audit history"]:::blocked
+    T085["T-085 Implement smoke-run clear-down by run manifest"]:::blocked
+    T086["T-086 Verify repeated smoke runs use isolated tables and leave no owned data"]:::blocked
+    T087["T-087 Verify explicit-poll and run-ID cleanup across paginated data"]:::blocked
+    T088["T-088 Verify cleanup safeguards and recovery diagnostics"]:::blocked
+    T089["T-089 Document ephemeral table lifecycle in the README"]:::blocked
+    T090["T-090 Document explicit-poll and run-ID cleanup operations"]:::blocked
+    T091["T-091 Finalize cleanup acceptance traceability and operational verification"]:::blocked
+    T080 --> T081
+    T081 --> T082
+    T082 --> T083
+    T082 --> T086
+    T083 --> T084
+    T084 --> T085
+    T085 --> T086
+    T085 --> T087
+    T086 --> T088
+    T087 --> T088
+    T088 --> T089
+    T089 --> T090
+    T090 --> T091
+  end
+  click S037 "../entities/S-037-run-smoke-tests-against-ephemeral-per-run-dynamodb-tables.md"
+  click S038 "../entities/S-038-provide-safe-explicit-poll-and-smoke-run-cleanup-utilities.md"
+  click S039 "../entities/S-039-verify-cleanup-isolation-repeatability-and-failure-recovery.md"
+  click S040 "../entities/S-040-document-ephemeral-smoke-data-and-local-cleanup-operations.md"
+  click T080 "../entities/T-080-specify-per-run-table-ownership-and-smoke-run-manifest-format.md"
+  click T081 "../entities/T-081-provision-unique-application-and-audit-tables-for-each-smoke-run.md"
+  click T082 "../entities/T-082-persist-smoke-run-manifests-and-tear-down-only-owned-tables.md"
+  click T083 "../entities/T-083-define-safe-explicit-poll-and-smoke-run-cleanup-contracts.md"
+  click T084 "../entities/T-084-implement-complete-deletion-of-one-local-poll-and-its-audit-history.md"
+  click T085 "../entities/T-085-implement-smoke-run-clear-down-by-run-manifest.md"
+  click T086 "../entities/T-086-verify-repeated-smoke-runs-use-isolated-tables-and-leave-no-owned-data.md"
+  click T087 "../entities/T-087-verify-explicit-poll-and-run-id-cleanup-across-paginated-data.md"
+  click T088 "../entities/T-088-verify-cleanup-safeguards-and-recovery-diagnostics.md"
+  click T089 "../entities/T-089-document-ephemeral-table-lifecycle-in-the-readme.md"
+  click T090 "../entities/T-090-document-explicit-poll-and-run-id-cleanup-operations.md"
+  click T091 "../entities/T-091-finalize-cleanup-acceptance-traceability-and-operational-verification.md"

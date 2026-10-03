@@ -15,6 +15,7 @@ graph LR
     E008["E-008 E8 — Production AWS platform"]:::blocked
     E009["E-009 E9 — Tested production release and operations"]:::blocked
     E010["E-010 E10 — Local onboarding and full-journey smoke testing"]:::done
+    E011["E-011 E11 — Ephemeral smoke data and safe local cleanup"]:::blocked
     E001 --> E002
     E002 --> E003
     E003 --> E004
@@ -25,6 +26,8 @@ graph LR
     E007 --> E010
     E008 --> E009
     E010 --> E008
+    E010 --> E011
+    E011 --> E008
   end
   subgraph Stories
     S001["S-001 Establish the TypeScript workspace and shared contracts"]:::done
@@ -63,6 +66,10 @@ graph LR
     S034["S-034 Define the deterministic application smoke-test contract"]:::done
     S035["S-035 Implement the executable full-journey local smoke test"]:::done
     S036["S-036 Operationalize and verify local smoke-test execution"]:::done
+    S037["S-037 Run smoke tests against ephemeral per-run DynamoDB tables"]:::blocked
+    S038["S-038 Provide safe explicit-poll and smoke-run cleanup utilities"]:::blocked
+    S039["S-039 Verify cleanup isolation, repeatability, and failure recovery"]:::blocked
+    S040["S-040 Document ephemeral smoke data and local cleanup operations"]:::blocked
     S001 --> S002
     S002 --> S003
     S003 --> S004
@@ -104,6 +111,9 @@ graph LR
     S033 --> S035
     S034 --> S035
     S035 --> S036
+    S037 --> S038
+    S038 --> S039
+    S039 --> S040
   end
   subgraph Tasks
     T001["T-001 Specify workspace and shared contracts with failing automated tests"]:::done
@@ -185,6 +195,18 @@ graph LR
     T077["T-077 Add a dedicated developer command for the local smoke test"]:::done
     T078["T-078 Verify smoke-test repeatability, failure diagnostics, and port overrides"]:::done
     T079["T-079 Finalize the local guide and acceptance traceability evidence"]:::done
+    T080["T-080 Specify per-run table ownership and smoke-run manifest format"]:::todo
+    T081["T-081 Provision unique application and audit tables for each smoke run"]:::blocked
+    T082["T-082 Persist smoke-run manifests and tear down only owned tables"]:::blocked
+    T083["T-083 Define safe explicit-poll and smoke-run cleanup contracts"]:::blocked
+    T084["T-084 Implement complete deletion of one local poll and its audit history"]:::blocked
+    T085["T-085 Implement smoke-run clear-down by run manifest"]:::blocked
+    T086["T-086 Verify repeated smoke runs use isolated tables and leave no owned data"]:::blocked
+    T087["T-087 Verify explicit-poll and run-ID cleanup across paginated data"]:::blocked
+    T088["T-088 Verify cleanup safeguards and recovery diagnostics"]:::blocked
+    T089["T-089 Document ephemeral table lifecycle in the README"]:::blocked
+    T090["T-090 Document explicit-poll and run-ID cleanup operations"]:::blocked
+    T091["T-091 Finalize cleanup acceptance traceability and operational verification"]:::blocked
     T001 --> T002
     T002 --> T003
     T003 --> T004
@@ -268,6 +290,19 @@ graph LR
     T076 --> T077
     T077 --> T078
     T078 --> T079
+    T080 --> T081
+    T081 --> T082
+    T082 --> T083
+    T082 --> T086
+    T083 --> T084
+    T084 --> T085
+    T085 --> T086
+    T085 --> T087
+    T086 --> T088
+    T087 --> T088
+    T088 --> T089
+    T089 --> T090
+    T090 --> T091
   end
   click E001 "../entities/E-001-e1-runnable-local-engineering-foundation.md"
   click E002 "../entities/E-002-e2-organiser-draft-builder-and-preview.md"
@@ -279,6 +314,7 @@ graph LR
   click E008 "../entities/E-008-e8-production-aws-platform.md"
   click E009 "../entities/E-009-e9-tested-production-release-and-operations.md"
   click E010 "../entities/E-010-e10-local-onboarding-and-full-journey-smoke-testing.md"
+  click E011 "../entities/E-011-e11-ephemeral-smoke-data-and-safe-local-cleanup.md"
   click S001 "../entities/S-001-establish-the-typescript-workspace-and-shared-contracts.md"
   click S002 "../entities/S-002-run-shared-services-locally-with-dynamodb-and-guarded-authentication.md"
   click S003 "../entities/S-003-provide-one-command-local-startup-and-browser-test-harness.md"
@@ -315,6 +351,10 @@ graph LR
   click S034 "../entities/S-034-define-the-deterministic-application-smoke-test-contract.md"
   click S035 "../entities/S-035-implement-the-executable-full-journey-local-smoke-test.md"
   click S036 "../entities/S-036-operationalize-and-verify-local-smoke-test-execution.md"
+  click S037 "../entities/S-037-run-smoke-tests-against-ephemeral-per-run-dynamodb-tables.md"
+  click S038 "../entities/S-038-provide-safe-explicit-poll-and-smoke-run-cleanup-utilities.md"
+  click S039 "../entities/S-039-verify-cleanup-isolation-repeatability-and-failure-recovery.md"
+  click S040 "../entities/S-040-document-ephemeral-smoke-data-and-local-cleanup-operations.md"
   click T001 "../entities/T-001-specify-workspace-and-shared-contracts-with-failing-automated-tests.md"
   click T002 "../entities/T-002-implement-and-verify-workspace-and-shared-contracts.md"
   click T003 "../entities/T-003-specify-local-dynamodb-shared-services-and-guarded-auth-with-failing-automated-tests.md"
@@ -394,3 +434,15 @@ graph LR
   click T077 "../entities/T-077-add-a-dedicated-developer-command-for-the-local-smoke-test.md"
   click T078 "../entities/T-078-verify-smoke-test-repeatability-failure-diagnostics-and-port-overrides.md"
   click T079 "../entities/T-079-finalize-the-local-guide-and-acceptance-traceability-evidence.md"
+  click T080 "../entities/T-080-specify-per-run-table-ownership-and-smoke-run-manifest-format.md"
+  click T081 "../entities/T-081-provision-unique-application-and-audit-tables-for-each-smoke-run.md"
+  click T082 "../entities/T-082-persist-smoke-run-manifests-and-tear-down-only-owned-tables.md"
+  click T083 "../entities/T-083-define-safe-explicit-poll-and-smoke-run-cleanup-contracts.md"
+  click T084 "../entities/T-084-implement-complete-deletion-of-one-local-poll-and-its-audit-history.md"
+  click T085 "../entities/T-085-implement-smoke-run-clear-down-by-run-manifest.md"
+  click T086 "../entities/T-086-verify-repeated-smoke-runs-use-isolated-tables-and-leave-no-owned-data.md"
+  click T087 "../entities/T-087-verify-explicit-poll-and-run-id-cleanup-across-paginated-data.md"
+  click T088 "../entities/T-088-verify-cleanup-safeguards-and-recovery-diagnostics.md"
+  click T089 "../entities/T-089-document-ephemeral-table-lifecycle-in-the-readme.md"
+  click T090 "../entities/T-090-document-explicit-poll-and-run-id-cleanup-operations.md"
+  click T091 "../entities/T-091-finalize-cleanup-acceptance-traceability-and-operational-verification.md"
