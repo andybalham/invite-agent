@@ -111,7 +111,7 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
       await page.getByRole("button", { name: "Save draft", exact: true }).click();
       const response = await created;
       expect(response.status()).toBe(201);
-      smoke.pollId = (await response.json()).id;
+      await smoke.recordCreatedPoll((await response.json()).id);
       await expect(page.getByRole("status")).toContainText("Draft saved");
     });
     expect(new URL(page.url()).searchParams.get("pollId")).toBe(smoke.pollId);

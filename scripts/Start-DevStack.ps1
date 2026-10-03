@@ -4,6 +4,7 @@ param(
     [int]$DynamoDbPort,
     [int]$ApiPort,
     [int]$WebPort,
+    [string]$SmokeRunManifestPath,
     [switch]$SkipBuild
 )
 
@@ -87,6 +88,7 @@ function Save-State {
         dynamodbStarted = $DynamoDbStarted
         ports = @{ dynamodb = $DynamoDbPort; api = $ApiPort; web = $WebPort }
         processes = $Processes
+        smokeRunManifestPath = $SmokeRunManifestPath
     }
     $state | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $statePath -Encoding utf8
 }
@@ -125,6 +127,15 @@ try {
         $env:API_PORT = $ApiPort.ToString()
         $env:WEB_PORT = $WebPort.ToString()
         $env:PUBLIC_BASE_URL = "http://127.0.0.1:$WebPort"
+        if ($SmokeRunManifestPath) {
+            $manifest = Get-Content -Raw -LiteralPath $SmokeRunManifestPath | ConvertFrom-Json
+            if ($manifest.endpoint -ne $env:DYNAMODB_ENDPOINT) { throw 'Smoke manifest endpoint does not match the local stack.' }
+            & node (Join-Path $PSScriptRoot 'smoke-run-resources.mjs') provision $SmokeRunManifestPath
+            if ($LASTEXITCODE -ne 0) { throw 'Smoke table provisioning failed.' }
+            $env:APP_TABLE_NAME = $manifest.tables[0].name
+            $env:AUDIT_TABLE_NAME = $manifest.tables[1].name
+            $env:SMOKE_RUN_MANIFEST_PATH = $SmokeRunManifestPath
+        }
         $api = Start-Process -FilePath 'node' -ArgumentList @('backend/dist/adapters/local/dev-server.js') -WorkingDirectory $repoRoot -RedirectStandardOutput (Join-Path $logsDirectory 'api.out.log') -RedirectStandardError (Join-Path $logsDirectory 'api.error.log') -PassThru -WindowStyle Hidden
         $recorded += @{ name = 'api'; pid = $api.Id; startTimeUtcFileTime = $api.StartTime.ToFileTimeUtc().ToString() }
         Save-State -Processes $recorded -DynamoDbStarted $dynamoDbStarted
@@ -139,6 +150,8 @@ try {
     }
     Write-Output "Invite-a-Gent is ready at http://127.0.0.1:$WebPort (API $ApiPort, DynamoDB $DynamoDbPort)"
 } catch {
-    & (Join-Path $PSScriptRoot 'Stop-DevStack.ps1')
-    throw
+    $startupFailure = $_
+    try { & (Join-Path $PSScriptRoot 'Stop-DevStack.ps1') }
+    catch { Write-Warning "Startup cleanup failed: $($_.Exception.Message)" }
+    throw $startupFailure
 }

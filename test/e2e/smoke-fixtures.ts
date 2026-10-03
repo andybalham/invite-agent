@@ -44,6 +44,14 @@ export class SmokeHarness {
   get ownerUrl(): string { return `${this.publicUrl}?organiser=1&testRunId=${this.runId}`; }
   get historyUrl(): string { return `/?pollId=${this.pollId}&testRunId=${this.runId}&view=history`; }
 
+  async recordCreatedPoll(pollId: string): Promise<void> {
+    this.pollId = pollId;
+    if (process.env.SMOKE_RUN_MANIFEST_PATH) {
+      const { recordPoll } = await import(pathToFileURL(path.resolve("scripts/smoke-run-resources.mjs")).href);
+      await recordPoll(process.env.SMOKE_RUN_MANIFEST_PATH, pollId);
+    }
+  }
+
   private observe(page: Page, role: string): void {
     page.on("response", (response) => {
       if (!/^\/(api|health)(\/|$)/.test(new URL(response.url()).pathname)) return;
@@ -242,14 +250,15 @@ export class SmokeHarness {
     await Promise.allSettled(this.pendingLogs);
     if (failed) await safeAttach("smoke-api.log", sanitize(`${this.apiLog.join("\n")}\n`), "text/plain");
     const summary = sanitize(JSON.stringify({
-      runId: this.runId, retainedPollId: this.pollId || null, checkpoint: this.checkpoint,
+      runId: this.runId, pollId: this.pollId || null, checkpoint: this.checkpoint,
+      manifestPath: process.env.SMOKE_RUN_MANIFEST_PATH ?? null,
       browserRole: this.browserRole, lastAction: this.lastAction, completed: this.completed,
       result: this.info.status, errors: this.info.errors.map(({ message }) => message),
       lastAuthoritativeSnapshot: failed ? this.lastSnapshot : undefined,
       limitations: [
         "SM-11 checks revocation via a test-only repository hook; organiser regeneration has no supported route/UI.",
         "History availability Before/After cells show Changed values; exact values are asserted in the action summary and owner API.",
-        "Smoke poll retained; no deletion workflow."
+        process.env.SMOKE_RUN_MANIFEST_PATH ? "Wrapper deletes owned tables after collecting diagnostics." : "Direct invocation retains its poll in the running stack."
       ]
     }, null, 2));
     // Keep an inspectable file on successful runs as well as an HTML attachment.
@@ -262,6 +271,14 @@ export class SmokeHarness {
 
 export const test = existingTest.extend<{ smoke: SmokeHarness }>({
   testRunId: async ({}, use, info) => {
+    if (process.env.SMOKE_RUN_MANIFEST_PATH) {
+      const { readManifest } = await import(pathToFileURL(path.resolve("scripts/smoke-run-resources.mjs")).href);
+      const manifest = await readManifest(process.env.SMOKE_RUN_MANIFEST_PATH);
+      expect(process.env.APP_TABLE_NAME).toBe(manifest.tables[0].name);
+      expect(process.env.AUDIT_TABLE_NAME).toBe(manifest.tables[1].name);
+      await use(manifest.runId);
+      return;
+    }
     await use(`smoke-${randomUUID()}-${info.project.name}-${info.workerIndex}-${info.retry}`.toLowerCase().replace(/[^a-z0-9-]/g, "-"));
   },
   // Replace the injected-page-only collector; SmokeHarness observes all roles and tolerates absent logs.

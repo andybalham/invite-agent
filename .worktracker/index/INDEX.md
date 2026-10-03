@@ -138,16 +138,16 @@ _Generated. Do not edit by hand._
   - [x] [T-079 · Finalize the local guide and acceptance traceability evidence](../entities/T-079-finalize-the-local-guide-and-acceptance-traceability-evidence.md) — done
 
 ## [E-011 · E11 — Ephemeral smoke data and safe local cleanup](./E-011.md) — blocked
-- [ ] **S-037 · Run smoke tests against ephemeral per-run DynamoDB tables** — blocked
-  - [ ] [T-080 · Specify per-run table ownership and smoke-run manifest format](../entities/T-080-specify-per-run-table-ownership-and-smoke-run-manifest-format.md) — todo
-  - [ ] [T-081 · Provision unique application and audit tables for each smoke run](../entities/T-081-provision-unique-application-and-audit-tables-for-each-smoke-run.md) — blocked · waiting on T-080
-  - [ ] [T-082 · Persist smoke-run manifests and tear down only owned tables](../entities/T-082-persist-smoke-run-manifests-and-tear-down-only-owned-tables.md) — blocked · waiting on T-081
-- [ ] **S-038 · Provide safe explicit-poll and smoke-run cleanup utilities** — blocked · waiting on S-037
-  - [ ] [T-083 · Define safe explicit-poll and smoke-run cleanup contracts](../entities/T-083-define-safe-explicit-poll-and-smoke-run-cleanup-contracts.md) — blocked · waiting on T-082
+- [x] **S-037 · Run smoke tests against ephemeral per-run DynamoDB tables** — done
+  - [x] [T-080 · Specify per-run table ownership and smoke-run manifest format](../entities/T-080-specify-per-run-table-ownership-and-smoke-run-manifest-format.md) — done
+  - [x] [T-081 · Provision unique application and audit tables for each smoke run](../entities/T-081-provision-unique-application-and-audit-tables-for-each-smoke-run.md) — done
+  - [x] [T-082 · Persist smoke-run manifests and tear down only owned tables](../entities/T-082-persist-smoke-run-manifests-and-tear-down-only-owned-tables.md) — done
+- [ ] **S-038 · Provide safe explicit-poll and smoke-run cleanup utilities** — blocked
+  - [ ] [T-083 · Define safe explicit-poll and smoke-run cleanup contracts](../entities/T-083-define-safe-explicit-poll-and-smoke-run-cleanup-contracts.md) — todo
   - [ ] [T-084 · Implement complete deletion of one local poll and its audit history](../entities/T-084-implement-complete-deletion-of-one-local-poll-and-its-audit-history.md) — blocked · waiting on T-083
   - [ ] [T-085 · Implement smoke-run clear-down by run manifest](../entities/T-085-implement-smoke-run-clear-down-by-run-manifest.md) — blocked · waiting on T-084
 - [ ] **S-039 · Verify cleanup isolation, repeatability, and failure recovery** — blocked · waiting on S-038
-  - [ ] [T-086 · Verify repeated smoke runs use isolated tables and leave no owned data](../entities/T-086-verify-repeated-smoke-runs-use-isolated-tables-and-leave-no-owned-data.md) — blocked · waiting on T-082, T-085
+  - [ ] [T-086 · Verify repeated smoke runs use isolated tables and leave no owned data](../entities/T-086-verify-repeated-smoke-runs-use-isolated-tables-and-leave-no-owned-data.md) — blocked · waiting on T-085
   - [ ] [T-087 · Verify explicit-poll and run-ID cleanup across paginated data](../entities/T-087-verify-explicit-poll-and-run-id-cleanup-across-paginated-data.md) — blocked · waiting on T-085
   - [ ] [T-088 · Verify cleanup safeguards and recovery diagnostics](../entities/T-088-verify-cleanup-safeguards-and-recovery-diagnostics.md) — blocked · waiting on T-086, T-087
 - [ ] **S-040 · Document ephemeral smoke data and local cleanup operations** — blocked · waiting on S-039

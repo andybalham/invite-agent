@@ -23,11 +23,20 @@ const primaryKey: KeySchemaElement[] = [
   { AttributeName: "SK", KeyType: "RANGE" }
 ];
 
-async function createIfMissing(client: DynamoDBClient, command: CreateTableCommand): Promise<void> {
+interface InitializationOptions {
+  readonly exclusive?: boolean;
+  readonly onCreated?: (tableName: string) => Promise<void>;
+}
+
+async function createIfMissing(client: DynamoDBClient, command: CreateTableCommand, options: InitializationOptions): Promise<void> {
   try {
     await client.send(command);
+    if (options.onCreated) {
+      await waitUntilActive(client, command.input.TableName!);
+      await options.onCreated(command.input.TableName!);
+    }
   } catch (error) {
-    if (!(error instanceof ResourceInUseException)) {
+    if (options.exclusive || !(error instanceof ResourceInUseException)) {
       throw error;
     }
   }
@@ -46,7 +55,8 @@ async function waitUntilActive(client: DynamoDBClient, tableName: string): Promi
 
 export async function initializeTables(
   client: DynamoDBClient,
-  names: TableNames
+  names: TableNames,
+  options: InitializationOptions = {}
 ): Promise<void> {
   await createIfMissing(
     client,
@@ -65,7 +75,8 @@ export async function initializeTables(
           Projection: { ProjectionType: "ALL" }
         }
       ]
-    })
+    }),
+    options
   );
   await createIfMissing(
     client,
@@ -74,7 +85,8 @@ export async function initializeTables(
       BillingMode: "PAY_PER_REQUEST",
       AttributeDefinitions: appAttributes.slice(0, 2),
       KeySchema: primaryKey
-    })
+    }),
+    options
   );
   await Promise.all([
     waitUntilActive(client, names.appTableName),

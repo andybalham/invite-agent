@@ -16,7 +16,7 @@ if (Test-Path -LiteralPath $statePath) {
     exit 1
 }
 
-$runId = "$(Get-Date -AsUTC -Format 'yyyyMMddTHHmmssfffZ')-$([guid]::NewGuid().ToString('N'))"
+$runId = "$(Get-Date -AsUTC -Format 'yyyyMMddTHHmmssfffZ')-$([guid]::NewGuid().ToString('N'))".ToLowerInvariant()
 $runDirectory = Join-Path $repoRoot ".devstack/smoke-runs/$runId"
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 $startedAt = [datetime]::UtcNow
@@ -27,12 +27,16 @@ $ports = $null
 $failure = $null
 $cleanupFailure = $null
 $diagnosticFailures = @()
+$manifestPath = Join-Path $runDirectory 'manifest.json'
 
 Push-Location $repoRoot
 try {
     Write-Output "Smoke evidence: $runDirectory"
+    $effectiveDynamoDbPort = if ($DynamoDbPort) { $DynamoDbPort } elseif ($env:DYNAMODB_PORT) { [int]$env:DYNAMODB_PORT } else { 18000 }
+    & node (Join-Path $PSScriptRoot 'smoke-run-resources.mjs') init $manifestPath $runId "http://127.0.0.1:$effectiveDynamoDbPort"
+    if ($LASTEXITCODE -ne 0) { throw 'Smoke manifest initialization failed.' }
     # Startup sets the effective port/endpoint environment for both services and Playwright.
-    & (Join-Path $PSScriptRoot 'Start-DevStack.ps1') -ReadinessTimeoutSeconds $ReadinessTimeoutSeconds -DynamoDbPort $DynamoDbPort -ApiPort $ApiPort -WebPort $WebPort *>&1 |
+    & (Join-Path $PSScriptRoot 'Start-DevStack.ps1') -SmokeRunManifestPath $manifestPath -ReadinessTimeoutSeconds $ReadinessTimeoutSeconds -DynamoDbPort $DynamoDbPort -ApiPort $ApiPort -WebPort $WebPort *>&1 |
         Tee-Object -FilePath (Join-Path $runDirectory 'startup.log')
     $ports = (Get-Content -Raw -LiteralPath $statePath | ConvertFrom-Json).ports
 
@@ -65,6 +69,16 @@ try {
                 Tee-Object -FilePath (Join-Path $runDirectory 'shutdown.log')
             if (Test-Path -LiteralPath $statePath) { throw 'Recorded stack state remains after shutdown.' }
         }
+        # Startup may already have stopped its stack, or may fail before recording it.
+        if (Test-Path -LiteralPath $manifestPath) {
+            $manifest = Get-Content -Raw -LiteralPath $manifestPath | ConvertFrom-Json
+            $unfinished = @($manifest.tables | Where-Object { $_.creationAttempted -and $_.cleanup -notin @('deleted', 'absent') })
+            if ($unfinished.Count -gt 0) {
+                & node (Join-Path $PSScriptRoot 'smoke-run-resources.mjs') cleanup $manifestPath *>&1 |
+                    Tee-Object -FilePath (Join-Path $runDirectory 'table-cleanup.log')
+                if ($LASTEXITCODE -ne 0) { throw 'Smoke table cleanup failed; see manifest.json.' }
+            }
+        }
     } catch {
         $cleanupFailure = $_.Exception.Message
         Write-Error -Message "Smoke stack cleanup failed: $cleanupFailure" -ErrorAction Continue
@@ -73,6 +87,7 @@ try {
     Pop-Location
     $summary = [ordered]@{
         runId = $runId
+        manifestPath = $manifestPath
         stage = $stage
         startedAt = $startedAt.ToString('o')
         finishedAt = [datetime]::UtcNow.ToString('o')

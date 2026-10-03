@@ -25,14 +25,22 @@ foreach ($record in $processes) {
     Stop-Process -Id $record.pid -Force
 }
 
-if ($state.dynamodbStarted -and $state.composeProject -eq 'invite-a-gent-local') {
-    Push-Location $repoRoot
-    try {
-        & docker compose -p $state.composeProject down
-    } finally {
-        Pop-Location
+try {
+    # API and web processes are stopped; keep DynamoDB reachable for owned-table teardown.
+    if ($state.smokeRunManifestPath) {
+        & node (Join-Path $PSScriptRoot 'smoke-run-resources.mjs') cleanup $state.smokeRunManifestPath
+        if ($LASTEXITCODE -ne 0) { throw 'Smoke table cleanup failed; see the run manifest.' }
     }
+} finally {
+    if ($state.dynamodbStarted -and $state.composeProject -eq 'invite-a-gent-local') {
+        Push-Location $repoRoot
+        try {
+            & docker compose -p $state.composeProject down
+            if ($LASTEXITCODE -ne 0) { throw 'Docker Compose shutdown failed; recorded state retained.' }
+        } finally {
+            Pop-Location
+        }
+    }
+    Remove-Item -LiteralPath $statePath -Force
 }
-
-Remove-Item -LiteralPath $statePath -Force
 Write-Output 'Stopped recorded Invite-a-Gent dev-stack processes.'
