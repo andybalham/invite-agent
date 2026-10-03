@@ -146,12 +146,12 @@ _Generated. Do not edit by hand._
   - [x] [T-083 · Define safe explicit-poll and smoke-run cleanup contracts](../entities/T-083-define-safe-explicit-poll-and-smoke-run-cleanup-contracts.md) — done
   - [x] [T-084 · Implement complete deletion of one local poll and its audit history](../entities/T-084-implement-complete-deletion-of-one-local-poll-and-its-audit-history.md) — done
   - [x] [T-085 · Implement smoke-run clear-down by run manifest](../entities/T-085-implement-smoke-run-clear-down-by-run-manifest.md) — done
-- [ ] **S-039 · Verify cleanup isolation, repeatability, and failure recovery** — blocked
-  - [ ] [T-086 · Verify repeated smoke runs use isolated tables and leave no owned data](../entities/T-086-verify-repeated-smoke-runs-use-isolated-tables-and-leave-no-owned-data.md) — todo
-  - [ ] [T-087 · Verify explicit-poll and run-ID cleanup across paginated data](../entities/T-087-verify-explicit-poll-and-run-id-cleanup-across-paginated-data.md) — todo
-  - [ ] [T-088 · Verify cleanup safeguards and recovery diagnostics](../entities/T-088-verify-cleanup-safeguards-and-recovery-diagnostics.md) — blocked · waiting on T-086, T-087
-- [ ] **S-040 · Document ephemeral smoke data and local cleanup operations** — blocked · waiting on S-039
-  - [ ] [T-089 · Document ephemeral table lifecycle in the README](../entities/T-089-document-ephemeral-table-lifecycle-in-the-readme.md) — blocked · waiting on T-088
+- [x] **S-039 · Verify cleanup isolation, repeatability, and failure recovery** — done
+  - [x] [T-086 · Verify repeated smoke runs use isolated tables and leave no owned data](../entities/T-086-verify-repeated-smoke-runs-use-isolated-tables-and-leave-no-owned-data.md) — done
+  - [x] [T-087 · Verify explicit-poll and run-ID cleanup across paginated data](../entities/T-087-verify-explicit-poll-and-run-id-cleanup-across-paginated-data.md) — done
+  - [x] [T-088 · Verify cleanup safeguards and recovery diagnostics](../entities/T-088-verify-cleanup-safeguards-and-recovery-diagnostics.md) — done
+- [ ] **S-040 · Document ephemeral smoke data and local cleanup operations** — blocked
+  - [ ] [T-089 · Document ephemeral table lifecycle in the README](../entities/T-089-document-ephemeral-table-lifecycle-in-the-readme.md) — todo
   - [ ] [T-090 · Document explicit-poll and run-ID cleanup operations](../entities/T-090-document-explicit-poll-and-run-id-cleanup-operations.md) — blocked · waiting on T-089
   - [ ] [T-091 · Finalize cleanup acceptance traceability and operational verification](../entities/T-091-finalize-cleanup-acceptance-traceability-and-operational-verification.md) — blocked · waiting on T-090
 - [ ] **S-041 · Clear down integration-test tables after every test** — blocked

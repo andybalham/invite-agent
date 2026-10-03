@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { tableNames } from "../../scripts/smoke-run-resources.mjs";
 import {
   cleanupPoll, cleanupRun, parseArguments, validateLocalEndpoint
 } from "../../scripts/cleanup-local-data.mjs";
@@ -12,7 +13,7 @@ function fakeClient() {
     [`POLL#${pollId}|METADATA`, { PK: { S: `POLL#${pollId}` }, SK: { S: "METADATA" }, document: { S: JSON.stringify({ id: pollId, publicTokenHash: "token-hash" }) } }],
     [`POLL#${pollId}|PARTICIPANT#p1`, { PK: { S: `POLL#${pollId}` }, SK: { S: "PARTICIPANT#p1" } }],
     [`POLL#${pollId}|NAME#alex`, { PK: { S: `POLL#${pollId}` }, SK: { S: "NAME#alex" } }],
-    ["PUBLIC_TOKEN#token-hash|CAPABILITY", { PK: { S: "PUBLIC_TOKEN#token-hash" }, SK: { S: "CAPABILITY" } }]
+    ["PUBLIC_TOKEN#token-hash|CAPABILITY", { PK: { S: "PUBLIC_TOKEN#token-hash" }, SK: { S: "CAPABILITY" }, pollId: { S: pollId } }]
   ]);
   const audit = new Map([
     [`POLL#${pollId}|EVENT#1`, { PK: { S: `POLL#${pollId}` }, SK: { S: "EVENT#1" } }],
@@ -27,7 +28,7 @@ function fakeClient() {
       calls.push({ type, ...command.input });
       if (type === "GetItemCommand") return { Item: app.get(keyText(command.input.Key)) };
       if (type === "QueryCommand") {
-        const source = command.input.TableName === "app" ? app : audit;
+        const source = command.input.TableName === "app" || command.input.TableName === tableNames(runId).app ? app : audit;
         const items = [...source.values()].filter((item) => item.PK.S === `POLL#${pollId}` &&
           (!command.input.ExpressionAttributeValues[":prefix"] || item.SK.S.startsWith(command.input.ExpressionAttributeValues[":prefix"].S)));
         const start = command.input.ExclusiveStartKey
@@ -68,11 +69,14 @@ test("explicit poll cleanup previews without mutating and then deletes all relat
 test("run cleanup uses only manifest poll IDs and preserves dry-run safety", async () => {
   const client = fakeClient();
   const manifest = {
+    schemaVersion: 1,
+    owner: "invite-a-gent-local-smoke",
+    ownershipNonce: pollId,
     runId,
     endpoint: "http://127.0.0.1:18000",
     tables: [
-      { role: "app", name: "app", cleanup: "pending", owned: true },
-      { role: "audit", name: "audit", cleanup: "pending", owned: true }
+      { role: "app", name: tableNames(runId).app, creationAttempted: true, cleanup: "pending", owned: true },
+      { role: "audit", name: tableNames(runId).audit, creationAttempted: true, cleanup: "pending", owned: true }
     ],
     pollIds: [pollId]
   };

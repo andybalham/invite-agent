@@ -232,6 +232,8 @@ node scripts/cleanup-local-data.mjs --run-id <run-id> --confirm
 
 Poll cleanup removes metadata, participants, participant-name indexes, the public-token capability, and all paginated audit events with bounded DynamoDB batch writes. Missing records are reported as already missing; an incomplete poll record reports the capability as unresolved rather than guessing a token key. Run cleanup validates the manifest and, before mutation, its per-table ownership markers. A mismatched marker, non-loopback endpoint, invalid manifest, missing table name, or conflicting mode is a hard refusal. Table teardown remains the smoke wrapper's responsibility; use the manifest's recorded evidence and cleanup status for recovery when a process stops unexpectedly.
 
+Cleanup keeps poll metadata until dependent deletes succeed, so rerunning the same confirmed command can recover from a partial failure. Missing application or audit tables are handled independently. Capability ownership must match the requested poll. Run cleanup reports each poll's result, continues with other recorded polls after a poll failure, and exits nonzero if any fail; inspect the reported error and rerun after correcting its cause. Existing tables require matching ownership markers even when the manifest says they were previously deleted.
+
 The command accepts the same port environment variables as `npm run dev`, or explicit PowerShell parameters (parameters take precedence):
 
 ```powershell

@@ -44,21 +44,27 @@ export async function createManifest(file, runId, endpoint, region = "eu-west-2"
   return manifest;
 }
 
-export async function readManifest(file) {
-  const manifest = JSON.parse(await readFile(file, "utf8"));
-  const names = tableNames(manifest.runId);
+export function validateManifest(manifest) {
+  const names = tableNames(manifest?.runId);
   if (manifest.schemaVersion !== 1 || manifest.owner !== owner ||
       !/^[a-f0-9-]{36}$/.test(manifest.ownershipNonce) ||
-      path.basename(path.dirname(path.resolve(file))) !== manifest.runId ||
-      path.basename(file) !== "manifest.json" ||
-      !Array.isArray(manifest.pollIds) || !manifest.pollIds.every((id) => typeof id === "string") ||
+      !Array.isArray(manifest.pollIds) || !manifest.pollIds.every((id) =>
+        typeof id === "string" && /^[a-f0-9-]{36}$/.test(id)) ||
       !Array.isArray(manifest.tables) || manifest.tables.length !== 2 ||
-      !manifest.tables.every((table, index) => table.role === ["app", "audit"][index] &&
+      !manifest.tables.every((table, index) => table?.role === ["app", "audit"][index] &&
         table.name === names[table.role] && typeof table.creationAttempted === "boolean" &&
-        typeof table.owned === "boolean")) {
+        typeof table.owned === "boolean" && ["pending", "deleted", "absent", "failed"].includes(table.cleanup))) {
     throw new Error("Invalid smoke ownership manifest");
   }
   localEndpoint(manifest.endpoint);
+  return manifest;
+}
+
+export async function readManifest(file) {
+  const manifest = validateManifest(JSON.parse(await readFile(file, "utf8")));
+  if (path.basename(path.dirname(path.resolve(file))) !== manifest.runId || path.basename(file) !== "manifest.json") {
+    throw new Error("Invalid smoke ownership manifest path");
+  }
   return manifest;
 }
 
@@ -86,9 +92,10 @@ async function assertOwnership(client, manifest, table) {
 }
 
 export async function assertManifestOwnership(client, manifest) {
-  for (const table of manifest.tables.filter(({ creationAttempted, cleanup }) =>
-    creationAttempted && cleanup !== "deleted" && cleanup !== "absent")) {
-    await assertOwnership(client, manifest, table);
+  // Saved lifecycle flags cannot prove ownership of a table that exists now.
+  for (const table of manifest.tables) {
+    try { await assertOwnership(client, manifest, table); }
+    catch (error) { if (error.name !== "ResourceNotFoundException") throw error; }
   }
 }
 

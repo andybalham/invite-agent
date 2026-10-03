@@ -12,8 +12,7 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [S-039 · Verify cleanup isolation, repeatability, and failure recovery](../entities/S-039-verify-cleanup-isolation-repeatability-and-failure-recovery.md) — blocked
-- [S-040 · Document ephemeral smoke data and local cleanup operations](../entities/S-040-document-ephemeral-smoke-data-and-local-cleanup-operations.md) — blocked · waiting on S-039
+- [S-040 · Document ephemeral smoke data and local cleanup operations](../entities/S-040-document-ephemeral-smoke-data-and-local-cleanup-operations.md) — blocked
 - [S-041 · Clear down integration-test tables after every test](../entities/S-041-clear-down-integration-test-tables-after-every-test.md) — blocked
 - [S-042 · Provide a script to clear all local application data](../entities/S-042-provide-a-script-to-clear-all-local-application-data.md) — blocked
 - [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
@@ -29,8 +28,6 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-088 · Verify cleanup safeguards and recovery diagnostics](../entities/T-088-verify-cleanup-safeguards-and-recovery-diagnostics.md) — blocked · waiting on T-086, T-087
-- [T-089 · Document ephemeral table lifecycle in the README](../entities/T-089-document-ephemeral-table-lifecycle-in-the-readme.md) — blocked · waiting on T-088
 - [T-090 · Document explicit-poll and run-ID cleanup operations](../entities/T-090-document-explicit-poll-and-run-id-cleanup-operations.md) — blocked · waiting on T-089
 - [T-091 · Finalize cleanup acceptance traceability and operational verification](../entities/T-091-finalize-cleanup-acceptance-traceability-and-operational-verification.md) — blocked · waiting on T-090
 - [T-093 · Implement finally-path deletion for integration-test tables](../entities/T-093-implement-finally-path-deletion-for-integration-test-tables.md) — blocked · waiting on T-092

@@ -6,7 +6,7 @@ import {
   GetItemCommand,
   QueryCommand
 } from "@aws-sdk/client-dynamodb";
-import { assertManifestOwnership, readManifest } from "./smoke-run-resources.mjs";
+import { assertManifestOwnership, readManifest, validateManifest } from "./smoke-run-resources.mjs";
 
 const pollIdPattern = /^[a-f0-9-]{36}$/;
 const runIdPattern = /^\d{8}t\d{9}z-[a-f0-9]{32}$/;
@@ -91,7 +91,10 @@ function pollFromDocument(item, pollId) {
   if (!item?.document?.S) return undefined;
   try {
     const poll = JSON.parse(item.document.S);
-    if (!poll || poll.id !== pollId || typeof poll.publicTokenHash !== "string") return poll;
+    if (!poll || poll.id !== pollId ||
+        (poll.publicTokenHash !== undefined && typeof poll.publicTokenHash !== "string")) {
+      throw new Error("metadata does not identify the requested poll");
+    }
     return poll;
   } catch {
     throw new Error(`Poll ${pollId} has invalid metadata`);
@@ -115,36 +118,39 @@ export async function inspectPoll({ client, appTableName, auditTableName, pollId
     metadata = await getPoll(client, appTableName, pollId);
   } catch (error) {
     if (isMissingTable(error)) {
-      result.status = "already-missing";
       result.missing.push(appTableName);
-      result.missing.push(auditTableName);
-      return result;
-    }
-    throw error;
+    } else { throw error; }
   }
-  if (!metadata) result.missing.push(`poll:${pollId}`);
+  if (!metadata && !result.missing.includes(appTableName)) result.missing.push(`poll:${pollId}`);
 
-  try {
-    result.keys.app = await queryKeys(client, appTableName, pollId);
-    result.keys.audit = await queryKeys(client, auditTableName, pollId, "EVENT#");
-  } catch (error) {
-    if (isMissingTable(error)) {
-      result.status = "already-missing";
-      result.missing.push(error.$metadata?.tableName ?? "table");
-      return result;
+  for (const [role, tableName, prefix] of [["app", appTableName], ["audit", auditTableName, "EVENT#"]]) {
+    if (result.missing.includes(tableName)) continue;
+    try { result.keys[role] = await queryKeys(client, tableName, pollId, prefix); }
+    catch (error) {
+      if (isMissingTable(error)) result.missing.push(tableName);
+      else throw error;
     }
-    throw error;
   }
   result.counts.pollItems = result.keys.app.length;
   result.counts.auditItems = result.keys.audit.length;
 
   const poll = pollFromDocument(metadata, pollId);
   if (poll?.publicTokenHash) {
-    result.keys.app.push(key(`PUBLIC_TOKEN#${poll.publicTokenHash}`, "CAPABILITY"));
-    result.counts.capabilityItems = 1;
+    const capabilityKey = key(`PUBLIC_TOKEN#${poll.publicTokenHash}`, "CAPABILITY");
+    const { Item } = await client.send(new GetItemCommand({
+      TableName: appTableName, Key: capabilityKey, ConsistentRead: true
+    }));
+    if (Item && Item.pollId?.S !== pollId) {
+      throw new Error(`Refusing to delete capability for poll ${pollId}: capability ownership does not match`);
+    }
+    if (Item) {
+      result.keys.app.push(capabilityKey);
+      result.counts.capabilityItems = 1;
+    } else { result.missing.push(`public-token-capability:${pollId}`); }
   } else {
     result.unresolved.push("public-token-capability (poll metadata has no token hash)");
   }
+  if (result.keys.app.length === 0 && result.keys.audit.length === 0) result.status = "already-missing";
   return result;
 }
 
@@ -153,8 +159,15 @@ export async function cleanupPoll({ client, appTableName, auditTableName, pollId
   if (!confirm || preview.status === "already-missing") {
     return { ...preview, dryRun: true, confirmationRequired: !confirm && preview.status !== "already-missing" };
   }
-  await deleteKeys(client, appTableName, preview.keys.app);
-  await deleteKeys(client, auditTableName, preview.keys.audit);
+  try {
+    // Keep the token reference until every dependent delete succeeds, so a rerun can recover.
+    await deleteKeys(client, auditTableName, preview.keys.audit);
+    await deleteKeys(client, appTableName, preview.keys.app.filter(({ SK }) => SK.S !== "METADATA"));
+    await deleteKeys(client, appTableName, preview.keys.app.filter(({ SK }) => SK.S === "METADATA"));
+  } catch (error) {
+    error.cleanupResult = { ...preview, status: "failed", dryRun: false, confirmationRequired: false, error: error.message };
+    throw error;
+  }
   return {
     ...preview,
     dryRun: false,
@@ -164,6 +177,8 @@ export async function cleanupPoll({ client, appTableName, auditTableName, pollId
 }
 
 export async function cleanupRun({ client, manifest, confirm = false }) {
+  validateManifest(manifest);
+  if (confirm) await assertManifestOwnership(client, manifest);
   const result = {
     runId: manifest.runId,
     endpoint: manifest.endpoint,
@@ -173,14 +188,19 @@ export async function cleanupRun({ client, manifest, confirm = false }) {
     polls: []
   };
   for (const pollId of manifest.pollIds) {
-    result.polls.push(await cleanupPoll({
-      client,
-      appTableName: manifest.tables.find(({ role }) => role === "app").name,
-      auditTableName: manifest.tables.find(({ role }) => role === "audit").name,
-      pollId,
-      confirm
-    }));
+    try {
+      result.polls.push(await cleanupPoll({
+        client,
+        appTableName: manifest.tables.find(({ role }) => role === "app").name,
+        auditTableName: manifest.tables.find(({ role }) => role === "audit").name,
+        pollId,
+        confirm
+      }));
+    } catch (error) {
+      result.polls.push(error.cleanupResult ?? { pollId, status: "failed", error: error.message });
+    }
   }
+  result.status = result.polls.some(({ status }) => status === "failed") ? "failed" : "complete";
   return result;
 }
 
@@ -236,8 +256,9 @@ async function main() {
     }
     const client = clientFor(endpoint);
     try {
-      if (confirm) await assertManifestOwnership(client, manifest);
-      process.stdout.write(`${JSON.stringify(await cleanupRun({ client, manifest, confirm }), null, 2)}\n`);
+      const result = await cleanupRun({ client, manifest, confirm });
+      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+      if (result.status === "failed") process.exitCode = 1;
     } finally {
       client.destroy();
     }
@@ -260,6 +281,7 @@ async function main() {
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   main().catch((error) => {
+    if (error.cleanupResult) process.stdout.write(`${JSON.stringify(error.cleanupResult, null, 2)}\n`);
     process.stderr.write(`${error.message}\n`);
     process.exitCode = 1;
   });

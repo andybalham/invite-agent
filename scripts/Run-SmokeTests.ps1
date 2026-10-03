@@ -65,6 +65,10 @@ try {
     }
     try {
         if (Test-Path -LiteralPath $statePath) {
+            $recordedState = Get-Content -Raw -LiteralPath $statePath | ConvertFrom-Json
+            if ($recordedState.smokeRunManifestPath -ne $manifestPath) {
+                throw 'Refusing to stop a stack that is not owned by this smoke run; recorded state retained.'
+            }
             & (Join-Path $PSScriptRoot 'Stop-DevStack.ps1') *>&1 |
                 Tee-Object -FilePath (Join-Path $runDirectory 'shutdown.log')
             if (Test-Path -LiteralPath $statePath) { throw 'Recorded stack state remains after shutdown.' }
