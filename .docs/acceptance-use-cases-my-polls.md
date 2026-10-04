@@ -14,7 +14,7 @@ These scenarios describe required behaviour, not functionality already implement
 - Give test polls distinct creation times so newest-first ordering can be asserted without defining a tie-breaking rule.
 - Include Draft, Open, and Closed polls, known proposed dates, and known participant counts.
 - Dashboard navigation, filtering, and search are read-only and must not create poll mutations or audit revisions. For lifecycle mutations, retain the existing audit assertions.
-- Assert semantic content and behaviour rather than exact date formatting or unspecified message text.
+- Assert semantic content and behaviour and the state copy resolved in the requirements; date assertions distinguish calendar dates from times and include the poll time zone where applicable.
 
 ## Use case MP-UC-01: Enter My polls and review owned polls
 
@@ -138,7 +138,19 @@ Then no poll entries are shown
 And I can change or clear the search
 ```
 
-This scenario uses an exact title match. Case sensitivity, partial matching, and normalization remain unspecified.
+Exact-title matching remains required. The following decisions extend matching without replacing it:
+
+```gherkin
+Given I own an open poll titled Café Autumn dinner
+When I search for a decomposed-Unicode spelling of CAFÉ followed by extra whitespace and Autumn
+Then that poll is listed
+When I search for cafe
+Then that poll is not listed because accents remain significant
+When I search for Autumn
+Then that poll is listed by partial title match
+When I search using only whitespace
+Then all my polls in the selected filter are listed
+```
 
 ## Use case MP-UC-03: Create and manage polls from the dashboard
 
@@ -233,8 +245,75 @@ And the existing participant permissions and lifecycle restrictions apply
 And the public link does not grant access to the organiser poll list
 ```
 
-## Details awaiting specification
+## Resolved decision acceptance cases (S-043)
 
-Exact proposed-date presentation, title-search matching rules, pagination, and empty/loading/error-state copy remain open in the requirements. These scenarios do not introduce additional requirements for those details or for recovery from stale links.
+### MP-US-03: Date representations and incomplete drafts
+
+```gherkin
+Given I own an incomplete draft with no proposed dates and no participants
+When I view its dashboard summary
+Then I see No dates proposed and 0 participants
+
+Given I own a poll with a date-only choice and a timed choice during a repeated DST hour
+When I view its summary from a browser in another time zone
+Then the date-only choice keeps its saved calendar date and has no invented time
+And the timed choice keeps its saved local date and time
+And the poll time zone and chosen UTC offset distinguish the timed choice
+And creation is displayed as a date in the poll time zone
+And all displayed dates include the year
+```
+
+### MP-US-04–06: Pagination and query changes
+
+```gherkin
+Given I own more matching polls than fit on the first page
+And another organiser also owns matching polls
+When I load My polls and select Load more
+Then matching owned polls from subsequent database pages are appended newest-created first
+And no other organiser's summaries are returned
+When I change the filter
+Then my search text is retained and paging restarts
+When I change the search
+Then the old pages are replaced with the new query's results
+
+Given a bounded search page contains no matches but has a continuation
+Then I see More polls may match. and Load more
+And I do not yet see No polls match your search.
+```
+
+### MP-US-01, MP-US-06: Loading, empty, and failure states
+
+```gherkin
+When my first request is pending
+Then I see Loading your polls… as a status
+When it succeeds with an exhausted empty Active list and blank search
+Then I see No active polls yet. and Create poll remains available
+When an exhausted search has no matches
+Then I see No polls match your search. and Clear search
+When the initial request fails
+Then I see We couldn't load your polls. and Try again
+And search and filter choices are retained
+When loading another page fails
+Then I see We couldn't load more polls. and Try again
+And previously loaded entries remain visible
+```
+
+Use the corresponding Draft/Open/Closed empty-state copy from the requirements. These decisions do not introduce recovery from stale poll links. Equal-time ordering and return-state restoration remain documented implementation decisions, not new acceptance requirements.
+
+## Story traceability and delivery boundaries
+
+| Stories | S-043 reusable foundation | Subsequent endpoint/browser verification |
+|---|---|---|
+| MP-US-01 | Active query default; documented states | Landing page, Create poll, loading/error UI |
+| MP-US-02 | Reject claimed owner fields; owner-scoped pure predicate | Verified identity, cross-owner list/cursor/open denial |
+| MP-US-03 | Strict safe summary; date preservation; zero dates/count | Desktop table/mobile cards and date display |
+| MP-US-04 | Creation comparator; mutation creation-time invariant | Global index order across pages |
+| MP-US-05 | Active = Draft + Open; all lifecycle predicates | Filter controls and query reset |
+| MP-US-06 | NFC/whitespace/case substring rules; bounded query/cursor schema | Search retention, continuation and empty states |
+| MP-US-07–09 | Existing lifecycle contracts retained | Creation, editor/management links and publication navigation |
+| MP-US-10 | Existing close/reopen semantics and immutable createdAt tested | Refreshed list membership after transitions |
+| MP-US-11 | Public contracts/error codes unchanged | Direct public access and dashboard denial |
+
+Contract and domain cases run in `test/foundation/my-polls-contracts.test.mjs` and `test/foundation/my-polls-query.test.mjs`; creation invariants run in `test/foundation/my-polls-creation.test.mjs`. Authentication, signed cursor verification, persistence, and browser UI are not delivered by S-043.
 
 Shared ownership, ownership transfer, site-wide administration, archiving, duplication, reminders, and bulk actions are outside this supplement's initial scope.

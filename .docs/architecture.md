@@ -182,7 +182,7 @@ Table name pattern: `invite-agent-<environment>-app`.
 
 Global secondary indexes:
 
-- `OwnerIndex`: `ownerId` plus `updatedAt#pollId`, used to list an organiser's polls.
+- `GSI1`: `GSI1PK = ORGANISER#<organiserId>` plus `GSI1SK = POLL#<createdAt>#<pollId>`, used to list owned polls newest-created first. This replaces the earlier proposed update-ordered `OwnerIndex`; see section 5.6 for the actual repository and compatibility plan.
 - `PublicTokenIndex`: `tokenHash` plus `linkGeneration`, used only to resolve an active public link to a poll. The index projection contains no participant data.
 
 Participant `responses` are stored as a map from `dateId` to `YES` or `NO`. Poll reads use a single partition query to obtain metadata, dates, and participants.
@@ -212,6 +212,38 @@ Each immutable audit item includes:
 Public-link tokens, JWTs, cookies, credentials, and session identifiers are never written to the audit table.
 
 Point-in-time recovery is enabled on both tables. Audit records have no TTL. Application data retention and account-deletion policies should be defined before production use.
+
+### 5.6 My polls contract and storage handoff (S-043)
+
+This section distinguishes inspected implementation from future API/storage work. S-043 delivers schemas and pure functions only; no endpoint, migration, deployment, or new lifecycle engine is introduced.
+
+#### Inspected implementation
+
+`packages/contracts/src/index.ts` uses strict, dependency-free `Schema.safeParse` validators. `backend/src/data/types.ts` stores `organiserId`, immutable `createdAt`, embedded `ProposedDate[]`, and lifecycle `draft | open | closed`. `DynamoPollRepository` writes metadata at `POLL#<id>/METADATA` with `GSI1PK = ORGANISER#<organiserId>` and `GSI1SK = POLL#<createdAt>#<id>` on create, details/location edits, publication, close/reopen, participant changes and undo. Dates are embedded, with date-only `localDate` or resolved timed `localDateTime/utcInstant/timeZone/utcOffset`. The actual public token lookup is a `PUBLIC_TOKEN#<hash>/CAPABILITY` point read, rather than the target-model PublicTokenIndex above.
+
+`initializeTables` already creates `GSI1` with an ALL projection. No owned-list repository method exists yet. Participant rows and name locks are separate items; metadata has no participant count. The current `listParticipants` is a single database page and must not be reused as a complete dashboard count. `infra/src/index.ts` currently exports only the region: production stacks/authorizers/IAM are still a handoff, not provisioned code. The implemented organiser collection path is `/api/organiser/polls`; the broader `/api/v1` target design is not a reason to introduce a separate dashboard route family.
+
+#### Authenticated request and response
+
+The future route is `GET /api/organiser/polls`, alongside the existing collection POST. Parse URL query parameters into `OwnedPollListRequest` before application use: optional `filter` (`active | draft | open | closed`), `search` (at most 200 Unicode code points), `pageSize` (integer 1–50, default 25), and `cursor`. Reject unknown or duplicate parameters, invalid numeric encodings (accept canonical positive decimal integers only), invalid lifecycle filters, and malformed cursors with `VALIDATION_ERROR`/400; do not silently clamp. The shared schema consumes typed values, so the transport must explicitly convert the canonical numeric string. Default filter is active and default search is blank. Normalize search using `normalizeDashboardTitle` (NFC, trim, whitespace collapse, locale-independent lowercase). No owner ID is accepted in query/body/cursor as an authority. Active includes only draft and open.
+
+`OwnedPollListResponse` is `{ items: OwnedPollSummary[], nextCursor?: string }` with at most 50 entries and no total. Each summary contains exactly `id`, `title`, `status`, canonical UTC ISO `createdAt` with milliseconds, `timeZone`, `proposedDates: ProposedDateInput[]`, and nonnegative integer `participantCount`. Preserve all proposed choices in saved order and timed UTC offsets, omitting internal resolution fields; permit zero proposed dates for incomplete drafts. The summary schema validates representations rather than reenacting publication readiness. Do not include organiser IDs, public links/tokens/hashes, participant names/availability, ranking, audit events, or mutation payloads. Creation dates are never synthesized from later activity. Missing/corrupt stored summary fields are server errors, never fabricated zero counts or creation times.
+
+`OwnedPollListErrorResponse` matches the current HTTP envelope `{ error: { code, message, correlationId? } }`; known codes retain `API_ERROR_STATUS` and the existing handler's `INTERNAL_ERROR` maps to 500. Authenticate before accessing owner data: missing/unverified organiser identity is `UNAUTHENTICATED`/401. Existing individual poll access remains `FORBIDDEN`/403 for non-owners. Bad, altered, expired, cross-owner or different-query cursors use `VALIDATION_ERROR`/400 with no data. Preserve rate limiting as `RATE_LIMITED`/429. Use simulated identity only from the guarded local adapter; production derives the subject from verified Cognito JWT claims. Dashboard reads create no audit revisions.
+
+#### Creation order, matching and bounded reads
+
+Query only the verified owner's GSI1 partition with `ScanIndexForward: false`; do not Scan the table or sort an update-ordered first page. Canonical creation timestamps followed by poll ID give descending creation order and descending ordinal ID for equal instants. The pure comparator implements the same order. Search and lifecycle matching apply to every candidate across continuation pages, not just the initial DynamoDB page.
+
+Future endpoint work evaluates at most 200 candidates per request, querying batches of at most 50 (and at most the remaining result capacity/budget so no matching candidate is lost through overflow). Strongly consistent metadata point reads, with bounded concurrency, recheck ownership and current title/status for each candidate because GSI propagation is eventual. Stale/deleted candidates are skipped. Stop at the requested match count, database exhaustion, or candidate budget; continue from the last evaluated candidate. A zero-item page may have nextCursor. Never claim exhaustive no-match until continuation ends. At most 200 metadata reads and 50 returned summaries occur per request, with no participant or audit hydration. Concurrent changes can affect membership between requests; refresh starts over, and consumers deduplicate IDs when appending. Creation ordering is stable but GSI publication is eventually consistent.
+
+To meet those bounds, future storage work adds a transactional `participantCount` on poll metadata, initialized to zero, changed only by participant add/delete and their inverses, and preserved by rename/availability and lifecycle/detail edits. All existing metadata-write paths must preserve the field. A controlled pre-enable backfill counts all current participant rows across every database page, excluding name locks, with version-conditional writes/retries so concurrent mutations cannot lose counts. Existing polls already have the creation GSI keys; no key rewrite is needed locally. Do not enable the endpoint until counts are backfilled, writers maintain them, and canonical creation timestamps/index presence are verified. Never assume absent count means zero. This is a later story's compatibility requirement, not an S-043 migration.
+
+#### Continuations and environment handoff
+
+The opaque cursor wire form is `v1.<base64url payload>.<base64url HMAC-SHA256>` (unpadded; 43-character MAC; maximum 2048 characters). Shared validation checks only version/shape/length, never cryptographic trust. Future backend code signs and verifies the complete payload with an environment-specific secret, rejects noncanonical encoding, and binds version, verified organiser subject, normalized search, filter, pageSize, expiry (15 minutes), and the last evaluated creation-index key. Validate decoded keys belong to that owner's partition and are correctly shaped. Do not send the cursor to telemetry. Clients treat it as opaque; changing search/filter/page size restarts paging. Do not reuse the unsigned audit offset cursor for this route.
+
+Local initialization and future production CDK must agree on GSI1 string keys/projection. If a deployed environment instead has the older OwnerIndex design, add the creation GSI and backfill its keys from immutable creation values, wait for ACTIVE and verify old data before enabling; retain the old index until its consumers are retired. Organiser IAM needs Query on the app table's GSI1 ARN and GetItem on metadata; no dashboard audit access or scan permission is needed. Future backfill tooling has separate scoped read/update permissions and never touches audit history. Production authorizer, query forwarding, cursor secret configuration and rotation (rotation invalidates old continuations), table/index verification, and count migration must be tested together in their delivery stories. No README operational change is needed until that work exists.
 
 ## 6. Domain Model and State Transitions
 

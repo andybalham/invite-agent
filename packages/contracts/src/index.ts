@@ -171,6 +171,70 @@ export interface Schema<T> {
   safeParse(input: unknown): SafeParseResult<T>;
 }
 
+export const OWNED_POLL_FILTERS = ["active", "draft", "open", "closed"] as const;
+export type OwnedPollFilter = (typeof OWNED_POLL_FILTERS)[number];
+export const OWNED_POLL_DEFAULT_PAGE_SIZE = 25;
+export const OWNED_POLL_MAX_PAGE_SIZE = 50;
+export const OWNED_POLL_SEARCH_MAX_CODE_POINTS = 200;
+export const OWNED_POLL_CURSOR_MAX_LENGTH = 2048;
+
+export interface OwnedPollListRequest {
+  filter?: OwnedPollFilter;
+  search?: string;
+  pageSize?: number;
+  cursor?: string;
+}
+
+export interface ResolvedOwnedPollListQuery {
+  filter: OwnedPollFilter;
+  search: string;
+  pageSize: number;
+  cursor?: string;
+}
+
+export interface OwnedPollSummary {
+  id: string;
+  title: string;
+  status: LifecycleState;
+  createdAt: string;
+  timeZone: string;
+  proposedDates: ProposedDateInput[];
+  participantCount: number;
+}
+
+export interface OwnedPollListResponse {
+  items: OwnedPollSummary[];
+  nextCursor?: string;
+}
+
+// The HTTP handler's error envelope differs from the existing status-bearing ApiError value.
+export interface OwnedPollListErrorResponse {
+  error: {
+    code: ApiErrorCode | "INTERNAL_ERROR";
+    message: string;
+    correlationId?: string;
+  };
+}
+
+export function normalizeDashboardTitle(value: string): string {
+  return value.normalize("NFC").replace(/[\p{White_Space}\uFEFF]+/gu, " ").trim().toLowerCase();
+}
+
+/** Resolve defaults only after validation; the transport remains responsible for URL decoding. */
+export function resolveOwnedPollListQuery(input: unknown): SafeParseResult<ResolvedOwnedPollListQuery> {
+  const parsed = ownedPollListRequestSchema.safeParse(input);
+  if (!parsed.success) return parsed;
+  return {
+    success: true,
+    data: {
+      filter: parsed.data.filter ?? "active",
+      search: normalizeDashboardTitle(parsed.data.search ?? ""),
+      pageSize: parsed.data.pageSize ?? OWNED_POLL_DEFAULT_PAGE_SIZE,
+      ...(parsed.data.cursor === undefined ? {} : { cursor: parsed.data.cursor })
+    }
+  };
+}
+
 function schema<T>(validator: (input: unknown) => input is T, issue: string): Schema<T> {
   return Object.freeze({
     safeParse(input: unknown): SafeParseResult<T> {
@@ -498,4 +562,67 @@ export const undoResultSchema = schema<UndoResult>(isUndoResult, "Invalid undo r
 export const confirmUndoRequestSchema = schema<ConfirmUndoRequest>(
   isConfirmUndoRequest,
   "Undo must be explicitly confirmed"
+);
+
+function isOwnedPollCursor(input: unknown): input is string {
+  // Shape only: verifying the signature, claims and owner/query binding belongs to the backend.
+  return typeof input === "string" && input.length <= OWNED_POLL_CURSOR_MAX_LENGTH &&
+    /^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]{43}$/.test(input);
+}
+
+function isOwnedPollListRequest(input: unknown): input is OwnedPollListRequest {
+  return isRecord(input) && hasOnlyKeys(input, ["filter", "search", "pageSize", "cursor"]) &&
+    (input.filter === undefined || (OWNED_POLL_FILTERS as readonly unknown[]).includes(input.filter)) &&
+    (input.search === undefined || (typeof input.search === "string" &&
+      [...input.search].length <= OWNED_POLL_SEARCH_MAX_CODE_POINTS)) &&
+    (input.pageSize === undefined || (Number.isSafeInteger(input.pageSize) &&
+      Number(input.pageSize) >= 1 && Number(input.pageSize) <= OWNED_POLL_MAX_PAGE_SIZE)) &&
+    (input.cursor === undefined || isOwnedPollCursor(input.cursor));
+}
+
+function isCanonicalCreationInstant(input: unknown): input is string {
+  if (typeof input !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(input)) {
+    return false;
+  }
+  const timestamp = Date.parse(input);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString() === input;
+}
+
+function isOwnedPollSummary(input: unknown): input is OwnedPollSummary {
+  return isRecord(input) &&
+    hasOnlyKeys(input, ["id", "title", "status", "createdAt", "timeZone", "proposedDates", "participantCount"]) &&
+    isNonBlankString(input.id) && isNonBlankString(input.title) && isLifecycleState(input.status) &&
+    isCanonicalCreationInstant(input.createdAt) && isValidIanaTimeZone(input.timeZone) &&
+    Array.isArray(input.proposedDates) && input.proposedDates.every(isProposedDateInput) &&
+    Number.isSafeInteger(input.participantCount) && Number(input.participantCount) >= 0;
+}
+
+function isOwnedPollListResponse(input: unknown): input is OwnedPollListResponse {
+  return isRecord(input) && hasOnlyKeys(input, ["items", "nextCursor"]) &&
+    Array.isArray(input.items) && input.items.length <= OWNED_POLL_MAX_PAGE_SIZE &&
+    input.items.every(isOwnedPollSummary) &&
+    (input.nextCursor === undefined || isOwnedPollCursor(input.nextCursor));
+}
+
+function isOwnedPollListErrorResponse(input: unknown): input is OwnedPollListErrorResponse {
+  if (!isRecord(input) || !hasOnlyKeys(input, ["error"]) || !isRecord(input.error)) return false;
+  const error = input.error;
+  return hasOnlyKeys(error, ["code", "message", "correlationId"]) &&
+    typeof error.code === "string" &&
+    (Object.hasOwn(API_ERROR_STATUS, error.code) || error.code === "INTERNAL_ERROR") &&
+    isNonBlankString(error.message) &&
+    (error.correlationId === undefined || isNonBlankString(error.correlationId));
+}
+
+export const ownedPollListRequestSchema = schema<OwnedPollListRequest>(
+  isOwnedPollListRequest, "Invalid owned-poll list request"
+);
+export const ownedPollSummarySchema = schema<OwnedPollSummary>(
+  isOwnedPollSummary, "Invalid owned-poll summary"
+);
+export const ownedPollListResponseSchema = schema<OwnedPollListResponse>(
+  isOwnedPollListResponse, "Invalid owned-poll list response"
+);
+export const ownedPollListErrorResponseSchema = schema<OwnedPollListErrorResponse>(
+  isOwnedPollListErrorResponse, "Invalid owned-poll list error response"
 );

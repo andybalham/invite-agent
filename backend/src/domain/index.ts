@@ -40,3 +40,9 @@ export { projectClosingAttendance } from "./closing-attendance.js";
 export type { ClosingAttendance, ClosingParticipant } from "./closing-attendance.js";
 export { planIsolatedUndo, UndoPlanError } from "./undo.js";
 export type { IsolatedUndoPlan } from "./undo.js";
+export {
+  comparePollCreation,
+  matchesOwnedPollQuery,
+  selectOwnedPolls,
+  toOwnedPollSummary
+} from "./my-polls.js";

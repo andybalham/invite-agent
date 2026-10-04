@@ -164,20 +164,20 @@ _Generated. Do not edit by hand._
   - [x] [T-097 · Verify and document complete local-data clear-down](../entities/T-097-verify-and-document-complete-local-data-clear-down.md) — done
 
 ## [E-012 · E12 — My polls organiser dashboard](./E-012.md) — blocked
-- [ ] **S-043 · Resolve My polls decisions and define tested dashboard contracts** — blocked
-  - [ ] [T-098 · Resolve dashboard search date pagination and state-copy decisions](../entities/T-098-resolve-dashboard-search-date-pagination-and-state-copy-decisions.md) — todo
-  - [ ] [T-099 · Define the owned-summary API and creation-ordered query strategy](../entities/T-099-define-the-owned-summary-api-and-creation-ordered-query-strategy.md) — blocked · waiting on T-098
-  - [ ] [T-100 · Specify dashboard schemas and pure query rules with foundation and domain tests](../entities/T-100-specify-dashboard-schemas-and-pure-query-rules-with-foundation-and-domain-tests.md) — blocked · waiting on T-099
-  - [ ] [T-101 · Implement shared dashboard contracts and pure summary query helpers](../entities/T-101-implement-shared-dashboard-contracts-and-pure-summary-query-helpers.md) — blocked · waiting on T-100
-- [ ] **S-044 · Query organiser-owned poll summaries through a secure list API** — blocked · waiting on S-043
-  - [ ] [T-102 · Build isolated two-organiser dashboard fixtures and verify teardown](../entities/T-102-build-isolated-two-organiser-dashboard-fixtures-and-verify-teardown.md) — blocked · waiting on T-101
+- [x] **S-043 · Resolve My polls decisions and define tested dashboard contracts** — done
+  - [x] [T-098 · Resolve dashboard search date pagination and state-copy decisions](../entities/T-098-resolve-dashboard-search-date-pagination-and-state-copy-decisions.md) — done
+  - [x] [T-099 · Define the owned-summary API and creation-ordered query strategy](../entities/T-099-define-the-owned-summary-api-and-creation-ordered-query-strategy.md) — done
+  - [x] [T-100 · Specify dashboard schemas and pure query rules with foundation and domain tests](../entities/T-100-specify-dashboard-schemas-and-pure-query-rules-with-foundation-and-domain-tests.md) — done
+  - [x] [T-101 · Implement shared dashboard contracts and pure summary query helpers](../entities/T-101-implement-shared-dashboard-contracts-and-pure-summary-query-helpers.md) — done
+- [ ] **S-044 · Query organiser-owned poll summaries through a secure list API** — blocked
+  - [ ] [T-102 · Build isolated two-organiser dashboard fixtures and verify teardown](../entities/T-102-build-isolated-two-organiser-dashboard-fixtures-and-verify-teardown.md) — todo
   - [ ] [T-103 · Specify owner-scoped summary queries with DynamoDB integration tests](../entities/T-103-specify-owner-scoped-summary-queries-with-dynamodb-integration-tests.md) — blocked · waiting on T-102
   - [ ] [T-104 · Implement creation-ordered owned-summary persistence queries](../entities/T-104-implement-creation-ordered-owned-summary-persistence-queries.md) — blocked · waiting on T-103
   - [ ] [T-105 · Specify organiser list authorization and transport contracts with API tests](../entities/T-105-specify-organiser-list-authorization-and-transport-contracts-with-api-tests.md) — blocked · waiting on T-102
   - [ ] [T-106 · Expose the protected poll-list service through local and Lambda adapters](../entities/T-106-expose-the-protected-poll-list-service-through-local-and-lambda-adapters.md) — blocked · waiting on T-104, T-105
   - [ ] [T-107 · Verify list-query integration and production boundary readiness](../entities/T-107-verify-list-query-integration-and-production-boundary-readiness.md) — blocked · waiting on T-106
-- [ ] **S-045 · Make My polls the organiser landing page and provide return navigation** — blocked · waiting on S-043
-  - [ ] [T-108 · Specify organiser entry return and public route behavior with unit tests](../entities/T-108-specify-organiser-entry-return-and-public-route-behavior-with-unit-tests.md) — blocked · waiting on T-101
+- [ ] **S-045 · Make My polls the organiser landing page and provide return navigation** — blocked
+  - [ ] [T-108 · Specify organiser entry return and public route behavior with unit tests](../entities/T-108-specify-organiser-entry-return-and-public-route-behavior-with-unit-tests.md) — todo
   - [ ] [T-109 · Implement My polls entry routes create action and return links](../entities/T-109-implement-my-polls-entry-routes-create-action-and-return-links.md) — blocked · waiting on T-108
   - [ ] [T-110 · Add browser tests for organiser landing create return and public-link isolation](../entities/T-110-add-browser-tests-for-organiser-landing-create-return-and-public-link-isolation.md) — blocked · waiting on T-106, T-109
   - [ ] [T-111 · Verify navigation guards and existing poll-route regressions](../entities/T-111-verify-navigation-guards-and-existing-poll-route-regressions.md) — blocked · waiting on T-110

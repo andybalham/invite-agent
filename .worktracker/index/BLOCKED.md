@@ -12,9 +12,8 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [S-043 · Resolve My polls decisions and define tested dashboard contracts](../entities/S-043-resolve-my-polls-decisions-and-define-tested-dashboard-contracts.md) — blocked
-- [S-044 · Query organiser-owned poll summaries through a secure list API](../entities/S-044-query-organiser-owned-poll-summaries-through-a-secure-list-api.md) — blocked · waiting on S-043
-- [S-045 · Make My polls the organiser landing page and provide return navigation](../entities/S-045-make-my-polls-the-organiser-landing-page-and-provide-return-navigation.md) — blocked · waiting on S-043
+- [S-044 · Query organiser-owned poll summaries through a secure list API](../entities/S-044-query-organiser-owned-poll-summaries-through-a-secure-list-api.md) — blocked
+- [S-045 · Make My polls the organiser landing page and provide return navigation](../entities/S-045-make-my-polls-the-organiser-landing-page-and-provide-return-navigation.md) — blocked
 - [S-046 · Render equivalent My polls summaries as desktop tables and mobile cards](../entities/S-046-render-equivalent-my-polls-summaries-as-desktop-tables-and-mobile-cards.md) — blocked · waiting on S-044, S-045
 - [S-047 · Find owned polls with lifecycle filters title search and creation ordering](../entities/S-047-find-owned-polls-with-lifecycle-filters-title-search-and-creation-ordering.md) — blocked · waiting on S-046
 - [S-048 · Reflect create publish close and reopen workflows in My polls](../entities/S-048-reflect-create-publish-close-and-reopen-workflows-in-my-polls.md) — blocked · waiting on S-046
@@ -33,16 +32,11 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-099 · Define the owned-summary API and creation-ordered query strategy](../entities/T-099-define-the-owned-summary-api-and-creation-ordered-query-strategy.md) — blocked · waiting on T-098
-- [T-100 · Specify dashboard schemas and pure query rules with foundation and domain tests](../entities/T-100-specify-dashboard-schemas-and-pure-query-rules-with-foundation-and-domain-tests.md) — blocked · waiting on T-099
-- [T-101 · Implement shared dashboard contracts and pure summary query helpers](../entities/T-101-implement-shared-dashboard-contracts-and-pure-summary-query-helpers.md) — blocked · waiting on T-100
-- [T-102 · Build isolated two-organiser dashboard fixtures and verify teardown](../entities/T-102-build-isolated-two-organiser-dashboard-fixtures-and-verify-teardown.md) — blocked · waiting on T-101
 - [T-103 · Specify owner-scoped summary queries with DynamoDB integration tests](../entities/T-103-specify-owner-scoped-summary-queries-with-dynamodb-integration-tests.md) — blocked · waiting on T-102
 - [T-104 · Implement creation-ordered owned-summary persistence queries](../entities/T-104-implement-creation-ordered-owned-summary-persistence-queries.md) — blocked · waiting on T-103
 - [T-105 · Specify organiser list authorization and transport contracts with API tests](../entities/T-105-specify-organiser-list-authorization-and-transport-contracts-with-api-tests.md) — blocked · waiting on T-102
 - [T-106 · Expose the protected poll-list service through local and Lambda adapters](../entities/T-106-expose-the-protected-poll-list-service-through-local-and-lambda-adapters.md) — blocked · waiting on T-104, T-105
 - [T-107 · Verify list-query integration and production boundary readiness](../entities/T-107-verify-list-query-integration-and-production-boundary-readiness.md) — blocked · waiting on T-106
-- [T-108 · Specify organiser entry return and public route behavior with unit tests](../entities/T-108-specify-organiser-entry-return-and-public-route-behavior-with-unit-tests.md) — blocked · waiting on T-101
 - [T-109 · Implement My polls entry routes create action and return links](../entities/T-109-implement-my-polls-entry-routes-create-action-and-return-links.md) — blocked · waiting on T-108
 - [T-110 · Add browser tests for organiser landing create return and public-link isolation](../entities/T-110-add-browser-tests-for-organiser-landing-create-return-and-public-link-isolation.md) — blocked · waiting on T-106, T-109
 - [T-111 · Verify navigation guards and existing poll-route regressions](../entities/T-111-verify-navigation-guards-and-existing-poll-route-regressions.md) — blocked · waiting on T-110
