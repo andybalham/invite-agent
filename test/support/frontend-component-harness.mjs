@@ -25,9 +25,20 @@ export async function startComponentBrowser() {
   const browser = await chromium.launch({ headless: true, ...(channel ? { channel } : {}) });
 
   async function mount(t, options = {}) {
-    const fixture = createNavigationFixture(options);
-    const context = await browser.newContext();
-    t.after(() => context.close());
+    const fixture = options.fixture ?? createNavigationFixture(options);
+    const context = await browser.newContext({
+      ...(options.viewport ? { viewport: options.viewport } : {}),
+      ...(options.timezoneId ? { timezoneId: options.timezoneId } : {})
+    });
+    const pendingApiRoutes = new Set();
+    t.after(async () => {
+      try {
+        await fixture.dispose?.();
+        await Promise.all([...pendingApiRoutes]);
+      } finally {
+        await context.close();
+      }
+    });
     const page = await context.newPage();
     // Link clicks wait for document navigation too. Give them the same budget
     // as goto; UI assertions keep their independent 1.5-second contract.
@@ -50,17 +61,21 @@ export async function startComponentBrowser() {
         return;
       }
       if (url.pathname === "/health" || url.pathname.startsWith("/api/")) {
-        try {
-          const { status, body } = fixture.respond({
-            url: request.url(), method: request.method(),
-            identity: request.headers()["x-local-organiser-id"],
-            body: request.postData() ? request.postDataJSON() : undefined
-          });
-          await route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
-        } catch (error) {
-          failures.push(error.message);
-          await route.fulfill({ status: 500, json: { error: { code: "INTERNAL_ERROR", message: error.message } } });
-        }
+        const completion = (async () => {
+          try {
+            const { status, body } = await fixture.respond({
+              url: request.url(), method: request.method(),
+              identity: request.headers()["x-local-organiser-id"],
+              body: request.postData() ? request.postDataJSON() : undefined
+            });
+            await route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
+          } catch (error) {
+            failures.push(error.message);
+            await route.fulfill({ status: 500, json: { error: { code: "INTERNAL_ERROR", message: error.message } } });
+          }
+        })();
+        pendingApiRoutes.add(completion);
+        try { await completion; } finally { pendingApiRoutes.delete(completion); }
         return;
       }
       const asset = assets.get(url.pathname);

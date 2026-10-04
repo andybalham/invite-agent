@@ -99,7 +99,7 @@ app.innerHTML = `
     </div>
     <p class="my-polls-status" role="status" aria-live="polite"></p>
     <p class="my-polls-error error" role="alert" hidden></p>
-    <ul class="my-polls-list" aria-label="Owned polls"></ul>
+    <div class="my-polls-list" aria-label="Owned polls"></div>
   </main>
   <section class="editor" hidden aria-labelledby="draft-heading">
       <a class="btn btn-ghost my-polls-return" href="#">← My polls</a>
@@ -414,7 +414,7 @@ let pollId = url.searchParams.get("pollId");
 const historyView = url.searchParams.get("view") === "history";
 const creationView = url.searchParams.get("view") === "create";
 const myPollsScreen = requireElement<HTMLElement>(".my-polls");
-const myPollsList = requireElement<HTMLUListElement>(".my-polls-list");
+const myPollsList = requireElement<HTMLElement>(".my-polls-list");
 const myPollsStatus = requireElement<HTMLElement>(".my-polls-status");
 const myPollsError = requireElement<HTMLElement>(".my-polls-error");
 requireElement<HTMLAnchorElement>(".create-poll").href = createPollDestination(testRunId);
@@ -636,6 +636,86 @@ function longChoiceLabel(choice: ProposedDate): string {
     weekday: "long", day: "numeric", month: "long", year: "numeric"
   }).format(new Date(Date.UTC(year, month - 1, day))).replace(",", "");
   return time ? `${formatted}, ${time}` : formatted;
+}
+
+function summaryDateLabel(choice: ProposedDate, timeZone: string): string {
+  const value = choice.kind === "date" ? choice.localDate : choice.localDateTime;
+  const [date = "", time] = value.split("T");
+  const [year = 0, month = 1, day = 1] = date.split("-").map(Number);
+  const calendarDate = new Intl.DateTimeFormat("en-GB", {
+    weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC"
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+  return choice.kind === "date" ? calendarDate
+    : `${calendarDate}, ${time} · ${timeZone} · UTC${choice.utcOffset}`;
+}
+
+function createdDateLabel(createdAt: string, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric", month: "short", year: "numeric", timeZone
+  }).format(new Date(createdAt));
+}
+
+function summaryStatusBadge(status: "draft" | "open" | "closed"): HTMLElement {
+  const badge = document.createElement("span");
+  badge.className = `summary-status summary-status--${status}`;
+  badge.textContent = status === "draft" ? "Draft" : status === "open" ? "Open" : "Closed";
+  return badge;
+}
+
+function renderPollSummary(poll: OwnedPollListResponse["items"][number], context: ReturnType<typeof myPollsContext>, table: HTMLTableSectionElement, cards: HTMLElement): void {
+  const summary = {
+    title: poll.title,
+    destination: ownedPollDestination(poll, testRunId, context),
+    created: createdDateLabel(poll.createdAt, poll.timeZone),
+    dates: poll.proposedDates.map((choice) => summaryDateLabel(choice, poll.timeZone)),
+    participants: `${poll.participantCount} ${poll.participantCount === 1 ? "participant" : "participants"}`
+  };
+  const titleLink = () => {
+    const link = document.createElement("a");
+    link.textContent = summary.title;
+    link.href = summary.destination;
+    return link;
+  };
+  const dateList = () => {
+    if (summary.dates.length === 0) return document.createTextNode("No dates proposed");
+    const list = document.createElement("ul");
+    list.className = "my-polls-dates";
+    for (const date of summary.dates) {
+      const item = document.createElement("li");
+      item.textContent = date;
+      list.append(item);
+    }
+    return list;
+  };
+
+  const row = document.createElement("tr");
+  row.append(...[
+    (() => { const cell = document.createElement("th"); cell.scope = "row"; cell.append(titleLink()); return cell; })(),
+    (() => { const cell = document.createElement("td"); cell.append(summaryStatusBadge(poll.status)); return cell; })(),
+    (() => { const cell = document.createElement("td"); cell.textContent = summary.created; return cell; })(),
+    (() => { const cell = document.createElement("td"); cell.append(dateList()); return cell; })(),
+    (() => { const cell = document.createElement("td"); cell.textContent = summary.participants; return cell; })()
+  ]);
+  table.append(row);
+
+  const card = document.createElement("article");
+  card.className = "my-polls-card";
+  const heading = document.createElement("h2");
+  heading.append(titleLink());
+  const details = document.createElement("dl");
+  const fields: Array<[string, () => Node]> = [
+    ["Status", () => summaryStatusBadge(poll.status)],
+    ["Created", () => document.createTextNode(summary.created)],
+    ["Proposed dates", dateList],
+    ["Participants", () => document.createTextNode(summary.participants)]
+  ];
+  for (const [label, content] of fields) {
+    const term = document.createElement("dt"); term.textContent = label;
+    const description = document.createElement("dd"); description.append(content());
+    details.append(term, description);
+  }
+  card.append(heading, details);
+  cards.append(card);
 }
 
 function openPreview(): void {
@@ -1332,16 +1412,19 @@ async function loadMyPolls(): Promise<void> {
     }
     const page = (await response.json()) as OwnedPollListResponse;
     if (generation !== ownedListRequest) return;
-    for (const poll of page.items) {
-      const item = document.createElement("li");
-      const link = document.createElement("a");
-      link.textContent = poll.title;
-      link.href = ownedPollDestination(poll, testRunId, context);
-      const state = document.createElement("span");
-      state.textContent = poll.status === "draft" ? "Draft" : poll.status === "open" ? "Open" : "Closed";
-      item.append(link, state);
-      myPollsList.append(item);
-    }
+    const desktop = document.createElement("div");
+    desktop.className = "my-polls-desktop";
+    const table = document.createElement("table");
+    table.className = "table";
+    table.setAttribute("aria-label", "Poll summaries");
+    table.innerHTML = "<thead><tr><th scope=\"col\">Title</th><th scope=\"col\">Status</th><th scope=\"col\">Created</th><th scope=\"col\">Proposed dates</th><th scope=\"col\">Participants</th></tr></thead>";
+    const body = document.createElement("tbody");
+    table.append(body);
+    desktop.append(table);
+    const mobile = document.createElement("div");
+    mobile.className = "my-polls-mobile";
+    myPollsList.append(desktop, mobile);
+    for (const poll of page.items) renderPollSummary(poll, context, body, mobile);
     myPollsStatus.textContent = page.items.length || page.nextCursor ? "" : "No polls to show.";
   } catch {
     if (generation !== ownedListRequest) return;
