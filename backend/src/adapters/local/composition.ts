@@ -7,6 +7,8 @@ import {
 } from "../../data/index.js";
 import { createSharedHttpHandler } from "../../http/index.js";
 import { createLocalAuthentication } from "./authentication.js";
+import { prepareLocalDashboard } from "./dashboard-migration.js";
+import { randomBytes } from "node:crypto";
 
 export interface LocalConfig {
   readonly appEnv: string;
@@ -17,6 +19,7 @@ export interface LocalConfig {
   readonly auditTableName: string;
   readonly publicBaseUrl: string;
   readonly publicTokenHashKey?: string;
+  readonly dashboardCursorSecret?: string;
 }
 
 export interface LocalComposition {
@@ -36,13 +39,17 @@ export async function createLocalComposition(config: LocalConfig): Promise<Local
   const repository = new DynamoPollRepository(client, config);
   const polls = new PollService(repository, {
     baseUrl: config.publicBaseUrl,
-    tokenHashKey: config.publicTokenHashKey ?? "local-development-token-hash-key"
+    tokenHashKey: config.publicTokenHashKey ?? "local-development-token-hash-key",
+    dashboardCursorSecret: config.dashboardCursorSecret ?? randomBytes(32).toString("base64url")
   });
   return {
     config,
     repository,
     http: createSharedHttpHandler({ authenticate, polls, repository }),
-    initializeTables: () => initializeTables(client, config),
+    initializeTables: async () => {
+      await initializeTables(client, config);
+      await prepareLocalDashboard(client, repository, config.appTableName);
+    },
     dispose: () => client.destroy()
   };
 }

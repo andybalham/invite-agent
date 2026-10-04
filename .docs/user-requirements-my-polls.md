@@ -93,4 +93,4 @@ The agreed initial scope includes the owned-poll list, desktop table and mobile 
 
 Shared ownership, ownership transfer, site-wide administration, archiving, duplication, reminders, and bulk actions are not part of the agreed initial scope.
 
-The decisions above resolve the initial presentation, search, pagination, and state-copy details. The API and storage handoff is defined in [architecture](architecture.md). S-043 implements reusable contracts/helpers only; the dashboard and owned-list endpoint are subsequent stories.
+The decisions above resolve the initial presentation, search, pagination, and state-copy details. The API and storage handoff is defined in [architecture](architecture.md). S-043 implements reusable contracts/helpers; S-044 implements the owned-list endpoint and persistence. The browser dashboard remains subsequent work.

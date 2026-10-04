@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createLocalComposition } from "../../backend/dist/adapters/local/composition.js";
 import { createIntegrationApp, integrationClient } from "./integration-fixture.mjs";
+import { seedDashboard } from "./my-polls-fixture.mjs";
 
 const mode = process.env.INTEGRATION_FAILURE_MODE;
 const endpoint = process.env.DYNAMODB_ENDPOINT;
@@ -21,9 +22,10 @@ test(`forced integration ${mode}`, async (t) => {
     }
     return result;
   };
-  await createIntegrationApp(t, createLocalComposition, {
+  const app = await createIntegrationApp(t, createLocalComposition, {
     appEnv: "test", authMode: "local", awsRegion: "eu-west-2", dynamodbEndpoint: endpoint,
     publicBaseUrl: "http://127.0.0.1:15173"
   }, { client });
+  if (mode === "dashboard") await seedDashboard(app);
   if (mode !== "cleanup-only") assert.fail("ORIGINAL_ASSERTION_FAILURE");
 });

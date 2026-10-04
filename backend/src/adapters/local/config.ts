@@ -17,6 +17,7 @@ export function readLocalConfig(environment: NodeJS.ProcessEnv): LocalConfig {
     appTableName: required(environment, "APP_TABLE_NAME"),
     auditTableName: required(environment, "AUDIT_TABLE_NAME"),
     publicBaseUrl: required(environment, "PUBLIC_BASE_URL"),
-    publicTokenHashKey: environment.PUBLIC_TOKEN_HASH_KEY ?? "local-development-token-hash-key"
+    publicTokenHashKey: environment.PUBLIC_TOKEN_HASH_KEY ?? "local-development-token-hash-key",
+    ...(environment.DASHBOARD_CURSOR_SECRET ? { dashboardCursorSecret: environment.DASHBOARD_CURSOR_SECRET } : {})
   };
 }

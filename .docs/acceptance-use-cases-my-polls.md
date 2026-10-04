@@ -317,3 +317,16 @@ Use the corresponding Draft/Open/Closed empty-state copy from the requirements. 
 Contract and domain cases run in `test/foundation/my-polls-contracts.test.mjs` and `test/foundation/my-polls-query.test.mjs`; creation invariants run in `test/foundation/my-polls-creation.test.mjs`. Authentication, signed cursor verification, persistence, and browser UI are not delivered by S-043.
 
 Shared ownership, ownership transfer, site-wide administration, archiving, duplication, reminders, and bulk actions are outside this supplement's initial scope.
+
+### S-044 API and persistence evidence
+
+| Acceptance | Executable evidence |
+|---|---|
+| MP-US-02, 11 | `test/integration/my-polls-api.test.mjs`: actual local HTTP identity failures, forged-owner rejection, signed cross-owner cursor denial, per-poll 403, public access retained, public Lambda rejects organiser paths |
+| MP-US-03–06 | `test/integration/my-polls-repository.test.mjs`: both organisers, every lifecycle filter, normalized title search, safe dates/counts, sparse pages and 200-candidate continuation budget, complete creation ordering without omission/duplication |
+| MP-US-04, 10 | Repository lifecycle case verifies creation time/order and close/reopen membership; transactional participant add/delete/undo counts and explicit legacy migration are covered |
+| Read-only access | Repository and HTTP cases compare complete application/audit table snapshots before and after list/filter/search requests; missing legacy counts fail without repairs |
+| Isolation | `my-polls-fixture.test.mjs` and `integration-cleanup.test.mjs` prove separate table pairs and teardown after a forced dashboard assertion failure |
+| Production boundary | `my-polls-api.test.mjs` compares local and HTTP API v2 adapter contracts with authorizer stubs; `my-polls-cursor.test.mjs` covers cryptographic canonicalization/expiry/key validation; production import-boundary checks exclude local adapters |
+
+S-044 delivers backend behavior only. Desktop/mobile presentation, browser navigation, dashboard refresh and real Cognito/AWS verification are not claimed. E-008 route, index, IAM and migration enablement requirements are recorded in architecture section 5.6.

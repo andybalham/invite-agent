@@ -13,6 +13,8 @@ export interface PollRecord extends CreatePollRequest {
   readonly version: number;
   readonly proposedDates: ProposedDate[];
   readonly createdAt: string;
+  /** Absent only on legacy records awaiting the explicit dashboard migration. */
+  readonly participantCount?: number;
   readonly publicTokenHash?: string;
   readonly selectedDateId?: string;
   readonly provisional?: true;

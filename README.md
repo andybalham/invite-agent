@@ -308,7 +308,7 @@ This command runs, in order: format check, lint, type check, `npm test` (foundat
 | `npm run lint` | Lint |
 | `npm run format:check` | Formatting check |
 | `npm run security:check` | Security checks |
-| `npm run tables:init` | Idempotently create local DynamoDB tables |
+| `npm run tables:init` | Initialize local tables and prepare legacy dashboard counts/index validation |
 | `npm run cleanup:local -- ...` | Preview or confirm explicit poll / manifest-recorded smoke poll deletion |
 | `npm run cleanup:all -- ...` | Preview or deliberately delete all supported local application/audit/smoke/test tables |
 
@@ -317,6 +317,10 @@ This command runs, in order: format check, lint, type check, `npm test` (foundat
 `.env.example` documents backend configuration. The PowerShell dev-stack scripts do not automatically load `.env.local`: set overrides in the shell before `npm run dev` (for example, the port settings above). The start script derives `DYNAMODB_ENDPOINT` and `PUBLIC_BASE_URL` and sets `API_PORT`, `WEB_PORT`, and `DYNAMODB_PORT` for its child services. Do not put real secrets in local configuration or commit them.
 
 ## Troubleshooting local development
+
+The organiser list API is `GET /api/organiser/polls`, using the existing local organiser identity header. Optional query parameters are `filter=active|draft|open|closed`, `search`, `pageSize` (1–50; default 25), and opaque `cursor`. Follow `nextCursor` even after an empty page. Lists are private, read-only and ordered by immutable creation time. The dashboard UI remains a later story.
+
+Local API startup and `tables:init` backfill missing participant counts before serving requests, preserving poll versions and audit history, and validate the creation index. A failed migration/index check prevents startup; fix the reported data/schema issue and retry. Do not bypass it by inventing zero counts. Optionally set `DASHBOARD_CURSOR_SECRET` to a secret of at least 32 bytes to retain continuations across local restarts; otherwise startup generates a temporary secret. Production wiring requirements are in [architecture section 5.6](.docs/architecture.md#56-my-polls-contract-and-storage-implementation-s-043--s-044).
 
 - **A recorded stack already exists:** Run `npm run dev:stop`, then retry `npm run dev`. The stop command reports when there is no recorded stack. If startup was interrupted before cleanup, inspect `.devstack/processes.json` and the service logs before taking any manual process action.
 - **A port is already in use:** Choose another port by setting `DYNAMODB_PORT`, `API_PORT`, or `WEB_PORT` in PowerShell before startup. For browser tests, retain the same `WEB_PORT` in that shell. If DynamoDB is already listening on the selected DynamoDB port, startup treats it as an existing service and will not stop it later.

@@ -16,8 +16,7 @@ graph LR
     E009["E-009 E9 — Tested production release and operations"]:::blocked
     E010["E-010 E10 — Local onboarding and full-journey smoke testing"]:::done
     E011["E-011 E11 — Ephemeral smoke data and safe local cleanup"]:::done
-    E012["E-012 E12 — My polls organiser dashboard"]:::blocked
-    E013["E-013 E12 — My polls organiser dashboard"]:::empty
+    E012["E-012 E12 — My polls organiser dashboard"]:::todo
     E001 --> E002
     E002 --> E003
     E003 --> E004
@@ -31,7 +30,6 @@ graph LR
     E010 --> E011
     E011 --> E008
     E011 --> E012
-    E011 --> E013
     E012 --> E008
   end
   subgraph Stories
@@ -78,8 +76,8 @@ graph LR
     S041["S-041 Clear down integration-test tables after every test"]:::done
     S042["S-042 Provide a script to clear all local application data"]:::done
     S043["S-043 Resolve My polls decisions and define tested dashboard contracts"]:::done
-    S044["S-044 Query organiser-owned poll summaries through a secure list API"]:::blocked
-    S045["S-045 Make My polls the organiser landing page and provide return navigation"]:::blocked
+    S044["S-044 Query organiser-owned poll summaries through a secure list API"]:::done
+    S045["S-045 Make My polls the organiser landing page and provide return navigation"]:::todo
     S046["S-046 Render equivalent My polls summaries as desktop tables and mobile cards"]:::blocked
     S047["S-047 Find owned polls with lifecycle filters title search and creation ordering"]:::blocked
     S048["S-048 Reflect create publish close and reopen workflows in My polls"]:::blocked
@@ -239,12 +237,12 @@ graph LR
     T099["T-099 Define the owned-summary API and creation-ordered query strategy"]:::done
     T100["T-100 Specify dashboard schemas and pure query rules with foundation and domain tests"]:::done
     T101["T-101 Implement shared dashboard contracts and pure summary query helpers"]:::done
-    T102["T-102 Build isolated two-organiser dashboard fixtures and verify teardown"]:::todo
-    T103["T-103 Specify owner-scoped summary queries with DynamoDB integration tests"]:::blocked
-    T104["T-104 Implement creation-ordered owned-summary persistence queries"]:::blocked
-    T105["T-105 Specify organiser list authorization and transport contracts with API tests"]:::blocked
-    T106["T-106 Expose the protected poll-list service through local and Lambda adapters"]:::blocked
-    T107["T-107 Verify list-query integration and production boundary readiness"]:::blocked
+    T102["T-102 Build isolated two-organiser dashboard fixtures and verify teardown"]:::done
+    T103["T-103 Specify owner-scoped summary queries with DynamoDB integration tests"]:::done
+    T104["T-104 Implement creation-ordered owned-summary persistence queries"]:::done
+    T105["T-105 Specify organiser list authorization and transport contracts with API tests"]:::done
+    T106["T-106 Expose the protected poll-list service through local and Lambda adapters"]:::done
+    T107["T-107 Verify list-query integration and production boundary readiness"]:::done
     T108["T-108 Specify organiser entry return and public route behavior with unit tests"]:::todo
     T109["T-109 Implement My polls entry routes create action and return links"]:::blocked
     T110["T-110 Add browser tests for organiser landing create return and public-link isolation"]:::blocked
@@ -414,7 +412,6 @@ graph LR
   click E010 "../entities/E-010-e10-local-onboarding-and-full-journey-smoke-testing.md"
   click E011 "../entities/E-011-e11-ephemeral-smoke-data-and-safe-local-cleanup.md"
   click E012 "../entities/E-012-e12-my-polls-organiser-dashboard.md"
-  click E013 "../entities/E-013-e12-my-polls-organiser-dashboard.md"
   click S001 "../entities/S-001-establish-the-typescript-workspace-and-shared-contracts.md"
   click S002 "../entities/S-002-run-shared-services-locally-with-dynamodb-and-guarded-authentication.md"
   click S003 "../entities/S-003-provide-one-command-local-startup-and-browser-test-harness.md"

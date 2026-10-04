@@ -21,7 +21,7 @@ test("forced setup/assertion failures delete their tables and retain original No
   const client = integrationClient(endpoint);
   try {
     // Other integration files run concurrently; inspect only this child's UUID pairs.
-    for (const mode of ["setup", "assertion", "assertion-cleanup", "cleanup-only"]) {
+    for (const mode of ["setup", "assertion", "assertion-cleanup", "cleanup-only", "dashboard"]) {
       const childEnv = { ...process.env, DYNAMODB_ENDPOINT: endpoint, INTEGRATION_FAILURE_MODE: mode };
       delete childEnv.NODE_TEST_CONTEXT;
       const result = spawnSync(process.execPath, ["--test", "--test-reporter=tap", "test/support/integration-failure-child.mjs"], {

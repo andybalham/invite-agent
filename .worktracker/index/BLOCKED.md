@@ -4,7 +4,6 @@ _Generated. Do not edit by hand._
 
 - [E-008 · E8 — Production AWS platform](../entities/E-008-e8-production-aws-platform.md) — blocked · waiting on E-012
 - [E-009 · E9 — Tested production release and operations](../entities/E-009-e9-tested-production-release-and-operations.md) — blocked · waiting on E-008
-- [E-012 · E12 — My polls organiser dashboard](../entities/E-012-e12-my-polls-organiser-dashboard.md) — blocked
 - [S-025 · Provision durable DynamoDB application and audit data](../entities/S-025-provision-durable-dynamodb-application-and-audit-data.md) — blocked · waiting on E-008
 - [S-026 · Deploy least-privilege Lambda APIs with Cognito authorization](../entities/S-026-deploy-least-privilege-lambda-apis-with-cognito-authorization.md) — blocked · waiting on S-025
 - [S-027 · Serve the SPA through private S3, CloudFront, DNS, and TLS](../entities/S-027-serve-the-spa-through-private-s3-cloudfront-dns-and-tls.md) — blocked · waiting on S-026
@@ -12,9 +11,7 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [S-044 · Query organiser-owned poll summaries through a secure list API](../entities/S-044-query-organiser-owned-poll-summaries-through-a-secure-list-api.md) — blocked
-- [S-045 · Make My polls the organiser landing page and provide return navigation](../entities/S-045-make-my-polls-the-organiser-landing-page-and-provide-return-navigation.md) — blocked
-- [S-046 · Render equivalent My polls summaries as desktop tables and mobile cards](../entities/S-046-render-equivalent-my-polls-summaries-as-desktop-tables-and-mobile-cards.md) — blocked · waiting on S-044, S-045
+- [S-046 · Render equivalent My polls summaries as desktop tables and mobile cards](../entities/S-046-render-equivalent-my-polls-summaries-as-desktop-tables-and-mobile-cards.md) — blocked · waiting on S-045
 - [S-047 · Find owned polls with lifecycle filters title search and creation ordering](../entities/S-047-find-owned-polls-with-lifecycle-filters-title-search-and-creation-ordering.md) — blocked · waiting on S-046
 - [S-048 · Reflect create publish close and reopen workflows in My polls](../entities/S-048-reflect-create-publish-close-and-reopen-workflows-in-my-polls.md) — blocked · waiting on S-046
 - [S-049 · Document My polls operation and verify acceptance and regression coverage](../entities/S-049-document-my-polls-operation-and-verify-acceptance-and-regression-coverage.md) — blocked · waiting on S-047, S-048
@@ -32,15 +29,10 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-103 · Specify owner-scoped summary queries with DynamoDB integration tests](../entities/T-103-specify-owner-scoped-summary-queries-with-dynamodb-integration-tests.md) — blocked · waiting on T-102
-- [T-104 · Implement creation-ordered owned-summary persistence queries](../entities/T-104-implement-creation-ordered-owned-summary-persistence-queries.md) — blocked · waiting on T-103
-- [T-105 · Specify organiser list authorization and transport contracts with API tests](../entities/T-105-specify-organiser-list-authorization-and-transport-contracts-with-api-tests.md) — blocked · waiting on T-102
-- [T-106 · Expose the protected poll-list service through local and Lambda adapters](../entities/T-106-expose-the-protected-poll-list-service-through-local-and-lambda-adapters.md) — blocked · waiting on T-104, T-105
-- [T-107 · Verify list-query integration and production boundary readiness](../entities/T-107-verify-list-query-integration-and-production-boundary-readiness.md) — blocked · waiting on T-106
 - [T-109 · Implement My polls entry routes create action and return links](../entities/T-109-implement-my-polls-entry-routes-create-action-and-return-links.md) — blocked · waiting on T-108
-- [T-110 · Add browser tests for organiser landing create return and public-link isolation](../entities/T-110-add-browser-tests-for-organiser-landing-create-return-and-public-link-isolation.md) — blocked · waiting on T-106, T-109
+- [T-110 · Add browser tests for organiser landing create return and public-link isolation](../entities/T-110-add-browser-tests-for-organiser-landing-create-return-and-public-link-isolation.md) — blocked · waiting on T-109
 - [T-111 · Verify navigation guards and existing poll-route regressions](../entities/T-111-verify-navigation-guards-and-existing-poll-route-regressions.md) — blocked · waiting on T-110
-- [T-112 · Specify equivalent desktop and mobile summaries with component tests](../entities/T-112-specify-equivalent-desktop-and-mobile-summaries-with-component-tests.md) — blocked · waiting on T-107, T-111
+- [T-112 · Specify equivalent desktop and mobile summaries with component tests](../entities/T-112-specify-equivalent-desktop-and-mobile-summaries-with-component-tests.md) — blocked · waiting on T-111
 - [T-113 · Build the responsive My polls table and card presentation](../entities/T-113-build-the-responsive-my-polls-table-and-card-presentation.md) — blocked · waiting on T-112
 - [T-114 · Connect owned-list loading and approved pagination and state feedback](../entities/T-114-connect-owned-list-loading-and-approved-pagination-and-state-feedback.md) — blocked · waiting on T-113
 - [T-115 · Verify real dashboard summaries and title navigation on desktop and mobile](../entities/T-115-verify-real-dashboard-summaries-and-title-navigation-on-desktop-and-mobile.md) — blocked · waiting on T-114

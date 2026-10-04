@@ -19,6 +19,7 @@ async function readJson(request: IncomingMessage): Promise<unknown> {
 function send(response: ServerResponse, result: FrameworkResponse): void {
   response.statusCode = result.status;
   response.setHeader("content-type", "application/json; charset=utf-8");
+  for (const [name, value] of Object.entries(result.headers ?? {})) response.setHeader(name, value);
   response.end(JSON.stringify(result.body));
 }
 
@@ -37,6 +38,7 @@ export function createLocalNodeServer(handler: SharedHandler): Server {
         await handler.handle({
           method: request.method ?? "GET",
           path: url.pathname,
+          rawQuery: url.search.slice(1),
           headers,
           body: await readJson(request)
         })

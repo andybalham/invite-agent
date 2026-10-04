@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { resolveOwnedPollListQuery, type OwnedPollListResponse } from "@invite-a-gent/contracts";
+import { OwnedPollCursor } from "../security/owned-poll-cursor.js";
 import type {
   AuditHistoryEvent,
   AuditHistoryPage,
@@ -163,8 +165,19 @@ function historyEvent(event: AuditEvent): AuditHistoryEvent {
 export class PollService {
   public constructor(
     private readonly repository: DynamoPollRepository,
-    private readonly publicConfig: { readonly baseUrl: string; readonly tokenHashKey: string }
+    private readonly publicConfig: { readonly baseUrl: string; readonly tokenHashKey: string; readonly dashboardCursorSecret?: string }
   ) {}
+
+  public async listOwned(input: unknown, organiserId: string): Promise<OwnedPollListResponse> {
+    if (!organiserId) throw new ApplicationError("UNAUTHENTICATED", "Organiser authentication is required");
+    const parsed = resolveOwnedPollListQuery(input);
+    if (!parsed.success) throw new ApplicationError("VALIDATION_ERROR", parsed.issues.join("; "));
+    const query = parsed.data;
+    const cursors = new OwnedPollCursor(this.publicConfig.dashboardCursorSecret ?? "");
+    const key = query.cursor ? cursors.verify(query.cursor, organiserId, query) : undefined;
+    const page = await this.repository.listOwnedSummaries(organiserId, query, key);
+    return { items: page.items, ...(page.lastEvaluatedKey ? { nextCursor: cursors.sign(organiserId, query, page.lastEvaluatedKey) } : {}) };
+  }
 
   public async create(input: unknown, organiserId: string): Promise<PollResponse> {
     const parsed = validateCreatePollRequest(withoutClaimedIdentity(input));
@@ -180,6 +193,7 @@ export class PollService {
       organiserId,
       status: "draft",
       version: 1,
+      participantCount: 0,
       createdAt
     };
     await this.repository.createPoll(poll, {

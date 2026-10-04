@@ -1,16 +1,19 @@
 import { ApplicationError, type PollService } from "../application/index.js";
 import type { DynamoPollRepository } from "../data/index.js";
+import { parseOwnedPollQuery } from "./owned-poll-query.js";
 
 export interface FrameworkRequest {
   readonly method: string;
   readonly path: string;
   readonly headers: Readonly<Record<string, string | undefined>>;
   readonly body?: unknown;
+  readonly rawQuery?: string;
 }
 
 export interface FrameworkResponse {
   readonly status: number;
   readonly body: unknown;
+  readonly headers?: Readonly<Record<string, string>>;
 }
 
 export type Authenticate = (headers: FrameworkRequest["headers"]) => string;
@@ -35,7 +38,15 @@ export function createSharedHttpHandler(dependencies: {
 }): { handle(request: FrameworkRequest): Promise<FrameworkResponse> } {
   return {
     async handle(request) {
+      const listHeaders = request.method === "GET" && request.path === "/api/organiser/polls"
+        ? { "cache-control": "private, no-store", vary: "Authorization, X-Local-Organiser-Id" } : undefined;
       try {
+        if (listHeaders) {
+          const organiserId = dependencies.authenticate(request.headers);
+          if (request.body !== undefined) throw new ApplicationError("VALIDATION_ERROR", "Poll list requests do not accept a body");
+          return { status: 200, headers: listHeaders,
+            body: await dependencies.polls.listOwned(parseOwnedPollQuery(request.rawQuery ?? ""), organiserId) };
+        }
         if (request.method === "GET" && request.path === "/health") {
           await dependencies.repository.health();
           return { status: 200, body: { status: "ok" } };
@@ -175,7 +186,7 @@ export function createSharedHttpHandler(dependencies: {
         }
         throw new ApplicationError("NOT_FOUND", "Route not found");
       } catch (error) {
-        return errorResponse(error);
+        return { ...errorResponse(error), ...(listHeaders ? { headers: listHeaders } : {}) };
       }
     }
   };
