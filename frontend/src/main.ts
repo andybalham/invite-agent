@@ -1,5 +1,6 @@
 import "./styles.css";
 import type { OwnedPollListResponse } from "@invite-a-gent/contracts";
+import { normalizeDashboardTitle } from "@invite-a-gent/contracts";
 import {
   createPollDestination, myPollsContext, myPollsDestination, organiserPollDestination,
   ownedPollDestination, pollReturnContext
@@ -91,6 +92,11 @@ app.innerHTML = `
       <div><p class="kicker">ORGANISER</p><h1 id="my-polls-heading">My polls</h1></div>
       <a class="btn btn-primary create-poll" href="#">Create poll</a>
     </div>
+    <div class="field">
+      <label for="my-polls-search">Search poll titles</label>
+      <input class="input" id="my-polls-search" type="search" />
+      <button class="btn btn-secondary my-polls-clear" type="button" hidden>Clear search</button>
+    </div>
     <div class="my-polls-filters" role="group" aria-label="Poll lifecycle">
       <button class="btn btn-secondary" type="button" data-filter="active" aria-pressed="true">Active</button>
       <button class="btn btn-secondary" type="button" data-filter="draft" aria-pressed="false">Draft</button>
@@ -102,7 +108,6 @@ app.innerHTML = `
     <button class="btn btn-secondary my-polls-retry" type="button" hidden>Try again</button>
     <div class="my-polls-list" aria-label="Owned polls"></div>
     <button class="btn btn-secondary my-polls-more" type="button" hidden>Load more polls</button>
-    <button class="btn btn-secondary my-polls-clear" type="button" hidden>Clear search</button>
   </main>
   <section class="editor" hidden aria-labelledby="draft-heading">
       <a class="btn btn-ghost my-polls-return" href="#">← My polls</a>
@@ -423,6 +428,7 @@ const myPollsError = requireElement<HTMLElement>(".my-polls-error");
 const myPollsRetry = requireElement<HTMLButtonElement>(".my-polls-retry");
 const myPollsMore = requireElement<HTMLButtonElement>(".my-polls-more");
 const myPollsClear = requireElement<HTMLButtonElement>(".my-polls-clear");
+const myPollsSearch = requireElement<HTMLInputElement>("#my-polls-search");
 requireElement<HTMLAnchorElement>(".create-poll").href = createPollDestination(testRunId);
 requireElement<HTMLAnchorElement>(".wordmark").href = myPollsDestination(testRunId);
 for (const link of document.querySelectorAll<HTMLAnchorElement>(".my-polls-return")) {
@@ -432,6 +438,7 @@ let ownedListRequest = 0;
 let ownedListLoading = false;
 let ownedListCursor: string | undefined;
 let ownedListCount = 0;
+const ownedListIds = new Set<string>();
 let ownedListIdentity = "";
 let ownedListQuery = "";
 let proposedDates: ProposedDate[] = [];
@@ -1431,11 +1438,13 @@ async function loadMyPolls(append = false): Promise<void> {
     ownedListQuery = query;
     ownedListCursor = undefined;
     ownedListCount = 0;
+    ownedListIds.clear();
     myPollsList.replaceChildren();
   }
   myPollsError.hidden = true;
   myPollsRetry.hidden = true;
-  myPollsClear.hidden = true;
+  myPollsSearch.value = context.search;
+  myPollsClear.hidden = !context.search;
   myPollsMore.hidden = true;
   myPollsStatus.textContent = append ? "Loading more polls…" : "Loading your polls…";
   for (const button of document.querySelectorAll<HTMLButtonElement>(".my-polls-filters button")) {
@@ -1457,6 +1466,7 @@ async function loadMyPolls(append = false): Promise<void> {
       if (response.status === 401) {
         ownedListCursor = undefined;
         ownedListCount = 0;
+        ownedListIds.clear();
         myPollsList.replaceChildren();
         myPollsError.textContent = "Sign in to view your polls.";
       } else {
@@ -1485,13 +1495,16 @@ async function loadMyPolls(append = false): Promise<void> {
       mobile.className = "my-polls-mobile";
       myPollsList.append(desktop, mobile);
     }
-    if (body && mobile) for (const poll of page.items) renderPollSummary(poll, context, runId, body, mobile);
-    ownedListCount += page.items.length;
+    if (body && mobile) for (const poll of page.items) {
+      if (ownedListIds.has(poll.id)) continue;
+      renderPollSummary(poll, context, runId, body, mobile);
+      ownedListIds.add(poll.id);
+    }
+    ownedListCount = ownedListIds.size;
     ownedListCursor = page.nextCursor;
     myPollsMore.hidden = !ownedListCursor;
     myPollsStatus.textContent = page.items.length === 0 && page.nextCursor ? "More polls may match."
-      : ownedListCount === 0 ? context.search.trim() ? "No polls match your search." : `No ${context.filter} polls yet.` : "";
-    myPollsClear.hidden = !(ownedListCount === 0 && !ownedListCursor && context.search.trim());
+      : ownedListCount === 0 ? normalizeDashboardTitle(context.search) ? "No polls match your search." : `No ${context.filter} polls yet.` : "";
   } catch {
     if (!current()) return;
     myPollsStatus.textContent = "";
@@ -1514,6 +1527,13 @@ requireElement<HTMLElement>(".my-polls-filters").addEventListener("click", (even
 
 myPollsMore.addEventListener("click", () => void loadMyPolls(true));
 myPollsRetry.addEventListener("click", () => void loadMyPolls(Boolean(ownedListCursor)));
+myPollsSearch.addEventListener("input", () => {
+  const target = new URL(window.location.href);
+  if (myPollsSearch.value) target.searchParams.set("search", myPollsSearch.value);
+  else target.searchParams.delete("search");
+  window.history.replaceState({}, "", target);
+  void loadMyPolls();
+});
 myPollsClear.addEventListener("click", () => {
   const target = new URL(window.location.href);
   target.searchParams.delete("search");

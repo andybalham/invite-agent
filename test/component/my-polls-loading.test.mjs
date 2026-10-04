@@ -72,7 +72,7 @@ test("terminal empty and no-match states differ; Clear search retains the filter
   const harness = await components.mount(t, { fixture });
   await harness.goto("/?testRunId=olivia&filter=closed&search=missing");
   await expect(harness.page.getByRole("status")).toHaveText(/more.*polls.*match/i);
-  await expect(harness.page.getByRole("button", { name: "Clear search" })).not.toBeVisible();
+  await expect(harness.page.getByRole("button", { name: "Clear search" })).toBeVisible();
   await harness.page.getByRole("button", { name: "Load more polls" }).click();
   await expect(harness.page.getByRole("status")).toHaveText(/no.*polls.*match.*search/i);
   await harness.page.getByRole("button", { name: "Clear search" }).click();
