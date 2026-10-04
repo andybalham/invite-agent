@@ -807,6 +807,7 @@ async function persistDraft(): Promise<PollDetails | undefined> {
     return undefined;
   }
   const poll = (await response.json()) as PollDetails;
+  invalidateMyPolls();
   applyPoll(poll);
   url.searchParams.set("pollId", poll.id);
   url.searchParams.set("view", "editor");
@@ -1427,6 +1428,17 @@ function currentOwnedList(): { identity: string; runId: string; context: ReturnT
   };
 }
 
+function invalidateMyPolls(): void {
+  // Saved summaries must be read again, never patched or reordered from a
+  // detail response. Also retire any response from an accumulated list page.
+  ownedListRequest += 1;
+  ownedListLoading = false;
+  ownedListCursor = undefined;
+  ownedListCount = 0;
+  ownedListIds.clear();
+  myPollsList.replaceChildren();
+}
+
 async function loadMyPolls(append = false): Promise<void> {
   if (append && (ownedListLoading || !ownedListCursor)) return;
   const { identity, runId, context, query } = currentOwnedList();
@@ -1435,6 +1447,7 @@ async function loadMyPolls(append = false): Promise<void> {
     void loadMyPolls();
     return;
   }
+  if (!append) invalidateMyPolls();
   const generation = ++ownedListRequest;
   ownedListLoading = true;
   myPollsList.setAttribute("aria-busy", "true");
@@ -1443,10 +1456,6 @@ async function loadMyPolls(append = false): Promise<void> {
     requireElement<HTMLAnchorElement>(".wordmark").href = myPollsDestination(runId);
     ownedListIdentity = identity;
     ownedListQuery = query;
-    ownedListCursor = undefined;
-    ownedListCount = 0;
-    ownedListIds.clear();
-    myPollsList.replaceChildren();
   }
   myPollsError.hidden = true;
   myPollsRetry.hidden = true;
@@ -1463,7 +1472,9 @@ async function loadMyPolls(append = false): Promise<void> {
   };
   try {
     const params = new URLSearchParams({ filter: context.filter, search: context.search, pageSize: "25", ...(cursor ? { cursor } : {}) });
-    const response = await request(`/api/organiser/polls?${params}`, { headers: { "x-local-organiser-id": identity } });
+    const response = await request(`/api/organiser/polls?${params}`, {
+      cache: "no-store", headers: { "x-local-organiser-id": identity }
+    });
     if (!current()) return;
     if (!response.ok) {
       // Consume the body before publishing any error state: query and identity
@@ -1553,7 +1564,17 @@ myPollsClear.addEventListener("click", () => {
   changeMyPollsQuery({ search: "" });
   myPollsSearch.focus();
 });
-window.addEventListener("popstate", () => { if (!myPollsScreen.hidden) void loadMyPolls(); });
+window.addEventListener("popstate", () => {
+  const { identity, query } = currentOwnedList();
+  // pageshow handles restored documents; popstate only needs another read
+  // when same-document navigation changes the list's identity or query.
+  if (!myPollsScreen.hidden && (identity !== ownedListIdentity || query !== ownedListQuery)) void loadMyPolls();
+});
+window.addEventListener("pageshow", (event) => {
+  // Ordinary links reload the document and already read page one. Browser
+  // Back/Forward may restore the entire dashboard from the back/forward cache.
+  if (event.persisted && !myPollsScreen.hidden) void loadMyPolls();
+});
 
 locationField.addEventListener("input", () => { updatePreview(); updatePublicationReadiness(); });
 requireElement<HTMLButtonElement>(".edit-location").addEventListener("click", () => {
@@ -1646,6 +1667,7 @@ publishButton.addEventListener("click", () => {
       return;
     }
     const result = (await response.json()) as { publicUrl: string };
+    invalidateMyPolls();
     showShareScreen(result.publicUrl);
   })();
 });
@@ -1697,6 +1719,7 @@ reopenDialog.addEventListener("submit", (event) => {
         return;
       }
       const result = (await response.json()) as { poll: PublicPollDetails };
+      invalidateMyPolls();
       reopenDialog.close();
       renderPublicPoll(result.poll);
       publicPollHeading.focus();
@@ -1732,6 +1755,7 @@ closeDialog.addEventListener("submit", (event) => {
       return;
     }
     const result = (await response.json()) as { poll: PublicPollDetails };
+    invalidateMyPolls();
     closeDialog.close();
     renderPublicPoll(result.poll);
   })();

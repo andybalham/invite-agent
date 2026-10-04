@@ -67,6 +67,36 @@ test("initial and append failures have separate retry paths and preserve the con
   assert.ok(harness.listRequests().every(({ url }) => new URL(url).searchParams.get("search") === "First"));
 });
 
+test("restoring a cached dashboard discards accumulated pages and ignores a pending old continuation", async (t) => {
+  const stale = heldResponse(page([item("stale", "Stale continuation")], "obsolete"));
+  const fixture = createSummaryFixture({ replies: [
+    page([item("first", "Before management")], "first-cursor"),
+    page([item("second", "Old page two")], "second-cursor"), stale,
+    page([item("fresh", "After management")], "fresh-cursor"),
+    page([item("last", "Current page two")])
+  ] });
+  const harness = await components.mount(t, { fixture });
+  await harness.goto("/?testRunId=olivia&filter=draft&search=dinner");
+  const more = harness.page.getByRole("button", { name: "Load more polls" });
+  await more.click();
+  await expect(harness.page.getByRole("link", { name: "Old page two" })).toBeVisible();
+  await more.click();
+  await expect(harness.page.getByRole("status")).toHaveText(/loading.*more.*polls/i);
+  await harness.page.evaluate(() => dispatchEvent(new PageTransitionEvent("pageshow", { persisted: true })));
+  await expect(harness.page.getByRole("link", { name: "After management" })).toBeVisible();
+  stale.release();
+  await more.click();
+  await expect(harness.page.getByRole("link", { name: "Current page two" })).toBeVisible();
+  assert.deepEqual(await harness.page.locator(".my-polls-desktop tbody a").allTextContents(),
+    ["After management", "Current page two"]);
+  assert.deepEqual(harness.listRequests().map(({ url }) => new URL(url).searchParams.get("cursor")),
+    [null, "first-cursor", "second-cursor", null, "fresh-cursor"]);
+  assert.ok(harness.listRequests().every(({ url }) => {
+    const query = new URL(url).searchParams;
+    return query.get("filter") === "draft" && query.get("search") === "dinner";
+  }));
+});
+
 test("terminal empty and no-match states differ; Clear search retains the filter", async (t) => {
   const fixture = createSummaryFixture({ replies: [page([], "keep-looking"), emptyPage, emptyPage] });
   const harness = await components.mount(t, { fixture });

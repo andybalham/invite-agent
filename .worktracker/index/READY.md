@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-120 · Specify dashboard summary refresh and immutable creation time with unit tests](../entities/T-120-specify-dashboard-summary-refresh-and-immutable-creation-time-with-unit-tests.md) — todo
+- [ ] [T-124 · Update dashboard requirements acceptance traceability and architecture documentation](../entities/T-124-update-dashboard-requirements-acceptance-traceability-and-architecture-documentation.md) — todo

@@ -191,13 +191,13 @@ _Generated. Do not edit by hand._
   - [x] [T-117 · Implement lifecycle filters and title-search controls against the owned-list API](../entities/T-117-implement-lifecycle-filters-and-title-search-controls-against-the-owned-list-api.md) — done
   - [x] [T-118 · Verify filtering search and creation-date order across browser viewports](../entities/T-118-verify-filtering-search-and-creation-date-order-across-browser-viewports.md) — done
   - [x] [T-119 · Verify API and browser discovery behavior together without read mutations](../entities/T-119-verify-api-and-browser-discovery-behavior-together-without-read-mutations.md) — done
-- [ ] **S-048 · Reflect create publish close and reopen workflows in My polls** — todo
-  - [ ] [T-120 · Specify dashboard summary refresh and immutable creation time with unit tests](../entities/T-120-specify-dashboard-summary-refresh-and-immutable-creation-time-with-unit-tests.md) — todo
-  - [ ] [T-121 · Integrate saved poll and lifecycle results with dashboard refresh](../entities/T-121-integrate-saved-poll-and-lifecycle-results-with-dashboard-refresh.md) — blocked · waiting on T-120
-  - [ ] [T-122 · Verify lifecycle summaries and read-only list behavior with server integration tests](../entities/T-122-verify-lifecycle-summaries-and-read-only-list-behavior-with-server-integration-tests.md) — blocked · waiting on T-121
-  - [ ] [T-123 · Verify complete dashboard lifecycle journeys and public-link isolation in browsers](../entities/T-123-verify-complete-dashboard-lifecycle-journeys-and-public-link-isolation-in-browsers.md) — blocked · waiting on T-122
-- [ ] **S-049 · Document My polls operation and verify acceptance and regression coverage** — blocked · waiting on S-048
-  - [ ] [T-124 · Update dashboard requirements acceptance traceability and architecture documentation](../entities/T-124-update-dashboard-requirements-acceptance-traceability-and-architecture-documentation.md) — blocked · waiting on T-123
+- [x] **S-048 · Reflect create publish close and reopen workflows in My polls** — done
+  - [x] [T-120 · Specify dashboard summary refresh and immutable creation time with unit tests](../entities/T-120-specify-dashboard-summary-refresh-and-immutable-creation-time-with-unit-tests.md) — done
+  - [x] [T-121 · Integrate saved poll and lifecycle results with dashboard refresh](../entities/T-121-integrate-saved-poll-and-lifecycle-results-with-dashboard-refresh.md) — done
+  - [x] [T-122 · Verify lifecycle summaries and read-only list behavior with server integration tests](../entities/T-122-verify-lifecycle-summaries-and-read-only-list-behavior-with-server-integration-tests.md) — done
+  - [x] [T-123 · Verify complete dashboard lifecycle journeys and public-link isolation in browsers](../entities/T-123-verify-complete-dashboard-lifecycle-journeys-and-public-link-isolation-in-browsers.md) — done
+- [ ] **S-049 · Document My polls operation and verify acceptance and regression coverage** — todo
+  - [ ] [T-124 · Update dashboard requirements acceptance traceability and architecture documentation](../entities/T-124-update-dashboard-requirements-acceptance-traceability-and-architecture-documentation.md) — todo
   - [ ] [T-125 · Document My polls user navigation and local operational guidance in README](../entities/T-125-document-my-polls-user-navigation-and-local-operational-guidance-in-readme.md) — blocked · waiting on T-124
   - [ ] [T-126 · Integrate My polls into the isolated local smoke journey and its contract](../entities/T-126-integrate-my-polls-into-the-isolated-local-smoke-journey-and-its-contract.md) — blocked · waiting on T-124
   - [ ] [T-127 · Run dashboard acceptance and regression checks and record implementation evidence](../entities/T-127-run-dashboard-acceptance-and-regression-checks-and-record-implementation-evidence.md) — blocked · waiting on T-125, T-126
