@@ -57,7 +57,7 @@ test("closed public page keeps the selected non-leader primary and the closing r
   const poster = page.locator(".final-date-poster");
   const ranking = page.getByRole("list", { name: "Final ranking" });
   const answers = page.getByRole("heading", { name: "Everyone's answers" });
-  await expect(page.getByText("Closed", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("public-state")).toHaveText("Closed");
   await expect(poster).toContainText("IT'S DECIDED");
   await expect(poster.getByRole("heading", { name: "Saturday 24 October 2026" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Final ranking" })).toBeVisible();

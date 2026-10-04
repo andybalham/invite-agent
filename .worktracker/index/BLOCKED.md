@@ -11,7 +11,6 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [S-046 · Render equivalent My polls summaries as desktop tables and mobile cards](../entities/S-046-render-equivalent-my-polls-summaries-as-desktop-tables-and-mobile-cards.md) — blocked · waiting on S-045
 - [S-047 · Find owned polls with lifecycle filters title search and creation ordering](../entities/S-047-find-owned-polls-with-lifecycle-filters-title-search-and-creation-ordering.md) — blocked · waiting on S-046
 - [S-048 · Reflect create publish close and reopen workflows in My polls](../entities/S-048-reflect-create-publish-close-and-reopen-workflows-in-my-polls.md) — blocked · waiting on S-046
 - [S-049 · Document My polls operation and verify acceptance and regression coverage](../entities/S-049-document-my-polls-operation-and-verify-acceptance-and-regression-coverage.md) — blocked · waiting on S-047, S-048
@@ -29,8 +28,6 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-111 · Verify navigation guards and existing poll-route regressions](../entities/T-111-verify-navigation-guards-and-existing-poll-route-regressions.md) — blocked · waiting on T-110
-- [T-112 · Specify equivalent desktop and mobile summaries with component tests](../entities/T-112-specify-equivalent-desktop-and-mobile-summaries-with-component-tests.md) — blocked · waiting on T-111
 - [T-113 · Build the responsive My polls table and card presentation](../entities/T-113-build-the-responsive-my-polls-table-and-card-presentation.md) — blocked · waiting on T-112
 - [T-114 · Connect owned-list loading and approved pagination and state feedback](../entities/T-114-connect-owned-list-loading-and-approved-pagination-and-state-feedback.md) — blocked · waiting on T-113
 - [T-115 · Verify real dashboard summaries and title navigation on desktop and mobile](../entities/T-115-verify-real-dashboard-summaries-and-title-navigation-on-desktop-and-mobile.md) — blocked · waiting on T-114

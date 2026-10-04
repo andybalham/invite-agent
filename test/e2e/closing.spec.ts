@@ -44,7 +44,7 @@ test("organiser reviews attendance, cancellation is inert, then closes in one co
 
   await page.locator(`[data-choice-id="${fixture.selectedDateId}"]`).getByRole("button", { name: "Pick…" }).click();
   await dialog.getByRole("button", { name: "Confirm & close poll" }).click();
-  await expect(page.getByText("Closed", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("public-state")).toHaveText("Closed");
   await expect(page.getByText("IT'S DECIDED")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Final ranking" })).toBeVisible();
   await expect(page.getByText("This poll is closed. Responses are read-only.")).toBeVisible();

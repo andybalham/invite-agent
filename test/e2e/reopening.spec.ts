@@ -52,7 +52,7 @@ for (const selection of ["same", "different"]) test(`reopen and close again on t
   await expect(participantPage.getByRole("button", { name: "Reopen poll…" })).toHaveCount(0);
   await trigger.click();
   await page.keyboard.press("Enter");
-  await expect(page.getByText("Open", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("public-state")).toHaveText("Open");
   const provisional = page.getByRole("region", { name: "Provisional selection" });
   await expect(provisional).toContainText("Provisional");
   await expect(provisional).toContainText("The poll was reopened — this date may change.");
@@ -77,7 +77,7 @@ for (const selection of ["same", "different"]) test(`reopen and close again on t
   const selectedDateId = selection === "same" ? fixture.first : fixture.second;
   await page.locator(`[data-choice-id="${selectedDateId}"]`).getByRole("button", { name: "Pick…" }).click();
   await page.getByRole("dialog", { name: "Final date" }).getByRole("button", { name: "Confirm & close poll" }).click();
-  await expect(page.getByText("Closed", { exact: true })).toBeVisible();
+  await expect(page.getByTestId("public-state")).toHaveText("Closed");
   await expect(provisional).not.toBeVisible();
   await expect(page.locator(".final-date-poster")).toContainText(selection === "same" ? "Saturday 10 October 2026" : "Saturday 17 October 2026, 18:00");
   await expect(participantPage.getByRole("button", { name: "+ Add a row" })).toHaveCount(0);

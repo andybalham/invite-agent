@@ -55,7 +55,7 @@ test("a fresh unauthenticated browser renders the safe public poll", async ({
   const publicPage = await context.newPage();
   await publicPage.goto(publicUrl);
   await expect(publicPage.getByText("No account needed", { exact: true })).toBeVisible();
-  await expect(publicPage.getByText("Open", { exact: true })).toBeVisible();
+  await expect(publicPage.getByTestId("public-state")).toHaveText("Open");
   await expect(publicPage.getByRole("heading", { name: poll.title })).toBeVisible();
   await expect(publicPage.getByText("Community Hall — map")).toBeVisible();
   await expect(publicPage.getByText("Times in Europe/London")).toBeVisible();

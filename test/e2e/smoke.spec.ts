@@ -339,7 +339,7 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
     const close = await smoke.accepted(page, "owner", "close on A", ["POLL_CLOSED"], async () => {
       await page.locator(`[data-choice-id="${ids[0]}"]`).getByRole("button", { name: "Pick…", exact: true }).click();
       await page.getByRole("dialog", { name: "Final date", exact: true }).getByRole("button", { name: "Confirm & close poll", exact: true }).click();
-      await expect(page.getByText("Closed", { exact: true })).toBeVisible();
+      await expect(page.getByTestId("public-state")).toHaveText("Closed");
     }, { type: "poll", id: smoke.pollId });
     expect(close.after).toMatchObject({ status: "closed", selectedDateId: ids[0] });
     await first.reload();
@@ -379,7 +379,7 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
     await smoke.accepted(page, "owner", "reopen closed poll", ["POLL_REOPENED"], async () => {
       await page.getByRole("button", { name: "Reopen poll…", exact: true }).click();
       await page.getByRole("dialog", { name: "Reopen this poll?", exact: true }).getByRole("button", { name: "Reopen poll", exact: true }).click();
-      await expect(page.getByText("Open", { exact: true })).toBeVisible();
+      await expect(page.getByTestId("public-state")).toHaveText("Open");
     }, { type: "poll", id: smoke.pollId });
     expect(await smoke.publicPoll()).toMatchObject({ status: "open", selectedDateId: ids[0], provisional: true });
     await expect(page.getByRole("region", { name: "Provisional selection" })).toContainText("Saturday 10 October 2026");
@@ -389,7 +389,7 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
     await smoke.accepted(page, "owner", "close again on C", ["POLL_CLOSED"], async () => {
       await page.locator(`[data-choice-id="${ids[2]}"]`).getByRole("button", { name: "Pick…", exact: true }).click();
       await page.getByRole("dialog", { name: "Final date", exact: true }).getByRole("button", { name: "Confirm & close poll", exact: true }).click();
-      await expect(page.getByText("Closed", { exact: true })).toBeVisible();
+      await expect(page.getByTestId("public-state")).toHaveText("Closed");
     }, { type: "poll", id: smoke.pollId });
     const poll = await smoke.publicPoll();
     expect(poll).toMatchObject({ status: "closed", selectedDateId: ids[2] });
