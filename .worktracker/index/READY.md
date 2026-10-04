@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-126 · Integrate My polls into the isolated local smoke journey and its contract](../entities/T-126-integrate-my-polls-into-the-isolated-local-smoke-journey-and-its-contract.md) — todo
+- [ ] [T-127 · Run dashboard acceptance and regression checks and record implementation evidence](../entities/T-127-run-dashboard-acceptance-and-regression-checks-and-record-implementation-evidence.md) — todo

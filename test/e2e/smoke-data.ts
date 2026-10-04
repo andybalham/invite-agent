@@ -14,5 +14,6 @@ export const smokeData = {
     { kind: "date-time", localDateTime: "2026-10-24T18:00" }
   ] satisfies ProposedDateInput[],
   labels: ["Sat 10 Oct", "Sat 17 Oct 18:00", "Sat 24 Oct 18:00"],
+  dashboardLabels: ["Sat, 10 Oct 2026", "Sat, 17 Oct 2026, 18:00 · Europe/London · UTC+01:00", "Sat, 24 Oct 2026, 18:00 · Europe/London · UTC+01:00"],
   matrix: { Alice: ["yes", "yes", "no"], Bob: ["yes", "yes", "no"], Charlie: ["no", "yes", "yes"] }
 } as const;

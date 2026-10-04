@@ -1,9 +1,95 @@
-import type { Page } from "@playwright/test";
-import type { ProposedDateInput, PublicPollResponse } from "@invite-a-gent/contracts";
+import type { Page, Request } from "@playwright/test";
+import type { OwnedPollFilter, OwnedPollListResponse, ProposedDateInput, PublicPollResponse } from "@invite-a-gent/contracts";
 import { expect, test, type SmokeHarness } from "./smoke-fixtures";
 import { smokeData as data } from "./smoke-data";
 
 test.use({ actionTimeout: 15_000, navigationTimeout: 15_000 });
+
+type DashboardPoll = {
+  title: string; status: "draft" | "open" | "closed"; createdAt: string;
+  participantCount: number; proposedDates: readonly ProposedDateInput[];
+};
+
+const myPollsLink = (page: Page) => page.getByRole("link", { name: /^(?:←\s*)?My polls$/ });
+const selectFilter = (page: Page, filter: string) => () => page.getByRole("button", { name: filter, exact: true }).click();
+
+async function navigation(smoke: SmokeHarness, page: Page, label: string, action: () => Promise<void>): Promise<void> {
+  smoke.browserRole = "owner";
+  smoke.lastAction = label;
+  const requests: Request[] = [];
+  const listener = (request: Request) => {
+    if (new URL(request.url()).pathname.startsWith("/api/")) requests.push(request);
+  };
+  page.on("request", listener);
+  try {
+    if (smoke.pollId) await smoke.unchanged(action);
+    else await action();
+    expect(requests.map((request) => request.method()), "Dashboard navigation must only read").toEqual(requests.map(() => "GET"));
+  } finally { page.off("request", listener); }
+}
+
+async function dashboard(
+  smoke: SmokeHarness, page: Page, filter: OwnedPollFilter, expected: DashboardPoll | null,
+  action: () => Promise<unknown>
+): Promise<void> {
+  await navigation(smoke, page, `My polls ${filter}: ${expected?.status ?? "empty"}`, async () => {
+    const loaded = page.waitForResponse((response) => {
+      const url = new URL(response.url());
+      return url.pathname === "/api/organiser/polls" && response.request().method() === "GET" &&
+        url.searchParams.get("filter") === filter && url.searchParams.get("search") === "" && !url.searchParams.has("cursor");
+    });
+    await action();
+    const response = await loaded;
+    expect(response.status()).toBe(200);
+    expect(response.request().headers()["x-local-organiser-id"]).toBe(smoke.headers["x-local-organiser-id"]);
+    expect(response.headers()["cache-control"]).toBe("private, no-store");
+    const body: OwnedPollListResponse = await response.json();
+    expect(body.nextCursor).toBeUndefined();
+    expect(body.items.map(({ id }) => id)).toEqual(expected ? [smoke.pollId] : []);
+    await expect(page.getByRole("heading", { name: "My polls", exact: true })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Owned polls", exact: true })).toHaveAttribute("aria-busy", "false");
+    await expect(page.getByRole("button", { name: filter[0]!.toUpperCase() + filter.slice(1), exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("searchbox", { name: "Search poll titles", exact: true })).toHaveValue("");
+    await expect(page.getByRole("link", { name: "Create poll", exact: true })).toBeVisible();
+    await expect(page).toHaveURL((url) => url.pathname === "/" && url.searchParams.get("testRunId") === smoke.runId &&
+      (url.searchParams.get("filter") ?? "active") === filter && !url.searchParams.has("pollId") && !url.searchParams.has("view"));
+    await expect(page.getByLabel("Title", { exact: true })).not.toBeVisible();
+    const rows = page.getByRole("table", { name: "Poll summaries", exact: true }).locator("tbody tr");
+    await expect(rows).toHaveCount(expected ? 1 : 0);
+    if (expected) {
+      expect(body.items[0]).toMatchObject(expected);
+      const row = rows.first();
+      const link = row.getByRole("link", { name: expected.title, exact: true });
+      await expect(link).toBeVisible();
+      expect(new URL(await link.getAttribute("href") ?? "", smoke.baseURL).searchParams.get("pollId")).toBe(smoke.pollId);
+      await expect(row.locator(".summary-status")).toHaveText(expected.status[0]!.toUpperCase() + expected.status.slice(1));
+      const creation = new Intl.DateTimeFormat("en-GB", {
+        day: "numeric", month: "short", year: "numeric", timeZone: data.timeZone
+      }).format(new Date(expected.createdAt));
+      await expect(row.getByText(creation, { exact: true })).toBeVisible();
+      await expect(row.getByText(`${expected.participantCount} participants`, { exact: true })).toBeVisible();
+      await expect(row.locator(".my-polls-dates li")).toHaveText(data.dashboardLabels.slice(0, expected.proposedDates.length));
+    } else await expect(page.getByText(`No ${filter} polls yet.`, { exact: true })).toBeVisible();
+  });
+}
+
+async function openFromDashboard(smoke: SmokeHarness, page: Page, poll: DashboardPoll, filter: OwnedPollFilter): Promise<void> {
+  await navigation(smoke, page, `open ${poll.status} by dashboard title`, async () => {
+    await page.getByRole("table", { name: "Poll summaries", exact: true }).getByRole("link", { name: poll.title, exact: true }).click();
+    await expect(page).toHaveURL((url) => url.pathname === "/" && url.searchParams.get("pollId") === smoke.pollId &&
+      url.searchParams.get("testRunId") === smoke.runId && url.searchParams.get("view") === (poll.status === "draft" ? "editor" : "manage") &&
+      url.searchParams.get("returnFilter") === filter && url.searchParams.get("returnSearch") === "");
+    await expect(myPollsLink(page)).toBeVisible();
+    if (poll.status === "draft") {
+      await expect(page.getByRole("textbox", { name: "Title", exact: true })).toHaveValue(poll.title);
+      await expect(page.getByRole("button", { name: "Save changes", exact: true })).toBeVisible();
+    } else {
+      await expect(page.getByRole("heading", { name: poll.title, exact: true })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Organiser controls" })).toBeVisible();
+      await expect(page.getByTestId("public-state")).toHaveText(poll.status === "open" ? "Open" : "Closed");
+    }
+  });
+}
 
 async function addDate(page: Page, choice: ProposedDateInput): Promise<void> {
   const [date, time = ""] = (choice.kind === "date" ? choice.localDate : choice.localDateTime).split("T");
@@ -90,33 +176,49 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
   let second: Page;
   let ids: string[];
   let aliceId: string;
+  let createdAt: string;
   const initialTitle = `Autumn get-together [smoke ${smoke.runId}]`;
   const finalTitle = `Autumn planning session [smoke ${smoke.runId}]`;
+  const summary = (status: DashboardPoll["status"], participantCount = 0): DashboardPoll => ({
+    title: finalTitle, status, createdAt, participantCount, proposedDates: data.dates
+  });
 
-  await smoke.step("SM-01: Local readiness and persisted private draft", async () => {
+  await smoke.step("SM-01: Local readiness, My polls entry and persisted private draft", async () => {
     const web = await smoke.api.get("/");
     expect(web.status(), "Local web readiness; start the stack first").toBe(200);
     const health = await smoke.call("GET", "/health");
     expect(health.response.status(), "API/DynamoDB readiness; inspect service logs").toBe(200);
     expect(health.body).toEqual({ status: "ok" });
-    await page.goto(`/?view=create&testRunId=${smoke.runId}`);
-    await page.getByLabel("Title").fill(initialTitle);
+    await dashboard(smoke, page, "active", null, () => page.goto(`/?testRunId=${smoke.runId}`));
+    await navigation(smoke, page, "Create poll from My polls", async () => {
+      await page.getByRole("link", { name: "Create poll", exact: true }).click();
+      await expect(page).toHaveURL((url) => url.searchParams.get("view") === "create" &&
+        url.searchParams.get("testRunId") === smoke.runId && !url.searchParams.has("pollId"));
+      await expect(page.getByRole("heading", { name: "New poll", exact: true })).toBeVisible();
+    });
+    await page.getByRole("textbox", { name: "Title", exact: true }).fill(initialTitle);
     await page.getByLabel("Description").fill(data.description);
     await page.getByLabel("Instructions").fill(data.instructions);
     await page.getByLabel("Location").fill(data.location);
     await page.getByLabel("Time zone").selectOption(data.timeZone);
-    await addDate(page, data.dates[0]);
-    await smoke.accepted(page, "owner", "save initial private draft", ["POLL_CREATED"], async () => {
+    await addDate(page, data.dates[0]!);
+    const creation = await smoke.accepted(page, "owner", "save initial private draft", ["POLL_CREATED"], async () => {
       const created = page.waitForResponse((response) => new URL(response.url()).pathname === "/api/organiser/polls" && response.request().method() === "POST");
       await page.getByRole("button", { name: "Save draft", exact: true }).click();
       const response = await created;
       expect(response.status()).toBe(201);
-      await smoke.recordCreatedPoll((await response.json()).id);
+      const poll = await response.json();
+      await smoke.recordCreatedPoll(poll.id);
       await expect(page.getByRole("status")).toContainText("Draft saved");
     });
+    // Creation metadata and POLL_CREATED share this instant; the create DTO omits createdAt.
+    createdAt = creation.occurredAt;
     expect(new URL(page.url()).searchParams.get("pollId")).toBe(smoke.pollId);
+    const draft = { ...summary("draft"), title: initialTitle, proposedDates: data.dates.slice(0, 1) };
+    await dashboard(smoke, page, "active", draft, () => myPollsLink(page).click());
+    await openFromDashboard(smoke, page, draft, "active");
     await page.reload();
-    await expect(page.getByLabel("Title")).toHaveValue(initialTitle);
+    await expect(page.getByRole("textbox", { name: "Title", exact: true })).toHaveValue(initialTitle);
     await expect(page.getByLabel("Location")).toHaveValue(data.location);
     const before = await smoke.snapshot(false);
     expect(before.owner).toMatchObject({ status: "draft", title: initialTitle, timeZone: data.timeZone });
@@ -137,7 +239,7 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
     await page.getByRole("button", { name: "Move date 4 up", exact: true }).click();
     await expect(page.getByLabel("Date 3", { exact: true })).toHaveValue("2026-11-01");
     await page.getByRole("button", { name: "Remove date 3", exact: true }).click();
-    await page.getByLabel("Title").fill(finalTitle);
+    await page.getByRole("textbox", { name: "Title", exact: true }).fill(finalTitle);
     const event = await smoke.accepted(page, "owner", "save prepared dates and edited title", ["POLL_DETAILS_UPDATED"], async () => {
       await page.getByRole("button", { name: "Save changes", exact: true }).click();
       await expect(page.getByRole("status")).toContainText("Changes saved");
@@ -145,7 +247,7 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
     expect(event.before).toMatchObject({ title: initialTitle });
     expect(event.after).toMatchObject({ title: finalTitle });
     await page.reload();
-    await expect(page.getByLabel("Title")).toHaveValue(finalTitle);
+    await expect(page.getByRole("textbox", { name: "Title", exact: true })).toHaveValue(finalTitle);
     for (const [index, choice] of data.dates.entries()) {
       await expect(page.getByLabel(`Date ${index + 1}`, { exact: true })).toHaveValue(choice.kind === "date" ? choice.localDate : choice.localDateTime.split("T")[0]!);
       await expect(page.getByLabel(`Time ${index + 1}`, { exact: true })).toHaveValue(choice.kind === "date" ? "" : "18:00");
@@ -163,6 +265,8 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
       await page.getByRole("button", { name: "Back to editing", exact: true }).click();
       await expect(page.getByText("Draft · only you can see this")).toBeVisible();
     }, false);
+    await dashboard(smoke, page, "active", summary("draft"), () => myPollsLink(page).click());
+    await openFromDashboard(smoke, page, summary("draft"), "active");
   });
 
   await smoke.step("SM-03: Publish, copy, and open the exact issued public link", async () => {
@@ -193,10 +297,15 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
       await expect(publicPage.getByRole("heading", { name: finalTitle, exact: true })).toBeVisible();
       await expect(publicPage.getByRole("button", { name: /Publish|Save draft|Edit location|Pick…|Reopen/ })).toHaveCount(0);
       await expect(publicPage.getByRole("link", { name: "History", exact: true })).toHaveCount(0);
+      await expect(publicPage.getByRole("link", { name: /My polls|Create poll/ })).toHaveCount(0);
+      await expect(publicPage).toHaveURL(smoke.publicUrl);
       await safeLocation(publicPage, "Community Hall");
       await ranking(publicPage, [0, 0, 0], [0, 1, 2]);
     }
-    await page.goto(smoke.ownerUrl);
+    await dashboard(smoke, page, "active", summary("open"), () => myPollsLink(page).click());
+    await dashboard(smoke, page, "draft", null, selectFilter(page, "Draft"));
+    await dashboard(smoke, page, "open", summary("open"), selectFilter(page, "Open"));
+    await openFromDashboard(smoke, page, summary("open"), "open");
     await expect(page.getByRole("button", { name: "Edit location", exact: true })).toBeVisible();
   });
 
@@ -307,13 +416,22 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
     expect(undo.undoOf).toEqual({ id: target.id, revision: target.revision });
     expect((await smoke.history()).find(({ id }) => id === target.id)).toEqual(target);
     await matrix(smoke, [first, second]);
-    await page.goto(smoke.ownerUrl);
+    await navigation(smoke, page, "return from History to management", async () => {
+      await page.getByRole("link", { name: "← Back to poll", exact: true }).click();
+      await expect(page.getByRole("region", { name: "Organiser controls" })).toBeVisible();
+    });
+    await dashboard(smoke, page, "active", summary("open", 3), () => myPollsLink(page).click());
+    await openFromDashboard(smoke, page, summary("open", 3), "active");
   });
 
   await smoke.step("SM-08: Server organiser and public capability authorization", async () => {
     const target = (await smoke.history()).find(({ action }) => action === "AVAILABILITY_CHANGED")!;
     const token = new URL(smoke.publicUrl).pathname.split("/").at(-1)!;
     await smoke.unchanged(async () => {
+      await smoke.rejected("GET", "/api/organiser/polls?filter=active&search=", 401, "UNAUTHENTICATED");
+      await smoke.rejected("GET", "/api/organiser/polls?filter=active&search=", 401, "UNAUTHENTICATED", {
+        headers: { authorization: `Bearer ${token}`, "x-public-link-token": token }
+      });
       await smoke.rejected("GET", smoke.management, 401, "UNAUTHENTICATED");
       await smoke.rejected("GET", `${smoke.management}/history`, 401, "UNAUTHENTICATED");
       await smoke.rejected("POST", `${smoke.management}/history/${target.id}/undo`, 401, "UNAUTHENTICATED", {
@@ -369,6 +487,10 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
     expect(cleared.selectedDateId).toBe(frozen.selectedDateId);
     expect(cleared.ranking).toEqual(frozen.ranking);
     expect(cleared.participants).toEqual(frozen.participants);
+    await dashboard(smoke, page, "active", null, () => myPollsLink(page).click());
+    await dashboard(smoke, page, "open", null, selectFilter(page, "Open"));
+    await dashboard(smoke, page, "closed", summary("closed", 3), selectFilter(page, "Closed"));
+    await openFromDashboard(smoke, page, summary("closed", 3), "closed");
   });
 
   await smoke.step("SM-10: Cancel/confirm reopening, edit again and close on C", async () => {
@@ -384,6 +506,10 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
     expect(await smoke.publicPoll()).toMatchObject({ status: "open", selectedDateId: ids[0], provisional: true });
     await expect(page.getByRole("region", { name: "Provisional selection" })).toContainText("Saturday 10 October 2026");
     await expect(first.getByRole("button", { name: "+ Add a row", exact: true })).toBeVisible();
+    await dashboard(smoke, page, "closed", null, () => myPollsLink(page).click());
+    await dashboard(smoke, page, "active", summary("open", 3), selectFilter(page, "Active"));
+    await dashboard(smoke, page, "open", summary("open", 3), selectFilter(page, "Open"));
+    await openFromDashboard(smoke, page, summary("open", 3), "open");
     await toggle(smoke, first, "public-1", "Alice", 2);
     for (const publicPage of [first, second]) await ranking(publicPage, [2, 3, 2], [1, 0, 2]);
     await smoke.accepted(page, "owner", "close again on C", ["POLL_CLOSED"], async () => {
@@ -401,6 +527,10 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
       await expect(publicPage.getByRole("button", { name: /: (Yes|No)$|Add a row/ })).toHaveCount(0);
     }
     expect((await smoke.history()).filter(({ action }) => ["POLL_CLOSED", "POLL_REOPENED"].includes(action)).map(({ action }) => action)).toEqual(["POLL_CLOSED", "POLL_REOPENED", "POLL_CLOSED"]);
+    await dashboard(smoke, page, "open", null, () => myPollsLink(page).click());
+    await dashboard(smoke, page, "active", null, selectFilter(page, "Active"));
+    await dashboard(smoke, page, "closed", summary("closed", 3), selectFilter(page, "Closed"));
+    await openFromDashboard(smoke, page, summary("closed", 3), "closed");
   });
 
   await smoke.step("SM-11: Test-only revocation hook rejects old-link reads and writes", async () => {
