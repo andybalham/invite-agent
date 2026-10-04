@@ -37,6 +37,8 @@ test("desktop table and mobile cards expose the same five fields and lifecycle n
     await expect(harness.page.locator(visible).getByText("4 Oct 2026", { exact: true })).toHaveCount(2);
     await expect(harness.page.locator(`${visible} .summary-status--draft`)).toHaveText("Draft");
     await expect(harness.page.locator(`${visible} .summary-status--open`)).toHaveText("Open");
+    await expect(harness.page.locator(`${visible} .summary-status--draft`)).toHaveCSS("background-color", "rgb(255, 242, 239)");
+    await expect(harness.page.locator(`${visible} .summary-status--open`)).toHaveCSS("background-color", "rgb(32, 30, 29)");
     await draft.focus();
     await expect(draft).toBeFocused();
     await draft.press("Enter");
@@ -62,6 +64,8 @@ test("saved date order, calendar days, time, zone and repeated-hour offsets surv
     await harness.page.getByRole("button", { name: "Closed", exact: true }).click();
     const closed = harness.page.locator(".my-polls-mobile article");
     await expect(closed.locator(".summary-status--closed")).toHaveText("Closed");
+    await expect(closed.locator(".summary-status--closed")).toHaveCSS("background-color", "rgb(236, 48, 19)");
+    await expect(closed.getByRole("link", { name: summaryTitles.closed })).toHaveAttribute("href", /pollId=closed-1&view=manage/);
     await expect(closed.locator(".my-polls-dates li")).toHaveText("Wed, 12 Aug 2026");
     await expect(closed.getByText("1 participant", { exact: true })).toBeVisible();
     await expect(closed.getByText("2 Aug 2026", { exact: true })).toBeVisible();
@@ -99,10 +103,27 @@ test("empty and failed list responses retain their distinct accessible messages"
   const emptyHarness = await components.mount(t, { fixture: createSummaryFixture({ replies: [emptyPage] }),
     viewport: { width: 390, height: 844 } });
   await emptyHarness.goto("/?testRunId=olivia");
-  await expect(emptyHarness.page.getByRole("status")).toHaveText("No polls to show.");
+  await expect(emptyHarness.page.getByRole("status")).toHaveText(/no.*active.*polls/i);
 
   const failedHarness = await components.mount(t, { fixture: createSummaryFixture({ replies: [failedPage] }),
     viewport: { width: 390, height: 844 } });
   await failedHarness.goto("/?testRunId=olivia");
-  await expect(failedHarness.page.getByRole("alert")).toContainText("Controlled failure");
+  await expect(failedHarness.page.getByRole("alert")).toHaveText(/could.*load.*polls/i);
+  await expect(failedHarness.page.getByRole("button", { name: "Try again" })).toBeVisible();
+});
+
+test("loads a complete owned-list page without silently truncating the summaries", async (t) => {
+  const item = (id, title) => ({ id, title, status: "draft", createdAt: "2026-10-04T08:00:00.000Z", timeZone: "Europe/London", proposedDates: [], participantCount: 0 });
+  const fixture = createSummaryFixture({ replies: [
+    { status: 200, body: { items: [item("page-1", "First page poll")], nextCursor: "next-page" } },
+    { status: 200, body: { items: [item("page-2", "Second page poll")] } }
+  ] });
+  const harness = await components.mount(t, { fixture, viewport: { width: 390, height: 844 } });
+  await harness.goto("/?testRunId=olivia");
+  await expect(harness.page.getByRole("link", { name: "First page poll", exact: true })).toBeVisible();
+  await expect(harness.page.getByRole("button", { name: "Load more polls", exact: true })).toBeVisible();
+  await harness.page.getByRole("button", { name: "Load more polls", exact: true }).click();
+  await expect(harness.page.getByRole("link", { name: "Second page poll", exact: true })).toBeVisible();
+  await expect(harness.page.getByRole("button", { name: "Load more polls", exact: true })).not.toBeVisible();
+  assert.equal(new URL(harness.listRequests()[1].url).searchParams.get("cursor"), "next-page");
 });

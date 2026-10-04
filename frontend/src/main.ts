@@ -99,7 +99,10 @@ app.innerHTML = `
     </div>
     <p class="my-polls-status" role="status" aria-live="polite"></p>
     <p class="my-polls-error error" role="alert" hidden></p>
+    <button class="btn btn-secondary my-polls-retry" type="button" hidden>Try again</button>
     <div class="my-polls-list" aria-label="Owned polls"></div>
+    <button class="btn btn-secondary my-polls-more" type="button" hidden>Load more polls</button>
+    <button class="btn btn-secondary my-polls-clear" type="button" hidden>Clear search</button>
   </main>
   <section class="editor" hidden aria-labelledby="draft-heading">
       <a class="btn btn-ghost my-polls-return" href="#">← My polls</a>
@@ -417,12 +420,20 @@ const myPollsScreen = requireElement<HTMLElement>(".my-polls");
 const myPollsList = requireElement<HTMLElement>(".my-polls-list");
 const myPollsStatus = requireElement<HTMLElement>(".my-polls-status");
 const myPollsError = requireElement<HTMLElement>(".my-polls-error");
+const myPollsRetry = requireElement<HTMLButtonElement>(".my-polls-retry");
+const myPollsMore = requireElement<HTMLButtonElement>(".my-polls-more");
+const myPollsClear = requireElement<HTMLButtonElement>(".my-polls-clear");
 requireElement<HTMLAnchorElement>(".create-poll").href = createPollDestination(testRunId);
 requireElement<HTMLAnchorElement>(".wordmark").href = myPollsDestination(testRunId);
 for (const link of document.querySelectorAll<HTMLAnchorElement>(".my-polls-return")) {
   link.href = myPollsDestination(testRunId, pollReturnContext(url.searchParams));
 }
 let ownedListRequest = 0;
+let ownedListLoading = false;
+let ownedListCursor: string | undefined;
+let ownedListCount = 0;
+let ownedListIdentity = "";
+let ownedListQuery = "";
 let proposedDates: ProposedDate[] = [];
 let publicToken: string | undefined;
 let displayedPublicPoll: PublicPollDetails | undefined;
@@ -646,7 +657,7 @@ function summaryDateLabel(choice: ProposedDate, timeZone: string): string {
     weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC"
   }).format(new Date(Date.UTC(year, month - 1, day)));
   return choice.kind === "date" ? calendarDate
-    : `${calendarDate}, ${time} · ${timeZone} · UTC${choice.utcOffset}`;
+    : `${calendarDate}, ${time} · ${timeZone}${choice.utcOffset ? ` · UTC${choice.utcOffset}` : ""}`;
 }
 
 function createdDateLabel(createdAt: string, timeZone: string): string {
@@ -662,10 +673,10 @@ function summaryStatusBadge(status: "draft" | "open" | "closed"): HTMLElement {
   return badge;
 }
 
-function renderPollSummary(poll: OwnedPollListResponse["items"][number], context: ReturnType<typeof myPollsContext>, table: HTMLTableSectionElement, cards: HTMLElement): void {
+function renderPollSummary(poll: OwnedPollListResponse["items"][number], context: ReturnType<typeof myPollsContext>, runId: string, table: HTMLTableSectionElement, cards: HTMLElement): void {
   const summary = {
     title: poll.title,
-    destination: ownedPollDestination(poll, testRunId, context),
+    destination: ownedPollDestination(poll, runId, context),
     created: createdDateLabel(poll.createdAt, poll.timeZone),
     dates: poll.proposedDates.map((choice) => summaryDateLabel(choice, poll.timeZone)),
     participants: `${poll.participantCount} ${poll.participantCount === 1 ? "participant" : "participants"}`
@@ -1391,56 +1402,125 @@ async function loadDraft(id: string): Promise<void> {
   }
 }
 
-async function loadMyPolls(): Promise<void> {
+function currentOwnedList(): { identity: string; runId: string; context: ReturnType<typeof myPollsContext>; query: string } {
+  const params = new URL(window.location.href).searchParams;
+  const context = myPollsContext(params);
+  const runId = params.get("testRunId") ?? "browser";
+  return {
+    identity: `local-organiser-${runId.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`,
+    runId,
+    context,
+    query: JSON.stringify([context.filter, context.search])
+  };
+}
+
+async function loadMyPolls(append = false): Promise<void> {
+  if (append && (ownedListLoading || !ownedListCursor)) return;
+  const { identity, runId, context, query } = currentOwnedList();
+  const cursor = append ? ownedListCursor : undefined;
+  if (append && (identity !== ownedListIdentity || query !== ownedListQuery)) {
+    void loadMyPolls();
+    return;
+  }
   const generation = ++ownedListRequest;
-  const context = myPollsContext(url.searchParams);
-  myPollsList.replaceChildren();
+  ownedListLoading = true;
+  if (!append) {
+    requireElement<HTMLAnchorElement>(".create-poll").href = createPollDestination(runId);
+    requireElement<HTMLAnchorElement>(".wordmark").href = myPollsDestination(runId);
+    ownedListIdentity = identity;
+    ownedListQuery = query;
+    ownedListCursor = undefined;
+    ownedListCount = 0;
+    myPollsList.replaceChildren();
+  }
   myPollsError.hidden = true;
-  myPollsStatus.textContent = "Loading your polls…";
+  myPollsRetry.hidden = true;
+  myPollsClear.hidden = true;
+  myPollsMore.hidden = true;
+  myPollsStatus.textContent = append ? "Loading more polls…" : "Loading your polls…";
   for (const button of document.querySelectorAll<HTMLButtonElement>(".my-polls-filters button")) {
     button.setAttribute("aria-pressed", String(button.dataset.filter === context.filter));
   }
+  const current = () => {
+    const latest = currentOwnedList();
+    return generation === ownedListRequest && latest.identity === identity && latest.query === query;
+  };
   try {
-    const params = new URLSearchParams({ filter: context.filter, search: context.search, pageSize: "25" });
-    const response = await request(`/api/organiser/polls?${params}`);
-    if (generation !== ownedListRequest) return;
+    const params = new URLSearchParams({ filter: context.filter, search: context.search, pageSize: "25", ...(cursor ? { cursor } : {}) });
+    const response = await request(`/api/organiser/polls?${params}`, { headers: { "x-local-organiser-id": identity } });
+    if (!current()) return;
     if (!response.ok) {
+      // Consume the body before publishing any error state: query and identity
+      // can change while an error response is being decoded.
+      try { await response.json(); } catch { /* The status is sufficient. */ }
+      if (!current()) return;
+      if (response.status === 401) {
+        ownedListCursor = undefined;
+        ownedListCount = 0;
+        myPollsList.replaceChildren();
+        myPollsError.textContent = "Sign in to view your polls.";
+      } else {
+        myPollsError.textContent = append ? "We couldn't load more polls." : "We couldn't load your polls.";
+        myPollsRetry.hidden = false;
+      }
       myPollsStatus.textContent = "";
-      myPollsError.textContent = response.status === 401 ? "Sign in to view your polls." : await readError(response);
       myPollsError.hidden = false;
       return;
     }
     const page = (await response.json()) as OwnedPollListResponse;
-    if (generation !== ownedListRequest) return;
-    const desktop = document.createElement("div");
-    desktop.className = "my-polls-desktop";
-    const table = document.createElement("table");
-    table.className = "table";
-    table.setAttribute("aria-label", "Poll summaries");
-    table.innerHTML = "<thead><tr><th scope=\"col\">Title</th><th scope=\"col\">Status</th><th scope=\"col\">Created</th><th scope=\"col\">Proposed dates</th><th scope=\"col\">Participants</th></tr></thead>";
-    const body = document.createElement("tbody");
-    table.append(body);
-    desktop.append(table);
-    const mobile = document.createElement("div");
-    mobile.className = "my-polls-mobile";
-    myPollsList.append(desktop, mobile);
-    for (const poll of page.items) renderPollSummary(poll, context, body, mobile);
-    myPollsStatus.textContent = page.items.length || page.nextCursor ? "" : "No polls to show.";
+    if (!current()) return;
+    let body = myPollsList.querySelector<HTMLTableSectionElement>(".my-polls-desktop tbody");
+    let mobile = myPollsList.querySelector<HTMLElement>(".my-polls-mobile");
+    if (page.items.length && (!body || !mobile)) {
+      const desktop = document.createElement("div");
+      desktop.className = "my-polls-desktop";
+      const table = document.createElement("table");
+      table.className = "table";
+      table.setAttribute("aria-label", "Poll summaries");
+      table.innerHTML = "<thead><tr><th scope=\"col\">Title</th><th scope=\"col\">Status</th><th scope=\"col\">Created</th><th scope=\"col\">Proposed dates</th><th scope=\"col\">Participants</th></tr></thead>";
+      body = document.createElement("tbody");
+      table.append(body);
+      desktop.append(table);
+      mobile = document.createElement("div");
+      mobile.className = "my-polls-mobile";
+      myPollsList.append(desktop, mobile);
+    }
+    if (body && mobile) for (const poll of page.items) renderPollSummary(poll, context, runId, body, mobile);
+    ownedListCount += page.items.length;
+    ownedListCursor = page.nextCursor;
+    myPollsMore.hidden = !ownedListCursor;
+    myPollsStatus.textContent = page.items.length === 0 && page.nextCursor ? "More polls may match."
+      : ownedListCount === 0 ? context.search.trim() ? "No polls match your search." : `No ${context.filter} polls yet.` : "";
+    myPollsClear.hidden = !(ownedListCount === 0 && !ownedListCursor && context.search.trim());
   } catch {
-    if (generation !== ownedListRequest) return;
+    if (!current()) return;
     myPollsStatus.textContent = "";
-    myPollsError.textContent = "Could not load your polls. Try again.";
+    myPollsError.textContent = append ? "We couldn't load more polls." : "We couldn't load your polls.";
     myPollsError.hidden = false;
+    myPollsRetry.hidden = false;
+  } finally {
+    if (generation === ownedListRequest) ownedListLoading = false;
   }
 }
 
 requireElement<HTMLElement>(".my-polls-filters").addEventListener("click", (event) => {
   const filter = (event.target as Element).closest<HTMLButtonElement>("button[data-filter]")?.dataset.filter;
   if (!filter) return;
-  url.searchParams.set("filter", filter);
-  window.history.replaceState({}, "", url);
+  const target = new URL(window.location.href);
+  target.searchParams.set("filter", filter);
+  window.history.replaceState({}, "", target);
   void loadMyPolls();
 });
+
+myPollsMore.addEventListener("click", () => void loadMyPolls(true));
+myPollsRetry.addEventListener("click", () => void loadMyPolls(Boolean(ownedListCursor)));
+myPollsClear.addEventListener("click", () => {
+  const target = new URL(window.location.href);
+  target.searchParams.delete("search");
+  window.history.replaceState({}, "", target);
+  void loadMyPolls();
+});
+window.addEventListener("popstate", () => { if (!myPollsScreen.hidden) void loadMyPolls(); });
 
 locationField.addEventListener("input", () => { updatePreview(); updatePublicationReadiness(); });
 requireElement<HTMLButtonElement>(".edit-location").addEventListener("click", () => {

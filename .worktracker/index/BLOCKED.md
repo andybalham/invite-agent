@@ -28,7 +28,6 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-115 · Verify real dashboard summaries and title navigation on desktop and mobile](../entities/T-115-verify-real-dashboard-summaries-and-title-navigation-on-desktop-and-mobile.md) — blocked · waiting on T-114
 - [T-116 · Specify filter search and paginated result state with frontend unit tests](../entities/T-116-specify-filter-search-and-paginated-result-state-with-frontend-unit-tests.md) — blocked · waiting on T-115
 - [T-117 · Implement lifecycle filters and title-search controls against the owned-list API](../entities/T-117-implement-lifecycle-filters-and-title-search-controls-against-the-owned-list-api.md) — blocked · waiting on T-116
 - [T-118 · Verify filtering search and creation-date order across browser viewports](../entities/T-118-verify-filtering-search-and-creation-date-order-across-browser-viewports.md) — blocked · waiting on T-117
