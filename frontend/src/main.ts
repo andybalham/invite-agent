@@ -92,21 +92,27 @@ app.innerHTML = `
       <div><p class="kicker">ORGANISER</p><h1 id="my-polls-heading">My polls</h1></div>
       <a class="btn btn-primary create-poll" href="#">Create poll</a>
     </div>
-    <div class="field">
+    <div class="field my-polls-search">
       <label for="my-polls-search">Search poll titles</label>
-      <input class="input" id="my-polls-search" type="search" />
-      <button class="btn btn-secondary my-polls-clear" type="button" hidden>Clear search</button>
+      <div class="my-polls-search__controls">
+        <input class="input" id="my-polls-search" type="search" aria-controls="my-polls-results" />
+        <button class="btn btn-secondary my-polls-clear" type="button" aria-controls="my-polls-results" hidden>Clear search</button>
+      </div>
     </div>
-    <div class="my-polls-filters" role="group" aria-label="Poll lifecycle">
-      <button class="btn btn-secondary" type="button" data-filter="active" aria-pressed="true">Active</button>
-      <button class="btn btn-secondary" type="button" data-filter="draft" aria-pressed="false">Draft</button>
-      <button class="btn btn-secondary" type="button" data-filter="open" aria-pressed="false">Open</button>
-      <button class="btn btn-secondary" type="button" data-filter="closed" aria-pressed="false">Closed</button>
+    <div class="my-polls-filters" role="group" aria-labelledby="my-polls-lifecycle-label">
+      <span id="my-polls-lifecycle-label" class="my-polls-filters__label">Poll lifecycle</span>
+      <div class="my-polls-filters__controls">
+        <button class="btn btn-secondary" type="button" data-filter="active" aria-pressed="true" aria-controls="my-polls-results" aria-describedby="my-polls-active-help">Active</button>
+        <button class="btn btn-secondary" type="button" data-filter="draft" aria-pressed="false" aria-controls="my-polls-results">Draft</button>
+        <button class="btn btn-secondary" type="button" data-filter="open" aria-pressed="false" aria-controls="my-polls-results">Open</button>
+        <button class="btn btn-secondary" type="button" data-filter="closed" aria-pressed="false" aria-controls="my-polls-results">Closed</button>
+      </div>
+      <p id="my-polls-active-help" class="my-polls-filters__help">Active includes draft and open polls.</p>
     </div>
     <p class="my-polls-status" role="status" aria-live="polite"></p>
     <p class="my-polls-error error" role="alert" hidden></p>
     <button class="btn btn-secondary my-polls-retry" type="button" hidden>Try again</button>
-    <div class="my-polls-list" aria-label="Owned polls"></div>
+    <div class="my-polls-list" id="my-polls-results" role="region" aria-label="Owned polls" aria-busy="false"></div>
     <button class="btn btn-secondary my-polls-more" type="button" hidden>Load more polls</button>
   </main>
   <section class="editor" hidden aria-labelledby="draft-heading">
@@ -1431,6 +1437,7 @@ async function loadMyPolls(append = false): Promise<void> {
   }
   const generation = ++ownedListRequest;
   ownedListLoading = true;
+  myPollsList.setAttribute("aria-busy", "true");
   if (!append) {
     requireElement<HTMLAnchorElement>(".create-poll").href = createPollDestination(runId);
     requireElement<HTMLAnchorElement>(".wordmark").href = myPollsDestination(runId);
@@ -1512,33 +1519,39 @@ async function loadMyPolls(append = false): Promise<void> {
     myPollsError.hidden = false;
     myPollsRetry.hidden = false;
   } finally {
-    if (generation === ownedListRequest) ownedListLoading = false;
+    if (generation === ownedListRequest) {
+      ownedListLoading = false;
+      myPollsList.setAttribute("aria-busy", "false");
+    }
   }
+}
+
+function changeMyPollsQuery(change: Partial<ReturnType<typeof myPollsContext>>): void {
+  const context = { ...currentOwnedList().context, ...change };
+  const target = new URL(window.location.href);
+  target.searchParams.set("filter", context.filter);
+  if (context.search) target.searchParams.set("search", context.search);
+  else target.searchParams.delete("search");
+  window.history.replaceState({}, "", target);
+  // Every query change replaces accumulated pages, including pending responses.
+  void loadMyPolls();
 }
 
 requireElement<HTMLElement>(".my-polls-filters").addEventListener("click", (event) => {
   const filter = (event.target as Element).closest<HTMLButtonElement>("button[data-filter]")?.dataset.filter;
-  if (!filter) return;
-  const target = new URL(window.location.href);
-  target.searchParams.set("filter", filter);
-  window.history.replaceState({}, "", target);
-  void loadMyPolls();
+  if (filter === "active" || filter === "draft" || filter === "open" || filter === "closed") {
+    changeMyPollsQuery({ filter });
+  }
 });
 
 myPollsMore.addEventListener("click", () => void loadMyPolls(true));
 myPollsRetry.addEventListener("click", () => void loadMyPolls(Boolean(ownedListCursor)));
 myPollsSearch.addEventListener("input", () => {
-  const target = new URL(window.location.href);
-  if (myPollsSearch.value) target.searchParams.set("search", myPollsSearch.value);
-  else target.searchParams.delete("search");
-  window.history.replaceState({}, "", target);
-  void loadMyPolls();
+  changeMyPollsQuery({ search: myPollsSearch.value });
 });
 myPollsClear.addEventListener("click", () => {
-  const target = new URL(window.location.href);
-  target.searchParams.delete("search");
-  window.history.replaceState({}, "", target);
-  void loadMyPolls();
+  changeMyPollsQuery({ search: "" });
+  myPollsSearch.focus();
 });
 window.addEventListener("popstate", () => { if (!myPollsScreen.hidden) void loadMyPolls(); });
 

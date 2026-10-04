@@ -62,6 +62,57 @@ test("Active defaults to Draft/Open; each lifecycle selection sends only list qu
 });
 
 for (const [layout, viewport] of [["desktop", { width: 1024, height: 800 }], ["mobile", { width: 390, height: 844 }]]) {
+  test(`labelled controls precede the list and support keyboard no-match recovery on ${layout}`, async (t) => {
+    const fixture = createSummaryFixture({ replies: [
+      reply([item("draft", "Unfinished autumn plan", "draft"), item("open", "Repeated-hour supper")]),
+      emptyPage, emptyPage, reply([item("closed", "Completed summer picnic", "closed")])
+    ] });
+    const harness = await mountReadOnly(t, { fixture, viewport: layout === "mobile" ? { width: 320, height: 844 } : viewport });
+    const { page } = harness;
+    await harness.goto("/?testRunId=olivia");
+    await titles(page, ["Unfinished autumn plan", "Repeated-hour supper"]);
+    const search = searchField(page);
+    const lifecycle = page.getByRole("group", { name: "Poll lifecycle" });
+    await expect(lifecycle.getByText("Poll lifecycle", { exact: true })).toBeVisible();
+    await expect(search).toBeVisible();
+    const list = page.locator(layout === "desktop" ? ".my-polls-desktop" : ".my-polls-mobile");
+    const listBox = await list.boundingBox();
+    for (const control of [search, lifecycle]) {
+      const box = await control.boundingBox();
+      assert.ok(box.y + box.height <= listBox.y, "query controls appear above the visible list");
+    }
+    for (const control of [search, ...["Active", "Draft", "Open", "Closed"].map((name) => filterButton(page, name))]) {
+      const box = await control.boundingBox();
+      assert.ok(box.height >= 44, "query controls provide usable touch targets");
+      await expect(control).toHaveAttribute("aria-controls", "my-polls-results");
+    }
+    const active = filterButton(page, "Active");
+    await active.hover();
+    const colors = await active.evaluate((button) => {
+      const style = getComputedStyle(button);
+      return [style.backgroundColor, style.color];
+    });
+    assert.deepEqual(colors, ["rgb(32, 30, 29)", "rgb(243, 242, 242)"], "hover preserves selected contrast");
+    await search.fill("Missing title");
+    await expect(page.getByRole("status")).toHaveText("No polls match your search.");
+    const closed = filterButton(page, "Closed");
+    await closed.focus();
+    await closed.press("Space");
+    await expect(closed).toHaveAttribute("aria-pressed", "true");
+    await expect(search).toHaveValue("Missing title");
+    await expect(page.getByRole("status")).toHaveText("No polls match your search.");
+    const clear = page.getByRole("button", { name: "Clear search", exact: true });
+    await clear.focus();
+    await clear.press("Enter");
+    await titles(page, ["Completed summer picnic"]);
+    await expect(search).toBeFocused();
+    await expect(search).toHaveValue("");
+    await expect(clear).not.toBeVisible();
+    assert.deepEqual(harness.listRequests().map(query), [parameters(), parameters("active", "Missing title"),
+      parameters("closed", "Missing title"), parameters("closed")]);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  });
+
   test(`search remains editable across every filter and clears within the selected filter on ${layout}`, async (t) => {
     const raw = "  Autumn & supper + friends  ";
     const fixture = createSummaryFixture({ replies: [emptyPage,
@@ -92,6 +143,60 @@ for (const [layout, viewport] of [["desktop", { width: 1024, height: 800 }], ["m
     assert.equal(new URL(page.url()).searchParams.has("search"), false);
     assert.deepEqual(harness.listRequests().map(query), [parameters(),
       ...["active", "draft", "open", "closed"].map((filter) => parameters(filter, raw)), parameters("closed")]);
+  });
+}
+
+for (const [label, stale] of [["success", reply([item("stale", "Private stale Olivia")], "stale-cursor")], ["error", failedPage]]) {
+  test(`identity A/B/A changes isolate pages from an earlier decoded ${label}`, async (t) => {
+    const waiting = heldResponse(reply([item("sam", "Sam title")], "sam-cursor"));
+    const fixture = createSummaryFixture({ replies: [stale, waiting,
+      reply([item("fresh", "Current Olivia")], "fresh-cursor"), reply([item("last", "Olivia next page")])] });
+    const harness = await components.mount(t, { fixture });
+    const { page } = harness;
+    await page.addInitScript(() => {
+      const originalFetch = window.fetch.bind(window);
+      let listCount = 0;
+      window.fetch = async (...args) => {
+        const response = await originalFetch(...args);
+        const target = new URL(typeof args[0] === "string" ? args[0] : args[0].url, location.href);
+        if (target.pathname === "/api/organiser/polls" && ++listCount === 1) {
+          const originalJson = response.json.bind(response);
+          response.json = () => new Promise((resolve, reject) => {
+            window.releaseIdentityBody = () => originalJson().then(resolve, reject);
+          });
+        }
+        return response;
+      };
+    });
+    await harness.goto("/?testRunId=olivia&filter=open&search=title");
+    await page.waitForFunction(() => typeof window.releaseIdentityBody === "function");
+    await expect(page.locator(".my-polls-list")).toHaveAttribute("aria-busy", "true");
+    await page.evaluate(() => {
+      history.pushState({}, "", "/?testRunId=sam&filter=open&search=title");
+      dispatchEvent(new PopStateEvent("popstate"));
+    });
+    await expect.poll(() => harness.listRequests().length).toBe(2);
+    await titles(page, []);
+    await expect(page.getByRole("button", { name: "Load more polls" })).not.toBeVisible();
+    waiting.release();
+    await titles(page, ["Sam title"]);
+    await page.evaluate(() => {
+      history.pushState({}, "", "/?testRunId=olivia&filter=open&search=title");
+      dispatchEvent(new PopStateEvent("popstate"));
+    });
+    await titles(page, ["Current Olivia"]);
+    await page.evaluate(() => window.releaseIdentityBody());
+    await titles(page, ["Current Olivia"]);
+    await expect(page.locator(".my-polls-list")).toHaveAttribute("aria-busy", "false");
+    await expect(page.getByRole("alert")).not.toBeVisible();
+    await page.getByRole("button", { name: "Load more polls" }).click();
+    await titles(page, ["Current Olivia", "Olivia next page"]);
+    assert.deepEqual(harness.listRequests().map(({ identity }) => identity), [
+      "local-organiser-olivia", "local-organiser-sam", "local-organiser-olivia", "local-organiser-olivia"
+    ]);
+    assert.deepEqual(harness.listRequests().map(query), [parameters("open", "title"), parameters("open", "title"),
+      parameters("open", "title"), parameters("open", "title", "fresh-cursor")]);
+    assert.ok(fixture.requests.every(({ method }) => method === "GET"));
   });
 }
 

@@ -55,8 +55,14 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .my-polls { display: grid; gap: var(--space-6); }
 .my-polls[hidden], .share-title[hidden] { display: none; }
 .my-polls .create-poll { text-decoration: none; white-space: nowrap; }
-.my-polls-filters { display: flex; flex-wrap: wrap; gap: var(--space-2); border-top: 2px solid var(--color-text); padding-top: var(--space-4); }
-.my-polls-filters [aria-pressed="true"] { background: var(--color-text); color: var(--color-bg); }
+.my-polls-search__controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.my-polls-search__controls .input { flex: 1 1 200px; min-width: 0; }
+.my-polls .my-polls-search .input, .my-polls .my-polls-clear, .my-polls-filters .btn { min-height: 44px; }
+.my-polls-filters { display: grid; gap: var(--space-2); border-top: 2px solid var(--color-text); padding-top: var(--space-4); }
+.my-polls-filters__label { font-size: 13px; font-weight: 800; }
+.my-polls-filters__controls { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.my-polls-filters__help { margin: 0; color: var(--color-neutral-700); font-size: 13px; }
+.my-polls-filters .btn[aria-pressed="true"], .my-polls-filters .btn[aria-pressed="true"]:hover { background: var(--color-text); color: var(--color-bg); }
 .my-polls-list { min-width: 0; }
 .my-polls-desktop { min-width: 0; }
 .my-polls-desktop .table { table-layout: fixed; }
