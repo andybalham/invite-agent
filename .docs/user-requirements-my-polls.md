@@ -4,7 +4,7 @@
 
 My polls is the normal organiser landing page for Invite-a-Gent. It allows an organiser to find their existing polls, resume work, and create another poll without needing to retain individual poll links.
 
-This document records the agreed dashboard design. It supplements the existing [user requirements](user-requirements.md) and describes intended behaviour, rather than functionality already implemented.
+This document records the resolved dashboard requirements and implemented local behaviour as of 4 October 2026. It supplements the existing [user requirements](user-requirements.md). The owned-list API, responsive browser dashboard, discovery controls and lifecycle return flows are implemented through S-043–S-048. [Acceptance scenarios and MP-US-01–11 evidence](acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries) distinguish pure-rule, component, real local API/database and browser coverage. This is not a production release or deployed sign-in claim.
 
 ## 2. Ownership and Access
 
@@ -13,7 +13,7 @@ This document records the agreed dashboard design. It supplements the existing [
 - Opening a poll from the dashboard uses the existing organiser access checks.
 - Public participant links continue to open the relevant poll directly.
 
-The current local application uses a simulated organiser identity. The dashboard must respect that identity in local development; production ownership follows the authenticated organiser identity described in the existing application requirements.
+The current local application uses a simulated organiser identity and enforces ownership on the server. Missing/invalid identity returns an authentication failure; opening another organiser's poll is forbidden. Production ownership must follow the authenticated organiser identity described in the existing application requirements. Lambda adapter factories consume the verified authorizer subject, but Cognito sign-in and production authorizer configuration have not been delivered or verified.
 
 ## 3. Page Layout
 
@@ -93,4 +93,16 @@ The agreed initial scope includes the owned-poll list, desktop table and mobile 
 
 Shared ownership, ownership transfer, site-wide administration, archiving, duplication, reminders, and bulk actions are not part of the agreed initial scope.
 
-The decisions above resolve the initial presentation, search, pagination, and state-copy details. The API and storage handoff is defined in [architecture](architecture.md). S-043 implements reusable contracts/helpers; S-044 implements the owned-list endpoint and persistence. The browser dashboard remains subsequent work.
+The decisions above resolve the initial presentation, search, pagination, and state-copy details. The API, storage and production handoff are defined in [architecture](architecture.md#56-my-polls-contract-and-storage-implementation-s-043--s-044), with current browser routing and freshness in [section 5.7](architecture.md#57-my-polls-browser-routes-freshness-and-identity-boundaries). S-043 supplies contracts/helpers; S-044 supplies the owned-list endpoint and persistence; S-045–S-048 supply navigation, summaries, discovery and lifecycle refresh.
+
+## 8. Implemented Freshness and Delivery Limits
+
+The desktop table and mobile cards show the same five summary fields. All proposed dates are rendered in saved order in a wrapping list, including timed offsets and years; incomplete drafts show the resolved zero-date/count copy. Filters and labelled title search request the server's owned list, initially 25 summaries. Load more appends server-ordered entries and deduplicates poll IDs. Keyboard operation and narrow layouts have component and local browser coverage.
+
+Successful create/save/publish/close/reopen responses invalidate loaded dashboard pages and pending responses. Returning through My polls requests page one with caching disabled. Existing-poll returns retain filter/search; new creation returns use Active and blank search. This refresh also obtains current participant counts after public collaboration. A dashboard restored through a persisted `pageshow` refetches page one; component tests dispatch restoration events explicitly and do not prove native browser back/forward-cache restoration.
+
+Query or URL identity changes discard loaded pages and prevent earlier success/error bodies from replacing current results. An authentication failure clears summaries and continuation. The local browser derives its simulated identity from `testRunId` (default `browser`); there is no sign-in or identity-switch control. The dashboard does not subscribe to focus, visibility or timer refresh. Summary freshness is established on reads and returns, not by live push updates. Creation-index propagation is eventually consistent, so a just-created poll may need another fresh read in an AWS environment; pagination is a live list, not a snapshot.
+
+Existing final-date confirmation, one-revision atomic close, confirmed reopen with provisional selection, closed participant/date restrictions, location maintenance and server authorization remain unchanged. Management opened by poll ID shows responses read-only; participant editing uses the existing public capability. Summaries and owned detail reads do not disclose a share capability. Publication retains its issued share link in the current management document; recovering that link from a later dashboard visit is not delivered.
+
+Production stacks, deployable handler composition, Cognito browser sign-in, index/IAM synthesis, deployed migration and live AWS smoke verification remain pending. The [S-044 verification record](s044-verification.md) is historical backend evidence, not a statement that later browser work is still outstanding. Smoke integration, README operational guidance and the final acceptance/regression run are separate T-125–T-127 deliverables; this documentation update does not claim them complete.

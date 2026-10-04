@@ -6,6 +6,8 @@ Invite Agent is a serverless web application that helps an organiser propose dat
 
 This document defines the target architecture for the MVP described in [`user-requirements.md`](./user-requirements.md). It covers the production AWS topology, application boundaries, data model, API design, consistency model, authentication and public-link security, auditing and undo, deployment, and operations.
 
+Implementation status as of 4 October 2026: the local TypeScript/Vite browser, shared services and DynamoDB repository implement My polls through S-043–S-048. Sections 5.6–5.7 describe that code and its delivery boundaries, with [MP-US-01–11 test traceability](acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries). The current frontend uses DOM rendering in `frontend/src/main.ts`, not React. `infra/src/index.ts` exports only the region; the AWS topology, Cognito/PKCE sign-in, CDK stacks, ZIP release pipeline, production safeguards and deployed smoke tests below are target requirements, not evidence of provisioned resources or executed deployment. The production hostname is a target, not a verified live service.
+
 The design assumes:
 
 - AWS region `eu-west-2` for regional resources.
@@ -14,7 +16,7 @@ The design assumes:
 - AWS CDK v2 for infrastructure as code.
 - Node.js 22 for AWS Lambda functions.
 - Lambda functions are deployed as ZIP archives, not container images.
-- Production is available at `https://invite-agent.10printiamcool.com`.
+- The target production URL is `https://invite-agent.10printiamcool.com`.
 - CloudFront provides a single public origin and routes `/api/*` to API Gateway.
 - The Route 53 public hosted zone for `10printiamcool.com` already exists.
 - The complete application can run locally for browser-based end-to-end testing without deployed AWS resources or AWS credentials.
@@ -118,18 +120,18 @@ The S3 bucket blocks all public access. CloudFront uses Origin Access Control to
 
 ### 5.1 Frontend
 
-The React SPA contains two route groups:
+The target SPA contains two route groups; the current local frontend implements them with TypeScript DOM rendering and Vite:
 
 - **Organiser application** - sign-in, poll list, poll editor, preview, publishing, history, undo, link regeneration, date selection, closing, and reopening.
 - **Public poll application** - poll details, collaborative availability table, totals, ranked dates, and the final selected date.
 
-The SPA uses Cognito Authorization Code flow with PKCE for organiser sign-in. It keeps access tokens in memory where practical and does not persist credentials or public-link secrets in telemetry.
+The production SPA must use Cognito Authorization Code flow with PKCE for organiser sign-in, keep access tokens in memory where practical, and exclude credentials/public-link secrets from telemetry. This flow is not implemented in the current browser, which sends a guarded local simulated identity.
 
 Every editable representation includes the current poll `version` so clients can recognise newer server state. Mutation requests do not submit an expected version. Each successful mutation returns the latest representation and version; the client replaces its displayed state with that server response. When a newer state is subsequently received, it replaces the older display without a conflict warning.
 
 ### 5.2 API Gateway
 
-API Gateway provides an HTTP API under `/api/v1`.
+The target API Gateway HTTP API must preserve the implemented `/api/organiser/*` and `/api/public/*` paths. The earlier `/api/v1` proposal is not the current route contract. API Gateway itself is not yet provisioned.
 
 - Organiser routes use a Cognito JWT authorizer.
 - Public routes do not use Cognito; the backend validates the public-link token.
@@ -215,13 +217,13 @@ Point-in-time recovery is enabled on both tables. Audit records have no TTL. App
 
 ### 5.6 My polls contract and storage implementation (S-043 / S-044)
 
-S-043 established schemas and pure functions. S-044 implements the owned-list endpoint, bounded repository query, transactional counts, local startup migration and Lambda adapter factories. Production infrastructure and browser dashboard delivery remain separate stories; no AWS resources were deployed.
+S-043 established schemas and pure functions. S-044 implements the owned-list endpoint, bounded repository query, transactional counts, local startup migration and Lambda adapter factories. S-045–S-048 implement the browser dashboard, navigation, discovery and lifecycle refresh described in section 5.7. Production infrastructure remains a separate handoff; no AWS deployment is established by this work.
 
 #### Inspected implementation
 
 `packages/contracts/src/index.ts` uses strict, dependency-free `Schema.safeParse` validators. `backend/src/data/types.ts` stores `organiserId`, immutable `createdAt`, embedded `ProposedDate[]`, and lifecycle `draft | open | closed`. `DynamoPollRepository` writes metadata at `POLL#<id>/METADATA` with `GSI1PK = ORGANISER#<organiserId>` and `GSI1SK = POLL#<createdAt>#<id>` on create, details/location edits, publication, close/reopen, participant changes and undo. Dates are embedded, with date-only `localDate` or resolved timed `localDateTime/utcInstant/timeZone/utcOffset`. The actual public token lookup is a `PUBLIC_TOKEN#<hash>/CAPABILITY` point read, rather than the target-model PublicTokenIndex above.
 
-`initializeTables` already creates `GSI1` with an ALL projection. The owned-list repository now reads that index and strongly rechecks metadata. Participant rows and name locks are separate items; new metadata stores participantCount in both the document and a transaction guard attribute. The current `listParticipants` is a single database page and must not be reused as a complete dashboard count. `infra/src/index.ts` currently exports only the region: production stacks/authorizers/IAM are still a handoff, not provisioned code. The implemented organiser collection path is `/api/organiser/polls`; the broader `/api/v1` target design is not a reason to introduce a separate dashboard route family.
+`initializeTables` already creates `GSI1` with an ALL projection. The owned-list repository reads that index and strongly rechecks metadata. Participant rows and name locks are separate items; new metadata stores participantCount in both the document and a transaction guard attribute. The current `listParticipants` is a single database page and must not be reused as a complete dashboard count. `infra/src/index.ts` currently exports only the region: production stacks/authorizers/IAM are still a handoff, not provisioned code. The implemented organiser collection path is `/api/organiser/polls`; it shares the existing route family rather than introducing `/api/v1` for the dashboard.
 
 #### Authenticated request and response
 
@@ -249,12 +251,47 @@ Local initialization and future production CDK must agree on GSI1 string keys/pr
 #### S-044 operational and production handoff
 
 - Local `initializeTables()` now runs `prepareLocalDashboard` before serving requests. This maintenance-only scan traverses all table pages, counts legacy participant rows across every query page, excludes name locks, and conditionally backfills missing counts. It validates the ACTIVE GSI1 schema/projection, existing creation keys and safe summaries. It does not repair corrupt dates/keys or silently fabricate counts; startup fails with an actionable error. New writes maintain counts transactionally. No scan, participant hydration, audit read or migration runs in the list-request path.
-- `GET /api/organiser/polls` forwards the raw query string through both adapters so duplicates can be rejected. GET bodies are rejected. Responses, including authorization/validation failures, use `Cache-Control: private, no-store`; there is no server list cache. Later UI stories must discard loaded pages on identity changes and ignore responses from earlier identities/queries.
+- `GET /api/organiser/polls` forwards the raw query string through both adapters so duplicates can be rejected. GET bodies are rejected. Responses, including authorization/validation failures, use `Cache-Control: private, no-store`; there is no server list cache. The implemented browser discards loaded pages on URL identity/query changes and ignores responses from earlier identities/queries, including delayed decoded bodies; see section 5.7.
 - Local cursors use an optional `DASHBOARD_CURSOR_SECRET` of at least 32 bytes; without it, the composition generates a random per-process secret, so restarting invalidates continuations. Production must provide a stable environment-specific secret via protected configuration, separate from public-token hashing. Secret rotation invalidates old cursors. Never log query strings or cursor payloads.
 - `backend/src/functions/http-api.ts` supplies dependency-injected HTTP API v2 organiser/public factories. Only the organiser factory consumes `requestContext.authorizer.jwt.claims.sub`; headers, request bodies and unsigned JWT payloads cannot establish production identity. The public factory rejects organiser paths even if claims are present. Local and Lambda adapters call the same service. These are adapter tests with verified-context stubs, not Cognito authentication tests.
 - E-008 must compose DynamoDB/repository/PollService with production table names and cursor secret, package the handler entry points, and map GET /api/organiser/polls to the organiser Lambda behind the Cognito JWT authorizer (issuer/audience configured). Preserve rawQueryString and disable gateway/CDN caching for organiser responses. Restrict invocation so untrusted callers cannot supply fabricated authorizer context through direct Lambda invocation.
 - The list path requires only `dynamodb:Query` on the application table's `/index/GSI1` ARN and `dynamodb:GetItem` on application metadata. Existing mutation routes retain their separately required permissions. Grant no dashboard Scan or audit access. A separate pre-enable migration job needs scoped participant Query, metadata GetItem/UpdateItem, and index verification; enumeration/Scan belongs only to that maintenance role. Backfill and verify all records/index readiness before enabling the route, especially if an older deployed OwnerIndex must be replaced. Production stacks, IAM synthesis, authorizer verification and live AWS execution remain unverified because infra/src/index.ts is still a placeholder.
 
+
+### 5.7 My polls browser routes, freshness and identity boundaries
+
+`frontend/src/main.ts` renders the dashboard with helpers from `frontend/src/organiser-navigation.ts`; `frontend/src/styles.css` switches from desktop table to mobile cards at 640px. Both layouts render safe text, the same title/status/creation/proposed-date/count fields, and every saved date choice. Creation uses the poll time zone and en-GB date/year; date-only choices keep their calendar day, while timed choices retain saved local time, zone and UTC offset. [Resolved requirements](user-requirements-my-polls.md) define matching, state copy and exclusions.
+
+| Browser URL | Implemented destination and boundary |
+|---|---|
+| `/` or `/?testRunId=<run>` | My polls; default Active and blank search. Optional `filter`/`search` restore dashboard context. |
+| `/?view=create&testRunId=<run>` | Existing creation editor; saving stays in the editor, and My polls returns to default Active/blank search. |
+| `/?pollId=<id>&view=editor\|manage&testRunId=<run>&returnFilter=…&returnSearch=…` | Protected detail GET decides editor versus management from current lifecycle, regardless of the title link's hint. Return parameters are navigation context, not ownership authority. |
+| `/?pollId=<id>&view=history&testRunId=<run>` | Existing protected history/undo view with a management return. |
+| `/p/<token>` | Direct public capability view takes precedence over conflicting organiser parameters; no organiser-list redirect. |
+| `/p/<token>?organiser=1&testRunId=<run>` | Existing capability view with organiser intent; server ownership checks must succeed before organiser controls appear. The capability grants no organiser-list permission. |
+
+The local browser maps `testRunId` to `local-organiser-<sanitized run>` (default `browser`) and sends `x-local-organiser-id`. Empty `testRunId=` produces an invalid identity and the authentication-required state. This is local simulation, not a production credential or authentication UI. Dashboard reads derive the current URL identity on each request; same-document URL changes replace results, but there is no general sign-in/sign-out subscription or identity-switch control. A future Cognito integration must clear pages/continuations and invalidate pending responses on authentication changes as well as supply verified credentials.
+
+#### Pagination and response isolation
+
+The browser sends bodyless GETs with `pageSize=25` and `cache: "no-store"`. It renders server order, appends on Load more, and deduplicates poll IDs; it does not re-sort by recent mutation time. An empty page with continuation retains Load more and the resolved sparse-page copy. Search/filter changes replace accumulated pages and start without a cursor; filter changes retain raw search. The URL stores filter/search, not result pages or credentials. There is no total, numbered paging, cross-session preference store or list snapshot.
+
+Each load records a request generation, current query and identity. Checks after the HTTP response and body decode prevent an earlier success/error from replacing current results, including A/B/A races. Changing identity/query clears entries and continuation. A 401 clears displayed summaries and paging state; initial failures show an empty error state, whereas append failures retain entries and retry the same continuation. Expired or restart-invalidated cursors remain generic append failures; automatic stale-cursor or stale-link recovery is not delivered.
+
+#### Summary freshness and lifecycle returns
+
+Successful create/save/publish/close/reopen responses invalidate dashboard pages and pending loads. Ordinary My polls links load a fresh document and page one; returning from an existing poll retains its filter/search, while creation returns to Active with blank search. Publication stays on management with the newly issued share link. Returning after participant collaboration reads current counts rather than patching summaries from detail responses. New creation, edits and reopen never change original `createdAt` or the GSI creation key.
+
+Persisted `pageshow` refetches a restored dashboard from page one. `popstate` only reads again when the URL identity/query changed, avoiding a duplicate restoration read. Component tests dispatch these browser events because request interception disables caching; native browser back/forward-cache restoration has not been established by an acceptance run. Focus, visibility and timers do not refresh My polls (the existing public poll refresh is separate). GSI propagation remains eventual even though candidates are rechecked with strong metadata reads; refresh does not guarantee immediate discovery of a newly indexed poll, and consecutive pages can see different live membership.
+
+The dashboard supplies navigation, not inline lifecycle mutations. Existing final-date confirmation, atomic one-revision close/frozen ranking, confirmed reopen/provisional selection, closed response/date restrictions, location maintenance and audit/undo authorization continue to apply. Protected owned detail GET returns Draft details or the existing Open/Closed view after ownership checks, without capability token/hash/public URL. Management opened by poll ID therefore displays participant responses read-only; collaborative writes continue through the existing public capability. The publication document retains its issued share link, but later dashboard navigation does not recover that capability.
+
+#### Verification and remaining delivery
+
+[MP-US-01–11 traceability](acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries) links foundation/contract/domain, DynamoDB/API authorization, intercepted frontend component and real desktop/mobile browser tests. Discovery/lifecycle reads compare complete paginated application/audit snapshots; lifecycle tests retain revision and rejection assertions. The [S-044 verification record](s044-verification.md) records an earlier backend stage and does not supersede subsequent browser coverage. This documentation change does not itself rerun or certify those functional suites.
+
+Production enablement still requires the section 5.6 index/count migration, stable cursor secret, handler composition/package, protected route/authorizer mapping, raw-query forwarding, IAM and cache configuration, plus actual browser Cognito integration and deployed smoke verification. No production data migration, synthesized IAM, AWS deployment or Cognito sign-in is claimed. T-125–T-127 cover separate README guidance, isolated smoke integration and final regression evidence; existing smoke-table ownership and cleanup rules continue to apply.
 
 ## 6. Domain Model and State Transitions
 
@@ -536,7 +573,7 @@ CDK Lambda assets are content-addressed, so changed code produces a new Lambda v
 
 ## 16. Local Development and Testing
 
-The complete application must run on a developer workstation and in CI without deploying AWS resources. Local E2E tests exercise the browser, HTTP API, domain services, and DynamoDB persistence together. AWS-specific edge services such as CloudFront, API Gateway, Cognito, Route 53, and ACM are replaced by thin local adapters; their production configuration remains covered by infrastructure and deployed smoke tests.
+The complete application must run on a developer workstation and in CI without deploying AWS resources. Local E2E tests exercise the browser, HTTP API, domain services, and DynamoDB persistence together. AWS-specific edge services such as CloudFront, API Gateway, Cognito, Route 53, and ACM are replaced by local adapters. Infrastructure and deployed smoke coverage of those production services remains required and is not delivered by local tests.
 
 ### 16.1 Local topology
 
@@ -606,7 +643,7 @@ The adapter is guarded in several ways:
 - Production CDK configuration has no switch that can enable authentication bypass.
 - Browser tests cover both an authenticated local organiser and rejected unauthenticated requests.
 
-The local adapter verifies application authorisation behavior, but not Cognito itself. JWT-authorizer configuration is covered by CDK tests, with a small deployed smoke test validating the real Cognito sign-in path before a production release.
+The local adapter verifies application authorisation behavior, but not Cognito itself. HTTP API v2 factory tests supply authorizer-context stubs; they do not validate JWT signatures or an actual gateway. CDK authorizer assertions and a deployed smoke test of real Cognito sign-in are still required before production release. The current browser has no Cognito sign-in implementation.
 
 ### 16.5 Configuration
 
@@ -674,7 +711,7 @@ The CI job uses the same orchestration and configuration model in headless mode:
 6. Always collect browser traces, screenshots, API logs, and service logs on failure.
 7. Stop processes and containers in an unconditional cleanup step.
 
-The local suite is the primary functional release gate. It is complemented, not replaced, by deployed smoke tests for CloudFront routing, private S3 access, API Gateway integration, Lambda ZIP execution, Cognito, DNS, and TLS.
+The local suite is the primary functional release gate. A production release additionally requires deployed smoke tests for CloudFront routing, private S3 access, API Gateway integration, Lambda ZIP execution, Cognito, DNS and TLS; their execution is not established by this local implementation.
 
 ### 16.8 Testing layers
 

@@ -4,6 +4,8 @@
 
 This document translates `user-requirements.md` into observable acceptance scenarios. The scenarios are intended to be automated with Playwright and run locally. They describe required behaviour, not page structure, selector names, routes, or implementation details.
 
+The [My polls acceptance supplement](acceptance-use-cases-my-polls.md) adds MP-US-01–11 for the organiser landing page, owned summaries, discovery and lifecycle navigation, with [links to executable coverage](acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries) and resolved [dashboard requirements](user-requirements-my-polls.md). Existing US-01–US-38 remain authoritative for lifecycle, collaboration, audit and authorization. Dashboard reads add no mutations or audit revisions; local identity and stubbed Lambda claims do not verify deployed Cognito sign-in.
+
 ## Test conventions
 
 - **Organiser** means an authenticated user who owns the poll.
@@ -762,12 +764,17 @@ Scenario Outline: Unauthorized location change is rejected
 | Reopening | US-28–US-30 |
 | Authentication and public links | US-06, US-07, US-23, US-31–US-34, US-38 |
 | Errors, concurrency, and server enforcement | US-03, US-04, US-10, US-11, US-13, US-14, US-16, US-22, US-26, US-31–US-34, US-37, US-38 |
+| My polls landing, ownership and responsive summaries | [MP-US-01–MP-US-03](acceptance-use-cases-my-polls.md#use-case-mp-uc-01-enter-my-polls-and-review-owned-polls); US-31, US-32 |
+| My polls creation ordering, lifecycle filters and title search | [MP-US-04–MP-US-06](acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries) |
+| My polls creation, title navigation and publication returns | [MP-US-07–MP-US-09](acceptance-use-cases-my-polls.md#use-case-mp-uc-03-create-and-manage-polls-from-the-dashboard); US-01–US-07 |
+| My polls refreshed close/reopen membership and public isolation | [MP-US-10–MP-US-11](acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries); US-24–US-34, US-36, US-38 |
 
 ## Resolved implementation decisions
 
 - Participant-name and location limits, normalisation, safe Markdown, public-token format, time-zone edge cases, error-code semantics, undo overwrite behaviour, and close/reopen audit granularity are fixed by the test conventions above and the corresponding requirements and architecture sections.
 - When a confirmed undo targets a value changed by a later revision, it restores the selected revision's documented previous value. If that would create structurally invalid state, the request is rejected atomically.
 - Implementation-specific tests may choose accessible labels and selectors, but must not weaken these behavioural rules.
+- My polls uses the supplement's resolved title normalization, date/count presentation, sparse continuation and state-copy decisions. Its read-only discovery assertions preserve complete application/audit snapshots; lifecycle journey assertions retain atomic close, separate confirmed reopen, provisional selection, closed-write rejection and owner-only location maintenance. Existing-poll returns retain search/filter and refresh from page one; new creation returns to default Active. Browser restoration is currently tested with dispatched component events, not a native cache acceptance run.
 
 ## Playwright implementation notes
 

@@ -4,6 +4,8 @@
 
 The application helps a group choose a suitable date for a get-together. An authenticated organiser proposes several dates and shares a public link. Participants use the link to record their availability, review everyone's responses, and update the shared table. The organiser then selects a final date and closes the poll.
 
+The normal organiser landing page is My polls. The [My polls requirements supplement](user-requirements-my-polls.md) records resolved dashboard decisions and implemented local behaviour; [MP-US-01–11 acceptance and test traceability](acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries) covers discovery, navigation and lifecycle returns. These supplement the rules below without changing poll lifecycle, public collaboration, audit or server authorization. Local simulated identity and Lambda adapter tests do not establish deployed Cognito sign-in.
+
 ## 2. User Roles
 
 ### Organiser
@@ -11,6 +13,7 @@ The application helps a group choose a suitable date for a get-together. An auth
 An organiser is an authenticated user who can:
 
 - Create and manage polls.
+- Find their owned polls in My polls, using creation ordering, lifecycle filters and title search, and open the existing editor or management view.
 - Add, edit, reorder, or remove proposed dates.
 - Set and edit optional location details throughout the poll lifecycle, including after the poll has closed.
 - Publish a poll and obtain a shareable link.
@@ -208,6 +211,8 @@ The organiser can subsequently choose the same date or a different date and clos
 
 Regenerating the link must invalidate the previous link without deleting the poll or its history.
 
+My polls must return only the current organiser's summaries, with ownership enforced by the server for both listing and opening a poll. Active groups Draft and Open; it is not another lifecycle state. Public links open their poll directly and grant no access to organiser discovery. Dashboard reads must not mutate polls or add audit revisions. Existing-poll returns refresh page one while retaining filter/search; returning after new creation uses Active with blank search. Detailed presentation, normalization, paging and freshness limits are defined in the [My polls supplement](user-requirements-my-polls.md).
+
 ## 12. Validation and Error Handling
 
 The application must:
@@ -268,3 +273,5 @@ The MVP is complete when:
 23. The organiser can close the poll again with the same or a different date.
 24. The organiser can revoke and regenerate the public link.
 25. All organiser-only operations are protected by server-side authorisation.
+26. My polls is the organiser landing page and provides an owned list with equivalent desktop/mobile summaries, newest-created ordering, Active/Draft/Open/Closed filters, title search, Load more and distinct loading/error/empty states.
+27. My polls supports creation, title navigation and refreshed lifecycle returns while preserving original creation dates, existing confirmations and direct participant access, as specified by [MP-US-01–11](acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries).
