@@ -198,6 +198,6 @@ _Generated. Do not edit by hand._
   - [x] [T-123 · Verify complete dashboard lifecycle journeys and public-link isolation in browsers](../entities/T-123-verify-complete-dashboard-lifecycle-journeys-and-public-link-isolation-in-browsers.md) — done
 - [ ] **S-049 · Document My polls operation and verify acceptance and regression coverage** — todo
   - [x] [T-124 · Update dashboard requirements acceptance traceability and architecture documentation](../entities/T-124-update-dashboard-requirements-acceptance-traceability-and-architecture-documentation.md) — done
-  - [ ] [T-125 · Document My polls user navigation and local operational guidance in README](../entities/T-125-document-my-polls-user-navigation-and-local-operational-guidance-in-readme.md) — todo
+  - [x] [T-125 · Document My polls user navigation and local operational guidance in README](../entities/T-125-document-my-polls-user-navigation-and-local-operational-guidance-in-readme.md) — done
   - [ ] [T-126 · Integrate My polls into the isolated local smoke journey and its contract](../entities/T-126-integrate-my-polls-into-the-isolated-local-smoke-journey-and-its-contract.md) — todo
-  - [ ] [T-127 · Run dashboard acceptance and regression checks and record implementation evidence](../entities/T-127-run-dashboard-acceptance-and-regression-checks-and-record-implementation-evidence.md) — blocked · waiting on T-125, T-126
+  - [ ] [T-127 · Run dashboard acceptance and regression checks and record implementation evidence](../entities/T-127-run-dashboard-acceptance-and-regression-checks-and-record-implementation-evidence.md) — blocked · waiting on T-126

@@ -14,6 +14,61 @@ The owning organiser can set, edit, or clear location in every state. In Draft, 
 
 On a Closed poll, the owning organiser can choose **Reopen poll…** and confirm **Reopen poll**. Cancelling leaves the decision, responses, and history unchanged. Confirmation restores participant editing and live ranking, and the previous final date is shown as **Provisional** until the organiser picks the same or another date and confirms closure again. Each reopen and close creates a distinct audit revision; earlier decisions and responses remain in History. The public link continues to work throughout.
 
+## My polls: finding and managing your polls
+
+Normal organiser entry at `/` opens **My polls**. Choose **Create poll** to open the draft editor, save the details and proposed dates, and use **My polls** to return to the list. Creation works from every filter; returning after creating a poll starts with Active and blank search.
+
+| Filter | Polls shown |
+| --- | --- |
+| **Active** (default) | Draft and Open polls; Active is a grouping, not a lifecycle state |
+| **Draft** | Private, unpublished polls |
+| **Open** | Published polls accepting participant changes |
+| **Closed** | Polls with a confirmed final date and read-only responses |
+
+**Search poll titles** searches within the selected filter. It matches a contiguous title substring after Unicode NFC normalization, trimming, collapsing Unicode whitespace, and locale-independent lowercasing. Blank or whitespace-only search shows all titles in that filter. Accents and punctuation remain significant; descriptions, dates and participant names are not searched. Search accepts up to 200 Unicode code points. Changing filters keeps the search text; **Clear search** keeps the filter and returns focus to the search field. Filter and search controls remain usable during loading, errors and no-match results.
+
+Desktop shows a table; mobile shows cards with the same information:
+
+| Summary | Meaning |
+| --- | --- |
+| **Title** | Opens the owned poll: Draft goes to its editor; Open or Closed goes to organiser management |
+| **Status** | The saved Draft, Open or Closed lifecycle state |
+| **Created** | Original creation date in the poll's time zone, in en-GB style with a year, such as `4 Oct 2026` |
+| **Proposed dates** | Every saved choice, in saved order, with a year; date-only choices stay calendar dates, while timed choices include local time, time zone and saved UTC offset to distinguish repeated DST times. An incomplete draft shows **No dates proposed** |
+| **Participants** | Current participant rows, including rows with no answers; an empty poll shows **0 participants** |
+
+The list is newest-created first, using the original UTC creation instant rather than the displayed date. Equal instants use descending poll ID. Edits, publication, closure, participant changes and reopening never change the creation time or move a poll ahead of a newer one.
+
+The editor and organiser management views provide a **My polls** return link. Returning from an existing poll retains that tab's filter/search and reads page one again, including current participant counts; previously loaded pages are discarded. A fresh entry defaults to Active with blank search. Successful save, publish, close and reopen actions invalidate old dashboard results. Restored browser documents also refetch on persisted `pageshow`; native browser-cache restoration has component-event coverage, not a verified native-cache acceptance run. The dashboard has no timer, focus or visibility refresh: return or reload for a fresh list.
+
+Publication keeps you on organiser management with the newly issued share link. On returning, the poll appears in Active/Open and leaves Draft. Confirming final-date selection closes the poll, freezes ranking and participant/date editing, and moves it from Active/Open to Closed. Confirmed reopening returns it to Active/Open and removes it from Closed, restores collaboration/live ranking and marks the previous selection Provisional. Cancellation changes nothing. Responses, earlier decisions, history and the public link survive close/reopen; the original creation order still applies. These actions use the existing management confirmations, not inline dashboard buttons.
+
+### Ownership and public links
+
+Locally, the browser sends the guarded `x-local-organiser-id` header. Normal entry uses `local-organiser-browser`; a `testRunId` URL parameter derives a separate simulated identity for fixtures. Use the same identity to find or reopen your local polls. The server checks ownership for both listing and individual poll access. Missing/invalid identity is unauthenticated; another organiser's detail route is forbidden. This simulation has no sign-in or identity-switch control and is enabled only for local/test adapters.
+
+Production ownership must come from the verified Cognito JWT subject. Lambda adapter contracts enforce that boundary, but production browser sign-in, authorizers, infrastructure and live AWS verification remain pending. The local header is not production authentication.
+
+Participants open `/p/<token>` directly without an account or dashboard detour, even if conflicting organiser query parameters are present. A public capability grants access to that poll, never the organiser list or management actions. Management reached by poll ID shows responses read-only; participant editing uses the public link. Dashboard summaries and owned detail responses contain no share capability. Publication retains the issued link in the current management document; recovering it on a later dashboard visit is not implemented.
+
+### Pages, loading and errors
+
+My polls requests up to 25 matching summaries initially; the API allows page sizes of 1–50. **Load more** appends results in creation order and deduplicates poll IDs. There are no numbered pages or total-result count. Search/filter changes restart page one. The server examines at most 200 candidates per request, so a page may contain fewer matches, or none, while still having a continuation. Exhaust that continuation before treating the query as empty. Pages form a live list, not a snapshot; concurrent changes can affect membership. The creation index is eventually consistent, so a newly created poll may require another fresh read.
+
+| State | What you see and can do |
+| --- | --- |
+| First page / another page loading | **Loading your polls…** / **Loading more polls…**; duplicate loads are prevented |
+| Empty page with continuation | **More polls may match.**; continue with **Load more** |
+| Exhausted list, blank search | **No active polls yet.**, **No draft polls yet.**, **No open polls yet.**, or **No closed polls yet.**; Create poll remains available |
+| Exhausted list, nonblank search | **No polls match your search.**; use **Clear search** or another filter |
+| First-page failure | **We couldn't load your polls.**; **Try again** retains filter/search |
+| Later-page failure | **We couldn't load more polls.**; loaded entries remain and **Try again** retries the same continuation |
+| Authentication failure | **Sign in to view your polls.**; summaries and continuation are cleared. Locally, check the simulated identity/configuration |
+
+Failures are distinct from empty successful lists, and responses from earlier queries or identities cannot replace current results. Continuations expire after 15 minutes; API restart without a stable cursor secret also invalidates them. These failures use the generic later-page error: Try again does not refresh an invalid cursor. Reload My polls or change the query to start page one. Dashboard reads never change poll versions or append audit events.
+
+See the [My polls requirements](.docs/user-requirements-my-polls.md), [MP-US-01–11 acceptance and evidence](.docs/acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries), and [storage/authentication architecture](.docs/architecture.md#56-my-polls-contract-and-storage-implementation-s-043--s-044) with [browser routes and freshness](.docs/architecture.md#57-my-polls-browser-routes-freshness-and-identity-boundaries).
+
 ## Architecture
 
 The production target is a serverless AWS application in `eu-west-2`:
@@ -37,8 +92,10 @@ Local organiser authentication uses a test-only header (`x-local-organiser-id`).
 Full design documentation lives in [`.docs/`](.docs/):
 
 - [`user-requirements.md`](.docs/user-requirements.md): functional requirements.
+- [`user-requirements-my-polls.md`](.docs/user-requirements-my-polls.md): organiser dashboard requirements and resolved decisions.
 - [`architecture.md`](.docs/architecture.md): production and local architecture, data model, API, security, testing.
 - [`acceptance-use-cases.md`](.docs/acceptance-use-cases.md): acceptance stories US-01 to US-38, written for Playwright.
+- [`acceptance-use-cases-my-polls.md`](.docs/acceptance-use-cases-my-polls.md): MP-US-01–11 dashboard scenarios, test traceability and delivery limits.
 - [`design/`](.docs/design/): UI hand-off notes and HTML prototypes.
 
 ## Repository layout
@@ -106,13 +163,24 @@ The startup script also accepts `-DynamoDbPort`, `-ApiPort`, and `-WebPort` when
 
 To create the local tables without starting the whole stack, run `npm run tables:init`.
 
+### Dashboard schema and existing local data
+
+With DynamoDB Local reachable, both API startup and `npm run tables:init` create missing application/audit tables and run dashboard maintenance before requests are served. Default names are `invite-agent-local-app` and `invite-agent-local-audit`. Set `APP_TABLE_NAME`/`AUDIT_TABLE_NAME` consistently for custom tables. Standalone initialization honors `DYNAMODB_ENDPOINT`, otherwise `DYNAMODB_PORT`; startup derives its loopback endpoint from `DYNAMODB_PORT`.
+
+The application table uses string `PK`/`SK` keys and an ACTIVE `GSI1` with string `GSI1PK`/`GSI1SK` keys and ALL projection. Poll metadata uses `GSI1PK = ORGANISER#<organiserId>` and `GSI1SK = POLL#<createdAt>#<pollId>`. The audit table uses string `PK`/`SK` keys. No separate dashboard table or seed command is needed.
+
+Maintenance scans all application-table pages, backfills missing legacy participant counts across all participant-query pages (excluding name locks), and validates creation keys and summary fields. Conditional writes retry contention and preserve poll versions, original creation times and audit history. Existing creation keys are checked, not rewritten. List requests use the owner index and metadata reads; they do not run scans or migrations. Initialization creates missing tables but does not add/repair an index on an existing table, reset data, or fix corrupt summaries. See [dashboard troubleshooting](#troubleshooting-local-development) for failed validation or migration.
+
+Local composition generates a random per-process cursor signing secret by default. An optional `DASHBOARD_CURSOR_SECRET` of at least 32 bytes allows otherwise-valid continuations to survive API restarts; keep it private and outside committed files. Rotation invalidates old continuations. Production needs protected, stable configuration and the separate index/count/authentication handoff in [architecture section 5.6](.docs/architecture.md#56-my-polls-contract-and-storage-implementation-s-043--s-044); these local commands are not a production migration procedure.
+
 ## Running the tests
 
-The tests have three layers, and each needs a different amount of infrastructure.
+The test layers need different amounts of infrastructure.
 
 | Layer | Location | Runner | Needs |
 | --- | --- | --- | --- |
 | Foundation (unit, contract, boundary) | `test/foundation/*.test.mjs` | `node --test` | Nothing |
+| Frontend component | `test/component/*.test.mjs` | `node --test` + intercepted browser requests | Playwright Chromium or an installed browser channel; no services |
 | Integration | `test/integration/*.test.mjs` | `node --test` | DynamoDB Local |
 | End-to-end | `test/e2e/*.spec.ts` | Playwright (Chromium) | Full dev stack |
 
@@ -150,6 +218,14 @@ npm run build
 node --test test/foundation/ranking.test.mjs
 node --test --test-name-pattern="undo" test/foundation/*.test.mjs
 ```
+
+### Frontend component tests
+
+```sh
+npm run test:component
+```
+
+This builds and runs all component suites, including My polls summaries, loading/errors, search, navigation and lifecycle returns. The harness builds the real frontend in memory and intercepts requests, so it needs no API, DynamoDB or dev stack. Install Chromium as above; on Windows it falls back to installed Edge when Chromium is absent. `COMPONENT_BROWSER_CHANNEL` selects an installed Playwright browser channel. Component tests run separately from `npm test`, `test:foundation` and `check`.
 
 ### Integration tests
 
@@ -200,6 +276,24 @@ npx playwright test --workers=1
 
 Playwright uses `http://127.0.0.1:${WEB_PORT:-15173}` as its base URL, so if you changed `WEB_PORT` for the stack, set the same value when you run the tests. On failure it keeps traces, screenshots and videos in `test-results/`, and it writes the HTML report to `playwright-report/`. The service logs are in `.devstack/service-logs/`.
 
+### Focused My polls verification
+
+`npm run test:discovery` above combines discovery contracts, components, real API/repository checks and desktop/mobile search/filter journeys. For navigation and lifecycle verification, use the established runners:
+
+```sh
+# No services (component files need a browser runtime):
+npm run build
+node --test test/foundation/my-polls-lifecycle.test.mjs test/component/my-polls-lifecycle.test.mjs test/component/my-polls-loading.test.mjs test/component/organiser-navigation.test.mjs
+
+# DynamoDB Local required; these fixtures delete only their own tables:
+node --test test/integration/my-polls-lifecycle.test.mjs
+
+# Full dev stack required; one Chromium worker, zero retries:
+npx playwright test test/e2e/organiser-navigation.spec.ts test/e2e/navigation-guards.spec.ts test/e2e/my-polls-search.spec.ts test/e2e/my-polls-lifecycle.spec.ts --project=chromium --workers=1 --retries=0
+```
+
+Keep the stack's `DYNAMODB_ENDPOINT`/`DYNAMODB_PORT`, `APP_TABLE_NAME`, `AUDIT_TABLE_NAME` and `WEB_PORT` consistent in the test shell. These direct commands and `test:discovery` leave service ownership with the caller. Integration fixtures own disposable table pairs; direct browser tests create fresh identities but retain polls in the configured local tables until explicit cleanup. The smoke wrapper alone supplies its per-run table teardown. Test references and known production/native-cache limits are in [My polls acceptance evidence](.docs/acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries); this guide does not claim a new regression or smoke run.
+
 ### Local smoke test
 
 After installing the prerequisites, run this from a stopped dev stack:
@@ -234,7 +328,7 @@ npm run cleanup:local -- --run-id '<run-id>' --dry-run
 npm run cleanup:local -- --run-id '<run-id>' --confirm
 ```
 
-Poll cleanup removes metadata, participants, participant-name indexes, the public-token capability, and all paginated audit events with bounded DynamoDB batch writes. Missing records are reported as already missing; an incomplete poll record reports the capability as unresolved rather than guessing a token key. Run cleanup validates the manifest and, before mutation, its per-table ownership markers. A mismatched marker, non-loopback endpoint, invalid manifest, missing table name, or conflicting mode is a hard refusal. Table teardown remains the smoke wrapper's responsibility; use the manifest's recorded evidence and cleanup status for recovery when a process stops unexpectedly.
+Poll cleanup removes metadata (including the dashboard participant count), participants, participant-name indexes, the public-token capability, and all paginated audit events with bounded DynamoDB batch writes. Deleting metadata also removes its GSI1 entry; there is no separate dashboard record to clean. Missing records are reported as already missing; an incomplete poll record reports the capability as unresolved rather than guessing a token key. Run cleanup validates the manifest and, before mutation, its per-table ownership markers. A mismatched marker, non-loopback endpoint, invalid manifest, missing table name, or conflicting mode is a hard refusal. Table teardown remains the smoke wrapper's responsibility; use the manifest's recorded evidence and cleanup status for recovery when a process stops unexpectedly.
 
 Cleanup keeps poll metadata until dependent deletes succeed, so rerunning the same confirmed command can recover from a partial failure. Missing application or audit tables are handled independently. Capability ownership must match the requested poll. Run cleanup reports each poll's result, continues with other recorded polls after a poll failure, and exits nonzero if any fail; inspect the reported error and rerun after correcting its cause. Existing tables require matching ownership markers even when the manifest says they were previously deleted.
 
@@ -262,7 +356,7 @@ Omitting authorization previews only. `--confirm` requires that exact phrase; th
 
 The CLI emits JSON lines: a preview before writes, followed by per-table successes/skips/failures when authorized. It validates schemas and rechecks creation identity before deletion. Inspection failures prevent all deletion; later failures can leave a partial reset and return exit 1. Exit 0 can include excluded tables: inspect the report. Custom names, legacy non-UUID integration names, and prefix lookalikes are excluded. All files remain, including `.dynamodb/`, smoke manifests/logs, reports, configuration, and backups. Removing `.dynamodb/` would also discard unrelated data and is not part of this command.
 
-After cleanup, supported tables are absent. Run `npm run tables:init` with the intended local configuration to recreate empty shared tables, then `npm run dev`; test fixtures create fresh tables on their next run. On failure, correct the cause, preview again, and repeat authorization. Recovery finishes deletion; restoration requires an independent backup. Reports and manifests are not backups, and this command does not update manifests or securely erase evidence. See the [full scope, exclusions, reporting and recovery contract](.docs/all-local-data-cleanup.md).
+After cleanup, supported tables are absent. Run `npm run tables:init` with the intended local configuration to recreate empty shared tables, including the dashboard's GSI1, then `npm run dev`; test fixtures create fresh tables on their next run. New polls initialize participant counts to zero. On failure, correct the cause, preview again, and repeat authorization. Recovery finishes deletion; restoration requires an independent backup. Reports and manifests are not backups, and this command does not update manifests or securely erase evidence. See the [full scope, exclusions, reporting and recovery contract](.docs/all-local-data-cleanup.md).
 
 ### Smoke configuration and evidence
 
@@ -322,14 +416,15 @@ This command runs, in order: format check, lint, type check, `npm test` (foundat
 
 The organiser list API is `GET /api/organiser/polls`, using the existing local organiser identity header. Optional query parameters are `filter=active|draft|open|closed`, `search`, `pageSize` (1–50; default 25), and opaque `cursor`. Follow `nextCursor` even after an empty page. Lists are private, read-only and ordered by immutable creation time.
 
-Normal local entry (`/`, optionally with `testRunId`) opens My polls with the current organiser's protected summaries, newest created first. Labelled Active (drafts and open polls), Draft, Open, and Closed controls and Search poll titles appear above both desktop and mobile lists; Active is the default. Search combines with the selected filter and remains editable during loading, failures and no-match results. Changing filters retains the raw search text. Clear search keeps the selected filter and returns keyboard focus to the search field. The `filter` and `search` URL parameters are sent to the owned-list API; changing either discards accumulated pages and starts again at the newest page. Responses from earlier queries or organiser identities are ignored. The dashboard requests 25 summaries at a time, and Load more follows the API cursor, including after an empty page with a continuation. Loading, exhausted, authentication, and failure states are distinct; Try again repeats the failed page. Returning to My polls starts again at the newest page. Create poll opens the existing editor at `/?view=create&testRunId=…`. Draft titles open the editor; Open/Closed titles open organiser management through the protected poll detail route. Visible My polls links return from both views. A new draft keeps its save confirmation and returns to Active with blank search when that link is selected; existing poll returns retain the originating filter/search. Publication opens management and displays the newly issued public link for sharing. Direct organiser/history URLs and unauthenticated `/p/<token>` capabilities retain their access checks and behavior.
-
-Local API startup and `tables:init` backfill missing participant counts before serving requests, preserving poll versions and audit history, and validate the creation index. A failed migration/index check prevents startup; fix the reported data/schema issue and retry. Do not bypass it by inventing zero counts. Optionally set `DASHBOARD_CURSOR_SECRET` to a secret of at least 32 bytes to retain continuations across local restarts; otherwise startup generates a temporary secret. Production wiring requirements are in [architecture section 5.6](.docs/architecture.md#56-my-polls-contract-and-storage-implementation-s-043--s-044).
+See [My polls navigation and states](#my-polls-finding-and-managing-your-polls) and [dashboard schema initialization](#dashboard-schema-and-existing-local-data) for the normal workflow. API query validation rejects unknown/duplicate parameters and malformed, expired, altered, foreign-owner or different-query cursors with 400; missing identity returns 401, non-owner detail access 403, and corrupt stored summaries 500. Do not edit or share opaque cursor values.
 
 - **A recorded stack already exists:** Run `npm run dev:stop`, then retry `npm run dev`. The stop command reports when there is no recorded stack. If startup was interrupted before cleanup, inspect `.devstack/processes.json` and the service logs before taking any manual process action.
 - **A port is already in use:** Choose another port by setting `DYNAMODB_PORT`, `API_PORT`, or `WEB_PORT` in PowerShell before startup. For browser tests, retain the same `WEB_PORT` in that shell. If DynamoDB is already listening on the selected DynamoDB port, startup treats it as an existing service and will not stop it later.
 - **Docker or DynamoDB does not start:** Confirm Docker Engine is running and `docker compose version` succeeds for your user. Check `.devstack/service-logs/` and the Compose output from `npm run dev`. Startup uses a 90-second readiness deadline for DynamoDB, the API, and Vite; Docker may report a successful container start before DynamoDB itself is ready.
 - **The API or web server times out:** Check `api.out.log`, `api.error.log`, `vite.out.log`, and `vite.error.log` in `.devstack/service-logs/`. Confirm the selected ports are free and that the API health URL (`http://127.0.0.1:<API_PORT>/health`) responds. A failed startup attempts to stop the processes it recorded; fix the underlying build, port, or service issue and retry.
+- **Dashboard initialization fails:** Inspect `api.error.log` for the first migration/schema error rather than only the readiness timeout. `Dashboard requires ACTIVE creation-ordered GSI1 with ALL projection` means the selected app table lacks the required active index/schema; `tables:init` does not upgrade existing indexes. Verify endpoint/table settings and index readiness. `Existing poll requires creation-index repair before dashboard enablement` or invalid summary data requires inspection and explicit data repair, preserving original creation times. Do not invent zero counts or bypass validation. For `Count migration contention`, stop competing writers and rerun `npm run tables:init` with the same configuration. Missing counts are backfilled; corrupt data/keys are not repaired automatically. If deliberately discarding disposable local data, use the preview/confirmation workflow in [all-local cleanup](.docs/all-local-data-cleanup.md), then initialize again; custom tables are excluded by that cleanup command.
+- **Load more repeatedly fails after an API restart or a long pause:** Restart-invalidated or expired cursors do not recover through Try again. Reload the dashboard or change its query to restart page one. A stable private local cursor secret preserves valid cursors across restarts, but not past their expiry.
+- **My polls is empty or asks for sign-in:** Check the selected lifecycle filter, title search and simulated `testRunId` identity; Closed is excluded from Active, and a different local identity owns a different list. Clear search or select another filter. If a page says More polls may match, continue loading. Check API logs/configuration for authentication or server failures; errors are not empty lists. Reload for current summaries after collaboration or index propagation. Share diagnostics with query strings, cursors, capability URLs and secrets removed.
 - **Playwright cannot reach the app:** Start the stack first; `npm run test:e2e` does not start or stop services. Confirm the browser-test shell has the same `WEB_PORT` used by the stack. If Chromium is missing, run `npx playwright install chromium` (on Linux, `npx playwright install --with-deps chromium`).
 - **A browser test fails:** Inspect the HTML report with `npx playwright show-report`, plus traces, screenshots, and videos in `test-results/`. For a less contended local run, use `npx playwright test --workers=1`.
-- **Local data looks unexpected:** DynamoDB Local stores data in `.dynamodb/`, which survives `npm run dev:stop`. The startup flow initializes tables but does not reset their contents. Do not delete `.dynamodb/` unless you deliberately intend to discard local data.
+- **Local data looks unexpected:** DynamoDB Local stores data in `.dynamodb/`, which survives `npm run dev:stop`. Startup initializes tables and prepares legacy dashboard counts but does not reset contents. Use the explicit scoped/all-local cleanup commands above after reviewing their targets; preserve `.dynamodb/`, which may also contain unrelated tables.
