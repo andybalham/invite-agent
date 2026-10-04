@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-108 · Specify organiser entry return and public route behavior with unit tests](../entities/T-108-specify-organiser-entry-return-and-public-route-behavior-with-unit-tests.md) — todo
+- [ ] [T-109 · Implement My polls entry routes create action and return links](../entities/T-109-implement-my-polls-entry-routes-create-action-and-return-links.md) — todo

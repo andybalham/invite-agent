@@ -29,7 +29,6 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-109 · Implement My polls entry routes create action and return links](../entities/T-109-implement-my-polls-entry-routes-create-action-and-return-links.md) — blocked · waiting on T-108
 - [T-110 · Add browser tests for organiser landing create return and public-link isolation](../entities/T-110-add-browser-tests-for-organiser-landing-create-return-and-public-link-isolation.md) — blocked · waiting on T-109
 - [T-111 · Verify navigation guards and existing poll-route regressions](../entities/T-111-verify-navigation-guards-and-existing-poll-route-regressions.md) — blocked · waiting on T-110
 - [T-112 · Specify equivalent desktop and mobile summaries with component tests](../entities/T-112-specify-equivalent-desktop-and-mobile-summaries-with-component-tests.md) — blocked · waiting on T-111

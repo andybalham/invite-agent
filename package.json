@@ -20,6 +20,7 @@
     "typecheck": "tsc -b --pretty false --noEmit false",
     "test": "npm run build && node scripts/check-production-boundaries.mjs && node --test test/foundation/*.test.mjs",
     "test:unit": "npm run build && node --test test/foundation/contracts.test.mjs test/foundation/backend-validation.test.mjs",
+    "test:component": "node --test test/component/*.test.mjs",
     "test:integration": "npm run build && node --test test/integration/*.test.mjs",
     "test:e2e": "playwright test",
     "test:smoke": "pwsh -NoProfile -File scripts/Run-SmokeTests.ps1",
