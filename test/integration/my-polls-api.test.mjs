@@ -7,9 +7,97 @@ import { PollService } from "../../backend/dist/application/poll-service.js";
 import { ownedPollListResponseSchema, resolveOwnedPollListQuery } from "../../packages/contracts/dist/index.js";
 import { selectOwnedPolls, toOwnedPollSummary } from "../../backend/dist/domain/my-polls.js";
 import { dashboardFixture, dashboardOwners, dashboardSnapshot } from "../support/my-polls-fixture.mjs";
+import { discoveryCases, discoveryFilters, expectedDiscovery } from "../support/my-polls-discovery-cases.mjs";
 
 const path = "/api/organiser/polls";
 const headers = { "x-local-organiser-id": dashboardOwners[0] };
+
+test("T-119 every discovery mode has explicit ordered answers and denies unauthenticated/foreign continuations", async (t) => {
+  let server;
+  const { app, polls } = await dashboardFixture(t, { beforeCleanup: [async () => {
+    if (server) await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }] });
+  server = createLocalNodeServer(app.http);
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const url = `http://127.0.0.1:${server.address().port}${path}`;
+  const before = await dashboardSnapshot(app);
+  const { createOrganiserLambdaHandler, createPublicLambdaHandler } = await import("../../backend/dist/functions/http-api.js");
+  const service = new PollService(app.repository, { baseUrl: app.config.publicBaseUrl, tokenHashKey: "discovery-test",
+    dashboardCursorSecret: app.config.dashboardCursorSecret });
+  const organiser = createOrganiserLambdaHandler({ polls: service, repository: app.repository });
+  const publicHandler = createPublicLambdaHandler({ polls: service, repository: app.repository });
+  for (const [ownerIndex, owner] of dashboardOwners.entries()) {
+    const foreignOwner = dashboardOwners[1 - ownerIndex];
+    for (const filter of Object.keys(discoveryFilters)) {
+      for (const { name, search, matches } of discoveryCases(ownerIndex ? "Olivia winter" : "Owen winter")) {
+        const label = `${owner}: ${filter}: ${name}`;
+        const expected = expectedDiscovery(polls, owner, filter, matches);
+        const resolved = resolveOwnedPollListQuery({ filter, search, pageSize: 1 }).data;
+        assert.deepEqual(selectOwnedPolls(polls, owner, resolved), expected, `${label}: pure rules`);
+        const items = [];
+        const cursors = new Set();
+        let cursor;
+        do {
+          const params = new URLSearchParams({ filter, search, pageSize: "1", ...(cursor ? { cursor } : {}) });
+          const response = await fetch(`${url}?${params}`, { headers: { "x-local-organiser-id": owner } });
+          assert.equal(response.status, 200, label);
+          assert.equal(response.headers.get("cache-control"), "private, no-store");
+          const page = await response.json();
+          assert.ok(ownedPollListResponseSchema.safeParse(page).success, label);
+          assert.ok(page.items.length <= 1, label);
+          items.push(...page.items);
+          // Authentication must still precede cursor validation on every continuation.
+          for (const deniedHeaders of [{}, { authorization: "Bearer public-token" }, { "x-local-organiser-id": "invalid" }]) {
+            const denied = await fetch(`${url}?${params}`, { headers: deniedHeaders });
+            assert.equal(denied.status, 401, label);
+            assert.equal(denied.headers.get("cache-control"), "private, no-store");
+            const body = await denied.json();
+            assert.equal(body.error.code, "UNAUTHENTICATED", label);
+            assert.equal(body.items, undefined, `${label}: no leaked summaries`);
+          }
+          const event = { rawPath: path, rawQueryString: params.toString(), headers: { "x-local-organiser-id": foreignOwner },
+            requestContext: { http: { method: "GET" }, authorizer: { jwt: { claims: { sub: owner } } } } };
+          const lambda = await organiser(event);
+          assert.equal(lambda.statusCode, 200, label);
+          assert.deepEqual(JSON.parse(lambda.body).items, page.items, `${label}: JWT identity overrides spoofed local header`);
+          assert.equal(lambda.headers["cache-control"], "private, no-store");
+          const noClaims = { ...event, requestContext: { http: { method: "GET" } } };
+          const deniedLambda = await organiser(noClaims);
+          assert.equal(deniedLambda.statusCode, 401, label);
+          assert.equal(JSON.parse(deniedLambda.body).error.code, "UNAUTHENTICATED");
+          assert.equal((await publicHandler(event)).statusCode, 404, `${label}: public adapter`);
+          if (cursor) {
+            const foreign = await fetch(`${url}?${params}`, { headers: { "x-local-organiser-id": foreignOwner } });
+            assert.equal(foreign.status, 400, `${label}: owner-bound cursor`);
+            assert.equal((await foreign.json()).error.code, "VALIDATION_ERROR");
+            const foreignLambda = await organiser({ ...event,
+              requestContext: { http: { method: "GET" }, authorizer: { jwt: { claims: { sub: foreignOwner } } } } });
+            assert.equal(foreignLambda.statusCode, 400, `${label}: JWT owner-bound cursor`);
+          }
+          cursor = page.nextCursor;
+          if (cursor) {
+            assert.ok(!cursors.has(cursor), `${label}: cursor must advance`);
+            cursors.add(cursor);
+            assert.ok(cursors.size <= polls.length, `${label}: bounded traversal`);
+          }
+        } while (cursor);
+        assert.deepEqual(items, expected.map((poll) => toOwnedPollSummary(poll, poll.participantCount)), label);
+        assert.equal(new Set(items.map(({ id }) => id)).size, items.length, `${label}: no duplicates`);
+        const params = new URLSearchParams({ filter, search, pageSize: "1" });
+        const empty = await fetch(`${url}?${params}`, { headers: { "x-local-organiser-id": "local-organiser-empty" } });
+        assert.equal(empty.status, 200, label);
+        assert.deepEqual(await empty.json(), { items: [] }, `${label}: no access to either owner's polls`);
+        params.set("ownerId", foreignOwner);
+        const spoofed = await fetch(`${url}?${params}`, { headers: { "x-local-organiser-id": owner } });
+        assert.equal(spoofed.status, 400, `${label}: claimed owner rejected`);
+        assert.equal((await spoofed.json()).error.code, "VALIDATION_ERROR");
+      }
+    }
+  }
+  // Complete persisted rows include poll versions, creation-index keys and every audit revision.
+  assert.deepEqual(await dashboardSnapshot(app), before);
+});
 
 test("HTTP list authenticates, validates raw queries, binds cursors and never mutates data (MP-US-02,11)", async (t) => {
   let server;

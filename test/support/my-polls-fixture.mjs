@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { ScanCommand } from "@aws-sdk/client-dynamodb";
 import { createLocalComposition } from "../../backend/dist/adapters/local/composition.js";
 import { createIntegrationApp, integrationClient } from "./integration-fixture.mjs";
+import { discoveryTitle } from "./my-polls-discovery-cases.mjs";
 
 export const dashboardOwners = ["local-organiser-olivia", "local-organiser-owen"];
 export const dashboardDates = [
@@ -15,7 +16,8 @@ export async function seedDashboard(app, { bulk = 0 } = {}) {
     for (let index = 0; index < 6 + bulk; index += 1) {
       const id = randomUUID();
       const poll = {
-        id, organiserId, title: index < 3 ? "Café Autumn dinner" : `${ownerIndex ? "Owen" : "Olivia"} winter ${index}`,
+        id, organiserId, title: index < 3 ? discoveryTitle : `${ownerIndex ? "Owen" : "Olivia"} winter ${index}`,
+        description: "description-only-needle", location: "location-only-needle",
         timeZone: "Europe/London", proposedDates: index === 3 ? [] : dashboardDates,
         status: ["draft", "open", "closed"][index % 3], version: 1, participantCount: 0,
         createdAt: new Date(Date.UTC(2026, 0, 1, 0, index)).toISOString(),

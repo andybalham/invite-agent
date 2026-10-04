@@ -3,6 +3,9 @@ import { DynamoDBClient, GetItemCommand, QueryCommand, type AttributeValue } fro
 import type { APIRequestContext, Page, Request, Response } from "@playwright/test";
 import type { OwnedPollFilter, OwnedPollListResponse, PublicPollResponse } from "@invite-a-gent/contracts";
 import type { PollRecord } from "../../backend/src/data/types";
+import { ownedPollListResponseSchema, resolveOwnedPollListQuery } from "@invite-a-gent/contracts";
+import { selectOwnedPolls } from "../../backend/src/domain/my-polls";
+import { discoveryCases, discoveryFilters, discoveryTitle, expectedDiscovery } from "../support/my-polls-discovery-cases.mjs";
 import { expect, test as base } from "./fixtures";
 
 type Status = "draft" | "open" | "closed";
@@ -29,7 +32,8 @@ const filterButton = (page: Page, filter: OwnedPollFilter) => page.getByRole("gr
   .getByRole("button", { name: filter[0]!.toUpperCase() + filter.slice(1), exact: true });
 const moreButton = (page: Page) => page.getByRole("button", { name: "Load more polls", exact: true });
 const headers = (runId: string) => ({ "x-local-organiser-id": `local-organiser-${runId}` });
-const newestFirst = (polls: SeededPoll[]) => [...polls].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+const newestFirst = (polls: SeededPoll[]) => [...polls].sort((a, b) => a.createdAt === b.createdAt
+  ? (a.id === b.id ? 0 : a.id > b.id ? -1 : 1) : a.createdAt > b.createdAt ? -1 : 1);
 
 async function seedPoll(request: APIRequestContext, store: Store, runId: string, title: string, status: Status): Promise<SeededPoll> {
   const created = await request.post("/api/organiser/polls", { headers: headers(runId), data: {
@@ -117,6 +121,8 @@ async function queryResponse(page: Page, runId: string, filter: OwnedPollFilter,
   expect(loaded.request().headers()["x-local-organiser-id"]).toBe(headers(runId)["x-local-organiser-id"]);
   expect(new URL(loaded.url()).searchParams.get("pageSize")).toBe("25");
   const body: OwnedPollListResponse = await loaded.json();
+  expect(ownedPollListResponseSchema.safeParse(body).success).toBe(true);
+  expect(loaded.headers()["cache-control"]).toBe("private, no-store");
   await expect(page.getByRole("region", { name: "Owned polls", exact: true })).toHaveAttribute("aria-busy", "false");
   await expect(searchField(page)).toHaveValue(search);
   for (const name of ["active", "draft", "open", "closed"] as const) {
@@ -152,6 +158,131 @@ for (const [layout, viewport] of [
 ] as const) {
   test.describe(`My polls discovery on ${layout}`, () => {
     test.use({ viewport });
+
+    test("T-119 pure rules, live API pages and keyboard controls agree for every discovery mode", async ({
+      page, context, request, testRunId, store
+    }) => {
+      // Sixty real query modes per layout, including full page traversal and both auth boundaries.
+      test.setTimeout(600_000);
+      const runId = `${testRunId}-${randomUUID()}`;
+      const own: SeededPoll[] = [];
+      const other: SeededPoll[] = [];
+      const foreignTitle = "Other owner's exclusive title";
+      for (const status of ["draft", "open", "closed"] as const) {
+        // Each lifecycle crosses the UI's 25-summary page boundary. Active spans three pages.
+        for (let index = 0; index < 26; index += 1) {
+          own.push(await seedPoll(request, store, runId, discoveryTitle, status));
+        }
+        own.push(await seedPoll(request, store, runId, `Winter ${status}`, status));
+        other.push(await seedPoll(request, store, `${runId}-other`, discoveryTitle, status));
+        other.push(await seedPoll(request, store, `${runId}-other`, foreignTitle, status));
+      }
+      const all = [...own, ...other];
+      const before = await snapshot(store, all);
+      const requests = observeApi(page);
+      const unauthPage = await context.newPage();
+      const unauthRequests = observeApi(unauthPage);
+      try {
+        const owner = headers(runId)["x-local-organiser-id"];
+        const candidates = all.map((poll) => ({ ...poll, organiserId: headers(poll.runId)["x-local-organiser-id"] }));
+        let body = await queryResponse(page, runId, "active", "", () => page.goto(`/?testRunId=${runId}`));
+        await entries(page, layout, expectedDiscovery(candidates, owner, "active", "all").slice(0, 25));
+        await expect(searchField(page)).toHaveAttribute("aria-controls", "my-polls-results");
+        await expect(filterButton(page, "active")).toHaveAccessibleDescription("Active includes draft and open polls.");
+        await searchField(page).focus();
+        for (const filter of Object.keys(discoveryFilters) as OwnedPollFilter[]) {
+          // Real tab traversal proves every lifecycle control is reachable in the live layout.
+          await page.keyboard.press("Tab");
+          await expect(filterButton(page, filter)).toBeFocused();
+          await expect(filterButton(page, filter)).toHaveAttribute("aria-controls", "my-polls-results");
+        }
+        for (const filter of Object.keys(discoveryFilters) as OwnedPollFilter[]) {
+          for (const [index, { name, search, matches }] of discoveryCases(foreignTitle).entries()) {
+            await test.step(`${filter}: ${name}`, async () => {
+              if (index === 0) {
+                body = await queryResponse(page, runId, filter, search, async () => {
+                  // Keyboard clearing retains the previous filter and returns focus to search.
+                  if (await searchField(page).inputValue()) {
+                    const clear = page.getByRole("button", { name: "Clear search", exact: true });
+                    await clear.focus();
+                    await clear.press("Enter");
+                    await expect(searchField(page)).toBeFocused();
+                  }
+                  await filterButton(page, filter).focus();
+                  await filterButton(page, filter).press(filter === "open" ? "Space" : "Enter");
+                });
+              } else {
+                body = await queryResponse(page, runId, filter, search, () => searchField(page).fill(search));
+              }
+              const expected = expectedDiscovery(candidates, owner, filter, matches);
+              const resolved = resolveOwnedPollListQuery({ filter, search, pageSize: 25 });
+              expect(resolved.success).toBe(true);
+              if (!resolved.success) throw new Error("Discovery query must resolve");
+              expect(selectOwnedPolls(candidates, owner, resolved.data)).toEqual(expected);
+              const accumulated: OwnedPollListResponse["items"] = [];
+              const cursors = new Set<string>();
+              do {
+                expect(body.items).toHaveLength(Math.min(25, expected.length - accumulated.length));
+                expect(body.items.map(({ id, title, status, createdAt }) => ({ id, title, status, createdAt })))
+                  .toEqual(expected.slice(accumulated.length, accumulated.length + 25)
+                    .map(({ id, title, status, createdAt }) => ({ id, title, status, createdAt })));
+                accumulated.push(...body.items);
+                await entries(page, layout, expected.slice(0, accumulated.length));
+                if (!body.nextCursor) break;
+                const cursor = body.nextCursor;
+                expect(cursors.has(cursor)).toBe(false);
+                cursors.add(cursor);
+                expect(cursors.size).toBeLessThanOrEqual(4);
+                const params = new URLSearchParams({ filter, search, pageSize: "25", cursor });
+                const foreign = await request.get(`/api/organiser/polls?${params}`, { headers: headers(`${runId}-other`) });
+                expect(foreign.status()).toBe(400);
+                expect((await foreign.json()).error.code).toBe("VALIDATION_ERROR");
+                const noAuth = await request.get(`/api/organiser/polls?${params}`);
+                expect(noAuth.status()).toBe(401);
+                expect((await noAuth.json()).error.code).toBe("UNAUTHENTICATED");
+                body = await queryResponse(page, runId, filter, search, async () => {
+                  await moreButton(page).focus();
+                  await moreButton(page).press("Enter");
+                }, cursor);
+              } while (true);
+              expect(accumulated.map(({ id }) => id)).toEqual(expected.map(({ id }) => id));
+              expect(new Set(accumulated.map(({ id }) => id)).size).toBe(accumulated.length);
+              await expect(moreButton(page)).not.toBeVisible();
+              if (!expected.length) await expect(page.getByRole("status")).toHaveText("No polls match your search.");
+
+              const params = new URLSearchParams({ filter, search, pageSize: "25" });
+              // Another owner's valid first page must contain only that owner's IDs.
+              const foreign = await request.get(`/api/organiser/polls?${params}`, { headers: headers(`${runId}-other`) });
+              expect(foreign.status()).toBe(200);
+              const foreignBody: OwnedPollListResponse = await foreign.json();
+              const foreignMatches = name === "foreign title"
+                ? other.filter((poll) => poll.title === foreignTitle && discoveryFilters[filter].includes(poll.status))
+                : expectedDiscovery(candidates, headers(`${runId}-other`)["x-local-organiser-id"], filter, matches);
+              expect(foreignBody.items.map(({ id }) => id)).toEqual(newestFirst(foreignMatches).map(({ id }) => id));
+              for (const deniedHeaders of [{}, { authorization: "Bearer public-token" }]) {
+                const denied = await request.get(`/api/organiser/polls?${params}`, { headers: deniedHeaders });
+                expect(denied.status()).toBe(401);
+                expect((await denied.json()).error.code).toBe("UNAUTHENTICATED");
+              }
+              // An explicit empty local identity exercises the existing unauthenticated UI boundary.
+              const deniedResponse = unauthPage.waitForResponse((response) =>
+                new URL(response.url()).pathname === "/api/organiser/polls");
+              await unauthPage.goto(`/?${new URLSearchParams({ testRunId: "", filter, search })}`, { waitUntil: "domcontentloaded" });
+              expect((await deniedResponse).status()).toBe(401);
+              await expect(unauthPage.getByRole("alert")).toHaveText("Sign in to view your polls.");
+              await expect(searchField(unauthPage)).toHaveValue(search);
+              await expect(filterButton(unauthPage, filter)).toHaveAttribute("aria-pressed", "true");
+              await entries(unauthPage, layout, []);
+              await expect(moreButton(unauthPage)).not.toBeVisible();
+              await expect(unauthPage.getByRole("status")).toBeEmpty();
+            });
+          }
+        }
+        assertReads(requests, runId);
+        assertReads(unauthRequests, "");
+        expect(await snapshot(store, all)).toEqual(before);
+      } finally { await unauthPage.close(); }
+    });
 
     test("lifecycle, resolved title search and navigation are read-only; editing retains creation order", async ({
       page, request, testRunId, store

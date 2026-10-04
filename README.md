@@ -163,6 +163,8 @@ docker compose -p invite-a-gent-local down             # or: npm run dev:stop
 
 The tests connect to `DYNAMODB_ENDPOINT` if it is set. Otherwise they use `http://127.0.0.1:${DYNAMODB_PORT:-18000}`.
 
+For the focused My polls discovery verification (T-119), start the local stack and run `npm run test:discovery`. This runs pure rules/contracts, frontend query components, API/repository cases and live desktop/mobile filter/search tests together, stopping on failure. See [combined discovery evidence](.docs/acceptance-use-cases-my-polls.md#s-047-combined-discovery-verification-t-119) for the matrix and pagination cases. Use the same endpoint/table/port environment as the stack; the command leaves service ownership with the caller.
+
 Run one file:
 
 ```sh

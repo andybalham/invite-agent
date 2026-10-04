@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import * as contracts from "../../packages/contracts/dist/index.js";
 import * as domain from "../../backend/dist/domain/index.js";
+import { discoveryCases, discoveryFilters, discoveryTitle, expectedDiscovery } from "../support/my-polls-discovery-cases.mjs";
 
 function helper(module, name) {
   assert.equal(typeof module[name], "function", `${name} must be exported`);
@@ -19,6 +20,30 @@ function poll(id, status, createdAt, organiserId = "owner") {
   return { id, title: "Autumn dinner", organiserId, status, createdAt, version: 1,
     timeZone: "Europe/London", proposedDates: [] };
 }
+
+test("T-119 discovery decisions agree across every lifecycle/search mode without mutating candidates", () => {
+  const rows = [];
+  for (const [index, status] of ["draft", "open", "closed"].entries()) {
+    const createdAt = `2026-10-0${index + 1}T10:00:00.000Z`;
+    for (const [id, title, owner] of [
+      [`own-${status}`, discoveryTitle, "owner"], [`winter-${status}`, "Winter dinner", "owner"],
+      [`foreign-${status}`, discoveryTitle, "other"], [`exclusive-${status}`, "Foreign exclusive title", "other"]
+    ]) rows.push({ ...poll(id, status, createdAt, owner), title,
+      description: "description-only-needle", location: "location-only-needle",
+      proposedDates: [{ kind: "date", localDate: "2026-10-10" }] });
+  }
+  const before = structuredClone(rows);
+  const select = helper(domain, "selectOwnedPolls");
+  for (const filter of Object.keys(discoveryFilters)) {
+    for (const { name, search, matches } of discoveryCases("Foreign exclusive title")) {
+      const resolved = query({ filter, search, pageSize: 1 });
+      const expected = expectedDiscovery(rows, "owner", filter, matches);
+      assert.deepEqual(select(rows, "owner", resolved), expected, `${filter}: ${name}`);
+      assert.deepEqual(select(rows, "nobody", resolved), [], `${filter}: ${name}: no owned candidates`);
+    }
+  }
+  assert.deepEqual(rows, before, "selection cannot change lifecycle, creation dates or versions");
+});
 
 // S-043 / MP-US-02,04,05,06,10.
 test("dashboard query defaults and normalization are explicit and reject malformed input", () => {
