@@ -189,8 +189,8 @@ _Generated. Do not edit by hand._
 - [ ] **S-047 · Find owned polls with lifecycle filters title search and creation ordering** — todo
   - [x] [T-116 · Specify filter search and paginated result state with frontend unit tests](../entities/T-116-specify-filter-search-and-paginated-result-state-with-frontend-unit-tests.md) — done
   - [x] [T-117 · Implement lifecycle filters and title-search controls against the owned-list API](../entities/T-117-implement-lifecycle-filters-and-title-search-controls-against-the-owned-list-api.md) — done
-  - [ ] [T-118 · Verify filtering search and creation-date order across browser viewports](../entities/T-118-verify-filtering-search-and-creation-date-order-across-browser-viewports.md) — todo
-  - [ ] [T-119 · Verify API and browser discovery behavior together without read mutations](../entities/T-119-verify-api-and-browser-discovery-behavior-together-without-read-mutations.md) — blocked · waiting on T-118
+  - [x] [T-118 · Verify filtering search and creation-date order across browser viewports](../entities/T-118-verify-filtering-search-and-creation-date-order-across-browser-viewports.md) — done
+  - [ ] [T-119 · Verify API and browser discovery behavior together without read mutations](../entities/T-119-verify-api-and-browser-discovery-behavior-together-without-read-mutations.md) — todo
 - [ ] **S-048 · Reflect create publish close and reopen workflows in My polls** — todo
   - [ ] [T-120 · Specify dashboard summary refresh and immutable creation time with unit tests](../entities/T-120-specify-dashboard-summary-refresh-and-immutable-creation-time-with-unit-tests.md) — todo
   - [ ] [T-121 · Integrate saved poll and lifecycle results with dashboard refresh](../entities/T-121-integrate-saved-poll-and-lifecycle-results-with-dashboard-refresh.md) — blocked · waiting on T-120

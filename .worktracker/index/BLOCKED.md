@@ -26,7 +26,6 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-119 · Verify API and browser discovery behavior together without read mutations](../entities/T-119-verify-api-and-browser-discovery-behavior-together-without-read-mutations.md) — blocked · waiting on T-118
 - [T-121 · Integrate saved poll and lifecycle results with dashboard refresh](../entities/T-121-integrate-saved-poll-and-lifecycle-results-with-dashboard-refresh.md) — blocked · waiting on T-120
 - [T-122 · Verify lifecycle summaries and read-only list behavior with server integration tests](../entities/T-122-verify-lifecycle-summaries-and-read-only-list-behavior-with-server-integration-tests.md) — blocked · waiting on T-121
 - [T-123 · Verify complete dashboard lifecycle journeys and public-link isolation in browsers](../entities/T-123-verify-complete-dashboard-lifecycle-journeys-and-public-link-isolation-in-browsers.md) — blocked · waiting on T-122
