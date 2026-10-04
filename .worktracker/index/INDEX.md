@@ -181,18 +181,18 @@ _Generated. Do not edit by hand._
   - [x] [T-109 · Implement My polls entry routes create action and return links](../entities/T-109-implement-my-polls-entry-routes-create-action-and-return-links.md) — done
   - [x] [T-110 · Add browser tests for organiser landing create return and public-link isolation](../entities/T-110-add-browser-tests-for-organiser-landing-create-return-and-public-link-isolation.md) — done
   - [x] [T-111 · Verify navigation guards and existing poll-route regressions](../entities/T-111-verify-navigation-guards-and-existing-poll-route-regressions.md) — done
-- [ ] **S-046 · Render equivalent My polls summaries as desktop tables and mobile cards** — todo
+- [x] **S-046 · Render equivalent My polls summaries as desktop tables and mobile cards** — done
   - [x] [T-112 · Specify equivalent desktop and mobile summaries with component tests](../entities/T-112-specify-equivalent-desktop-and-mobile-summaries-with-component-tests.md) — done
   - [x] [T-113 · Build the responsive My polls table and card presentation](../entities/T-113-build-the-responsive-my-polls-table-and-card-presentation.md) — done
   - [x] [T-114 · Connect owned-list loading and approved pagination and state feedback](../entities/T-114-connect-owned-list-loading-and-approved-pagination-and-state-feedback.md) — done
-  - [ ] [T-115 · Verify real dashboard summaries and title navigation on desktop and mobile](../entities/T-115-verify-real-dashboard-summaries-and-title-navigation-on-desktop-and-mobile.md) — todo
-- [ ] **S-047 · Find owned polls with lifecycle filters title search and creation ordering** — blocked · waiting on S-046
-  - [ ] [T-116 · Specify filter search and paginated result state with frontend unit tests](../entities/T-116-specify-filter-search-and-paginated-result-state-with-frontend-unit-tests.md) — blocked · waiting on T-115
+  - [x] [T-115 · Verify real dashboard summaries and title navigation on desktop and mobile](../entities/T-115-verify-real-dashboard-summaries-and-title-navigation-on-desktop-and-mobile.md) — done
+- [ ] **S-047 · Find owned polls with lifecycle filters title search and creation ordering** — todo
+  - [ ] [T-116 · Specify filter search and paginated result state with frontend unit tests](../entities/T-116-specify-filter-search-and-paginated-result-state-with-frontend-unit-tests.md) — todo
   - [ ] [T-117 · Implement lifecycle filters and title-search controls against the owned-list API](../entities/T-117-implement-lifecycle-filters-and-title-search-controls-against-the-owned-list-api.md) — blocked · waiting on T-116
   - [ ] [T-118 · Verify filtering search and creation-date order across browser viewports](../entities/T-118-verify-filtering-search-and-creation-date-order-across-browser-viewports.md) — blocked · waiting on T-117
   - [ ] [T-119 · Verify API and browser discovery behavior together without read mutations](../entities/T-119-verify-api-and-browser-discovery-behavior-together-without-read-mutations.md) — blocked · waiting on T-118
-- [ ] **S-048 · Reflect create publish close and reopen workflows in My polls** — blocked · waiting on S-046
-  - [ ] [T-120 · Specify dashboard summary refresh and immutable creation time with unit tests](../entities/T-120-specify-dashboard-summary-refresh-and-immutable-creation-time-with-unit-tests.md) — blocked · waiting on T-115
+- [ ] **S-048 · Reflect create publish close and reopen workflows in My polls** — todo
+  - [ ] [T-120 · Specify dashboard summary refresh and immutable creation time with unit tests](../entities/T-120-specify-dashboard-summary-refresh-and-immutable-creation-time-with-unit-tests.md) — todo
   - [ ] [T-121 · Integrate saved poll and lifecycle results with dashboard refresh](../entities/T-121-integrate-saved-poll-and-lifecycle-results-with-dashboard-refresh.md) — blocked · waiting on T-120
   - [ ] [T-122 · Verify lifecycle summaries and read-only list behavior with server integration tests](../entities/T-122-verify-lifecycle-summaries-and-read-only-list-behavior-with-server-integration-tests.md) — blocked · waiting on T-121
   - [ ] [T-123 · Verify complete dashboard lifecycle journeys and public-link isolation in browsers](../entities/T-123-verify-complete-dashboard-lifecycle-journeys-and-public-link-isolation-in-browsers.md) — blocked · waiting on T-117, T-122
