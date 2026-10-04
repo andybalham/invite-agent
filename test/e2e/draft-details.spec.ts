@@ -4,7 +4,7 @@ test("an organiser creates, revisits, and edits a private draft with safe locati
   page,
   testRunId
 }) => {
-  await page.goto(`/?testRunId=${encodeURIComponent(testRunId)}`);
+  await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
 
   await page.getByLabel("Title").fill("Autumn get-together");
   await page.getByLabel("Description").fill("Choose every date you could attend.");
@@ -38,7 +38,7 @@ test("hostile or excessive location input stays editable and never replaces save
   page,
   testRunId
 }) => {
-  await page.goto(`/?testRunId=${encodeURIComponent(testRunId)}`);
+  await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
   await page.getByLabel("Title").fill("Security review");
   await page.getByLabel("Location").fill("Community Hall");
   await page.getByRole("button", { name: "Save draft" }).click();

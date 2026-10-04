@@ -77,13 +77,19 @@ export function createNavigationFixture({ owner = navigationOwners.olivia } = {}
       records.set(poll.id, poll);
       return { status: 201, body: pollResponse(poll) };
     }
-    const match = /^\/api\/organiser\/polls\/([^/]+)(?:\/(history|publish))?$/.exec(pathname);
+    const match = /^\/api\/organiser\/polls\/([^/]+)(?:\/(history|publish|location))?$/.exec(pathname);
     const poll = records.get(match?.[1]);
     if (!poll) return error(404, "NOT_FOUND", "Poll not found");
     if (poll.organiserId !== identity) return error(403, "FORBIDDEN", "Only the organiser can access this poll");
-    if (!match[2] && method === "GET") return { status: 200, body: pollResponse(poll) };
+    if (!match[2] && method === "GET") {
+      return { status: 200, body: poll.status === "draft" ? pollResponse(poll) : publicResponse(poll) };
+    }
     if (match[2] === "history" && method === "GET") {
       return { status: 200, body: { items: [], total: 0 } };
+    }
+    if (match[2] === "location" && method === "PUT") {
+      Object.assign(poll, { location: body.location, version: poll.version + 1 });
+      return { status: 200, body: pollResponse(poll) };
     }
     if (!match[2] && method === "PUT") {
       Object.assign(poll, structuredClone(body), { version: poll.version + 1 });

@@ -10,7 +10,7 @@ test("preview shows participant-facing draft details without response capability
   page,
   testRunId
 }) => {
-  await page.goto(`/?testRunId=${encodeURIComponent(testRunId)}`);
+  await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
   await page.getByLabel("Title").fill("Autumn get-together");
   await page.getByLabel("Description").fill("Choose every date you could attend.");
   await page.getByLabel("Location").fill("**Community Hall** — [map](https://example.test/map)");
@@ -34,7 +34,7 @@ test("preview shows participant-facing draft details without response capability
 });
 
 test("readiness stays blocked until every required field is valid", async ({ page, testRunId }) => {
-  await page.goto(`/?testRunId=${encodeURIComponent(testRunId)}`);
+  await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
   const publish = page.getByRole("button", { name: "Publish" });
   await expect(publish).toBeDisabled();
   await expect(page.getByRole("alert")).toContainText("Add a title.");
@@ -52,7 +52,7 @@ test("unauthenticated draft reads and responses disclose nothing and change noth
   request,
   testRunId
 }) => {
-  await page.goto(`/?testRunId=${encodeURIComponent(testRunId)}`);
+  await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
   await page.getByLabel("Title").fill("Private planning notes");
   await addDate(page, "2026-10-10");
   await addDate(page, "2026-10-17");

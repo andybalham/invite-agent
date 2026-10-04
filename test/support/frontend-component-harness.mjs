@@ -29,7 +29,9 @@ export async function startComponentBrowser() {
     const context = await browser.newContext();
     t.after(() => context.close());
     const page = await context.newPage();
-    page.setDefaultTimeout(1_500);
+    // Link clicks wait for document navigation too. Give them the same budget
+    // as goto; UI assertions keep their independent 1.5-second contract.
+    page.setDefaultTimeout(10_000);
     page.setDefaultNavigationTimeout(10_000);
     const failures = [];
     page.on("pageerror", (error) => failures.push(error.message));

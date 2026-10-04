@@ -212,7 +212,7 @@ export class PollService {
     return publicResponse(poll);
   }
 
-  public async get(id: string, organiserId: string): Promise<PollResponse> {
+  public async get(id: string, organiserId: string): Promise<PollResponse | PublicPollResponse> {
     const poll = await this.repository.getPoll(id);
     if (!poll) {
       throw new ApplicationError("NOT_FOUND", "Poll not found");
@@ -220,7 +220,7 @@ export class PollService {
     if (poll.organiserId !== organiserId) {
       throw new ApplicationError("FORBIDDEN", "The organiser does not own this poll");
     }
-    return publicResponse(poll);
+    return poll.status === "draft" ? publicResponse(poll) : this.publicView(poll);
   }
 
   public async history(

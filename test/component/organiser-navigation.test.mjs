@@ -92,6 +92,19 @@ test("unsaved creation has a visible My polls return without creating a poll", a
   assert.equal(harness.fixture.requests.some(({ method }) => method !== "GET"), false);
 });
 
+test("creation from Closed returns the saved draft to default Active", async (t) => {
+  const harness = await components.mount(t);
+  const { page } = harness;
+  await harness.goto("/?testRunId=olivia&filter=closed");
+  await dashboard(page);
+  await page.getByRole("link", { name: "Create poll", exact: true }).click();
+  await page.getByLabel(/^Title(?:\s*\*)?$/).fill("New active draft");
+  await page.getByRole("button", { name: "Save draft", exact: true }).click();
+  await expect(page.getByTestId("draft-form").getByRole("status")).toContainText("Draft saved");
+  await returnToMyPolls(harness);
+  await expect(page.getByRole("link", { name: "New active draft", exact: true })).toBeVisible();
+});
+
 // MP-US-08: state-specific title destinations and visible return links.
 for (const [id, filter] of [["draft-1", "Active"], ["open-1", "Active"], ["closed-1", "Closed"]]) {
   test(`${id} title opens its existing ${id.startsWith("draft") ? "editor" : "management view"}`, async (t) => {
@@ -160,6 +173,22 @@ for (const route of [
 }
 
 // MP-US-09: publication must land on management, with both sharing and return.
+test("management reached by poll ID retains the existing protected location action", async (t) => {
+  const harness = await components.mount(t);
+  const { page, fixture } = harness;
+  await harness.goto("/?pollId=open-1&testRunId=olivia");
+  await management(page, fixture.records.get("open-1"));
+  await page.getByRole("button", { name: "Edit location", exact: true }).click();
+  await page.getByLabel("Plain text or Markdown links", { exact: true }).fill("The hall");
+  await page.getByRole("button", { name: "Save location", exact: true }).click();
+  await expect(page.locator(".public-location")).toContainText("The hall");
+  assert.equal(fixture.requests.some(({ url }) => new URL(url).pathname.startsWith("/api/public/")), false);
+  const update = fixture.requests.find(({ url, method }) =>
+    method === "PUT" && new URL(url).pathname.endsWith("/open-1/location"));
+  assert.equal(update.identity, navigationOwners.olivia);
+  assert.deepEqual(update.body, { location: "The hall" });
+});
+
 test("publication stays on the same poll management view with its issued share link", async (t) => {
   const harness = await components.mount(t);
   const { page, fixture } = harness;
@@ -169,6 +198,10 @@ test("publication stays on the same poll management view with its issued share l
   await expect.poll(() => fixture.requests.filter(({ url, method }) =>
     new URL(url).pathname.endsWith("/draft-1/publish") && method === "POST").length).toBe(1);
   await management(page, fixture.records.get("draft-1"));
+  await expect(page.getByLabel("Public poll link", { exact: true })).toHaveValue(fixture.publicUrl("draft-1"));
+  await page.dispatchEvent("body", "focus");
+  await expect.poll(() => fixture.requests.filter(({ url }) =>
+    new URL(url).pathname.startsWith("/api/public/")).length).toBeGreaterThan(1);
   await expect(page.getByLabel("Public poll link", { exact: true })).toHaveValue(fixture.publicUrl("draft-1"));
   await returnToMyPolls(harness);
   await selectFilter(page, "Open");

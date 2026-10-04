@@ -73,7 +73,7 @@ The prototype runs everything in the browser, in memory. It has **no server, aut
 - **Table:** date columns with the message "No responses yet.", and a disabled "+ Add row". The poll stays Draft.
 
 ### 4. Share (US-06, US-33)
-- **Header:** tag "Published · Open", h1 "Share this link", and "Anyone with the link can see and edit every response — no account needed."
+- **Header:** the original share-screen prototype uses tag "Published · Open", h1 "Share this link", and "Anyone with the link can see and edit every response — no account needed." S-045 now retains the published poll's management heading and controls, with the share-link section below the poll title.
 - **Link:** read-only monospace input `https://gather.app/p/<22-char token>` plus a primary "Copy link" button, which reads "Copied ✓" after clicking.
 - **Buttons:** "Go to the poll", "Open as a link holder".
 - **Link security** section:

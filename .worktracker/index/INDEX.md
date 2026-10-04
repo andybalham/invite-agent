@@ -178,8 +178,8 @@ _Generated. Do not edit by hand._
   - [x] [T-107 · Verify list-query integration and production boundary readiness](../entities/T-107-verify-list-query-integration-and-production-boundary-readiness.md) — done
 - [ ] **S-045 · Make My polls the organiser landing page and provide return navigation** — todo
   - [x] [T-108 · Specify organiser entry return and public route behavior with unit tests](../entities/T-108-specify-organiser-entry-return-and-public-route-behavior-with-unit-tests.md) — done
-  - [ ] [T-109 · Implement My polls entry routes create action and return links](../entities/T-109-implement-my-polls-entry-routes-create-action-and-return-links.md) — todo
-  - [ ] [T-110 · Add browser tests for organiser landing create return and public-link isolation](../entities/T-110-add-browser-tests-for-organiser-landing-create-return-and-public-link-isolation.md) — blocked · waiting on T-109
+  - [x] [T-109 · Implement My polls entry routes create action and return links](../entities/T-109-implement-my-polls-entry-routes-create-action-and-return-links.md) — done
+  - [ ] [T-110 · Add browser tests for organiser landing create return and public-link isolation](../entities/T-110-add-browser-tests-for-organiser-landing-create-return-and-public-link-isolation.md) — todo
   - [ ] [T-111 · Verify navigation guards and existing poll-route regressions](../entities/T-111-verify-navigation-guards-and-existing-poll-route-regressions.md) — blocked · waiting on T-110
 - [ ] **S-046 · Render equivalent My polls summaries as desktop tables and mobile cards** — blocked · waiting on S-045
   - [ ] [T-112 · Specify equivalent desktop and mobile summaries with component tests](../entities/T-112-specify-equivalent-desktop-and-mobile-summaries-with-component-tests.md) — blocked · waiting on T-111

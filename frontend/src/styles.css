@@ -52,6 +52,17 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .app-main { width: calc(100% - 48px); max-width: 920px; margin: 0 auto; padding: 28px 0 96px; }
 .editor { display: grid; gap: 20px; }
 .editor[hidden] { display: none; }
+.my-polls { display: grid; gap: var(--space-6); }
+.my-polls[hidden], .share-title[hidden] { display: none; }
+.my-polls .create-poll { text-decoration: none; white-space: nowrap; }
+.my-polls-filters { display: flex; flex-wrap: wrap; gap: var(--space-2); border-top: 2px solid var(--color-text); padding-top: var(--space-4); }
+.my-polls-filters [aria-pressed="true"] { background: var(--color-text); color: var(--color-bg); }
+.my-polls-list { margin: 0; padding: 0; list-style: none; }
+.my-polls-list li { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-4); border-bottom: 1px solid var(--color-divider); padding: var(--space-4) 0; }
+.my-polls-list a { overflow-wrap: anywhere; color: var(--color-text); font-size: 18px; font-weight: 800; text-underline-offset: 4px; }
+.my-polls-list span { color: var(--color-neutral-700); font-size: 13px; }
+.my-polls-status { margin: 0; }
+.my-polls-return { width: max-content; padding-left: 0; text-decoration: none; }
 .editor__header { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-6); }
 .editor__header-actions { display: flex; gap: var(--space-2); }
 .tag { display: inline-flex; align-items: center; min-height: 26px; margin: 0 0 var(--space-3); padding: 4px 8px; font-size: 11px; font-weight: 800; letter-spacing: .03em; }

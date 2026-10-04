@@ -18,7 +18,7 @@ test("an organiser publishes a valid draft and copies the active public link", a
   testRunId
 }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.goto(`/?testRunId=${encodeURIComponent(testRunId)}`);
+  await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
   await page.getByLabel("Title").fill(poll.title);
   for (const choice of poll.proposedDates) {
     await page.getByLabel("New proposed date").fill(
@@ -30,7 +30,8 @@ test("an organiser publishes a valid draft and copies the active public link", a
     await page.getByRole("button", { name: "Add date" }).click();
   }
   await page.getByRole("button", { name: "Publish" }).click();
-  await expect(page.getByRole("heading", { name: "Share this link" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: poll.title, exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Organiser controls" })).toBeVisible();
   const link = await page.getByLabel("Public poll link").inputValue();
   expect(link).toMatch(/\/p\/[A-Za-z0-9_-]{32}$/);
   await page.getByRole("button", { name: "Copy link" }).click();

@@ -1,4 +1,9 @@
 import "./styles.css";
+import type { OwnedPollListResponse } from "@invite-a-gent/contracts";
+import {
+  createPollDestination, myPollsContext, myPollsDestination, organiserPollDestination,
+  ownedPollDestination, pollReturnContext
+} from "./organiser-navigation.js";
 
 type ProposedDate =
   | { kind: "date"; localDate: string }
@@ -81,7 +86,23 @@ app.innerHTML = `
       </div>
     </div>
   </header>
-  <section class="editor" aria-labelledby="draft-heading">
+  <main class="my-polls" hidden aria-labelledby="my-polls-heading">
+    <div class="editor__header">
+      <div><p class="kicker">ORGANISER</p><h1 id="my-polls-heading">My polls</h1></div>
+      <a class="btn btn-primary create-poll" href="#">Create poll</a>
+    </div>
+    <div class="my-polls-filters" role="group" aria-label="Poll lifecycle">
+      <button class="btn btn-secondary" type="button" data-filter="active" aria-pressed="true">Active</button>
+      <button class="btn btn-secondary" type="button" data-filter="draft" aria-pressed="false">Draft</button>
+      <button class="btn btn-secondary" type="button" data-filter="open" aria-pressed="false">Open</button>
+      <button class="btn btn-secondary" type="button" data-filter="closed" aria-pressed="false">Closed</button>
+    </div>
+    <p class="my-polls-status" role="status" aria-live="polite"></p>
+    <p class="my-polls-error error" role="alert" hidden></p>
+    <ul class="my-polls-list" aria-label="Owned polls"></ul>
+  </main>
+  <section class="editor" hidden aria-labelledby="draft-heading">
+      <a class="btn btn-ghost my-polls-return" href="#">← My polls</a>
       <div class="editor__header">
         <div>
           <p class="tag tag-accent">Draft · only you can see this</p>
@@ -172,6 +193,7 @@ app.innerHTML = `
   <main class="public-poll" hidden aria-labelledby="public-poll-heading">
     <section class="organiser-toolbar" hidden aria-label="Organiser controls">
       <strong class="kicker">ORGANISER</strong>
+      <a class="btn btn-ghost my-polls-return" href="#">← My polls</a>
       <a class="btn btn-secondary poll-history" href="#">History</a>
       <button class="btn btn-secondary edit-location" type="button">Edit location</button>
       <button class="btn btn-primary reopen-poll" type="button" hidden>Reopen poll…</button>
@@ -308,7 +330,6 @@ const health = requireElement<HTMLElement>("[data-testid='api-health']");
 const heading = requireElement<HTMLElement>("#draft-heading");
 const headerSaveStatus = requireElement<HTMLElement>("[data-testid='header-save-status']");
 const shareScreen = requireElement<HTMLElement>(".share-screen");
-const shareHeading = requireElement<HTMLElement>("#share-heading");
 const publicLink = requireElement<HTMLInputElement>("#public-link");
 const copyLinkButton = requireElement<HTMLButtonElement>(".copy-link");
 const goToPoll = requireElement<HTMLAnchorElement>(".go-to-poll");
@@ -391,6 +412,17 @@ const testRunId = url.searchParams.get("testRunId") ?? "browser";
 const organiserId = `local-organiser-${testRunId.toLowerCase().replace(/[^a-z0-9-]/g, "-")}`;
 let pollId = url.searchParams.get("pollId");
 const historyView = url.searchParams.get("view") === "history";
+const creationView = url.searchParams.get("view") === "create";
+const myPollsScreen = requireElement<HTMLElement>(".my-polls");
+const myPollsList = requireElement<HTMLUListElement>(".my-polls-list");
+const myPollsStatus = requireElement<HTMLElement>(".my-polls-status");
+const myPollsError = requireElement<HTMLElement>(".my-polls-error");
+requireElement<HTMLAnchorElement>(".create-poll").href = createPollDestination(testRunId);
+requireElement<HTMLAnchorElement>(".wordmark").href = myPollsDestination(testRunId);
+for (const link of document.querySelectorAll<HTMLAnchorElement>(".my-polls-return")) {
+  link.href = myPollsDestination(testRunId, pollReturnContext(url.searchParams));
+}
+let ownedListRequest = 0;
 let proposedDates: ProposedDate[] = [];
 let publicToken: string | undefined;
 let displayedPublicPoll: PublicPollDetails | undefined;
@@ -673,6 +705,14 @@ async function persistDraft(): Promise<PollDetails | undefined> {
   const poll = (await response.json()) as PollDetails;
   applyPoll(poll);
   url.searchParams.set("pollId", poll.id);
+  url.searchParams.set("view", "editor");
+  if (!editing) {
+    url.searchParams.delete("returnFilter");
+    url.searchParams.delete("returnSearch");
+    for (const link of document.querySelectorAll<HTMLAnchorElement>(".my-polls-return")) {
+      link.href = myPollsDestination(testRunId);
+    }
+  }
   window.history.replaceState({}, "", url);
   return poll;
 }
@@ -681,16 +721,25 @@ function showShareScreen(link: string): void {
   editor.hidden = true;
   previewScreen.hidden = true;
   shareScreen.hidden = false;
+  requireElement<HTMLElement>(".share-title").hidden = true;
+  shareScreen.setAttribute("aria-label", "Share this poll");
+  shareScreen.removeAttribute("aria-labelledby");
+  publicPollScreen.insertBefore(shareScreen, finalDatePoster);
   publicLink.value = link;
   const organiserPollUrl = new URL(link);
   organiserPollUrl.searchParams.set("testRunId", testRunId);
   organiserPollUrl.searchParams.set("organiser", "1");
+  const returnContext = pollReturnContext(url.searchParams);
+  organiserPollUrl.searchParams.set("returnFilter", returnContext.filter);
+  organiserPollUrl.searchParams.set("returnSearch", returnContext.search);
   goToPoll.href = organiserPollUrl.toString();
   openPublicLink.href = link;
   if (pollId) {
-    openHistory.href = `/?pollId=${encodeURIComponent(pollId)}&testRunId=${encodeURIComponent(testRunId)}&view=history`;
+    openHistory.href = organiserPollDestination(pollId, "history", testRunId, returnContext);
   }
-  shareHeading.focus();
+  url.searchParams.set("view", "manage");
+  window.history.replaceState({}, "", url);
+  void loadPublicPoll(new URL(link).pathname.split("/").at(-1) as string, true);
 }
 
 function hidePrivateScreens(): void {
@@ -712,15 +761,16 @@ function renderPublicPoll(poll: PublicPollDetails): void {
   const previous = displayedPublicPoll;
   displayedPublicPoll = poll;
   hidePrivateScreens();
+  shareScreen.hidden = !ownerControlsAllowed || !publicLink.value;
   invalidLinkScreen.hidden = true;
   publicPollScreen.hidden = false;
-  document.querySelector<HTMLElement>(".account")!.textContent = "No account needed";
+  document.querySelector<HTMLElement>(".account")!.textContent = ownerControlsAllowed ? organiserId : "No account needed";
   headerSaveStatus.hidden = true;
   publicState.textContent = poll.status === "closed" ? "Closed" : "Open";
   organiserToolbar.hidden = !ownerControlsAllowed;
   requireElement<HTMLElement>(".organiser-close-hint").hidden = poll.status !== "open";
   reopenButton.hidden = !ownerControlsAllowed || poll.status !== "closed";
-  requireElement<HTMLAnchorElement>(".poll-history").href = `/?pollId=${encodeURIComponent(poll.id)}&testRunId=${encodeURIComponent(testRunId)}&view=history`;
+  requireElement<HTMLAnchorElement>(".poll-history").href = organiserPollDestination(poll.id, "history", testRunId, pollReturnContext(url.searchParams));
   publicPollHeading.textContent = poll.title;
   publicDescription.textContent = poll.description ?? "";
   publicDescription.hidden = !poll.description;
@@ -737,6 +787,7 @@ function renderPublicPoll(poll: PublicPollDetails): void {
   }
   publicTimeZone.textContent = `Times in ${poll.timeZone}`;
   const rankingIsFrozen = poll.status === "closed";
+  const responsesReadOnly = rankingIsFrozen || !publicToken;
   const selectedChoice = poll.proposedDates.find(({ id }) => id === poll.selectedDateId);
   finalDatePoster.hidden = !rankingIsFrozen || !selectedChoice;
   provisionalSelection.hidden = poll.status !== "open" || !poll.provisional || !selectedChoice;
@@ -801,10 +852,10 @@ function renderPublicPoll(poll: PublicPollDetails): void {
   const totalLabel = document.createElement("th");
   totalLabel.textContent = "Yes total";
   publicTableFoot.append(totalLabel);
-  collaborationNotice.hidden = rankingIsFrozen;
+  collaborationNotice.hidden = responsesReadOnly;
   closedNotice.hidden = !rankingIsFrozen;
-  addParticipantButton.hidden = rankingIsFrozen;
-  tableHelp.hidden = rankingIsFrozen;
+  addParticipantButton.hidden = responsesReadOnly;
+  tableHelp.hidden = responsesReadOnly;
   tableHelp.textContent = rankingIsFrozen
     ? ""
     : "Click a cell to switch between Yes and No, or Tab to it and press Space.";
@@ -820,7 +871,7 @@ function renderPublicPoll(poll: PublicPollDetails): void {
     );
     publicTableFoot.append(total);
   }
-  if (!rankingIsFrozen) {
+  if (!responsesReadOnly) {
     const actionsHeading = document.createElement("th");
     actionsHeading.scope = "col";
     actionsHeading.className = "row-actions-heading";
@@ -832,7 +883,7 @@ function renderPublicPoll(poll: PublicPollDetails): void {
   if (poll.participants.length === 0) {
     const row = document.createElement("tr");
     const empty = document.createElement("td");
-    empty.colSpan = poll.proposedDates.length + (rankingIsFrozen ? 1 : 2);
+    empty.colSpan = poll.proposedDates.length + (responsesReadOnly ? 1 : 2);
     empty.textContent = "No one has answered yet.";
     row.append(empty);
     publicTableBody.append(row);
@@ -847,7 +898,7 @@ function renderPublicPoll(poll: PublicPollDetails): void {
       for (const choice of poll.proposedDates) {
         const cell = document.createElement("td");
         const value = participant.availability[choice.id] ?? "no";
-        if (rankingIsFrozen) {
+        if (responsesReadOnly) {
           cell.textContent = value === "yes" ? "Yes" : "No";
           cell.classList.toggle("final-date-cell", choice.id === poll.selectedDateId);
         } else {
@@ -867,7 +918,7 @@ function renderPublicPoll(poll: PublicPollDetails): void {
         }
         row.append(cell);
       }
-      if (rankingIsFrozen) { publicTableBody.append(row); continue; }
+      if (responsesReadOnly) { publicTableBody.append(row); continue; }
       const actions = document.createElement("td");
       actions.className = "row-actions";
       const trigger = document.createElement("button");
@@ -938,7 +989,7 @@ function openCloseDialog(choiceId: string): void {
   closeConfirm.focus();
 }
 
-async function loadPublicPoll(token: string): Promise<void> {
+async function loadPublicPoll(token: string, publishedByOwner = false): Promise<void> {
   publicToken = token;
   const response = await fetch(`/api/public/polls/${encodeURIComponent(token)}`, {
     headers: { accept: "application/json" }
@@ -948,11 +999,12 @@ async function loadPublicPoll(token: string): Promise<void> {
     return;
   }
   const poll = (await response.json()) as PublicPollDetails;
-  if (organiserView) {
+  if (organiserView || publishedByOwner) {
     const ownerResponse = await request(`/api/organiser/polls/${encodeURIComponent(poll.id)}`);
     ownerControlsAllowed = ownerResponse.ok;
   }
   renderPublicPoll(poll);
+  if (publishedByOwner && ownerControlsAllowed) shareScreen.hidden = false;
 }
 
 function updateLocationDialogPreview(): void {
@@ -979,9 +1031,7 @@ async function saveLocationDialog(): Promise<void> {
       return;
     }
     // Fetch a complete current projection even while background polling is in flight.
-    const current = await fetch(`/api/public/polls/${encodeURIComponent(publicToken as string)}`, {
-      headers: { accept: "application/json" }
-    });
+    const current = await currentPollResponse();
     if (current.ok) renderPublicPoll((await current.json()) as PublicPollDetails);
     locationDialog.close();
     publicToast.textContent = locationDialogField.value ? "Location saved — showing on the public poll now." : "Location cleared from the public poll.";
@@ -996,13 +1046,17 @@ async function saveLocationDialog(): Promise<void> {
   }
 }
 
+function currentPollResponse(): Promise<Response> {
+  return publicToken
+    ? fetch(`/api/public/polls/${encodeURIComponent(publicToken)}`, { headers: { accept: "application/json" } })
+    : request(`/api/organiser/polls/${encodeURIComponent(pollId as string)}`);
+}
+
 async function refreshPublicPoll(): Promise<void> {
-  if (!publicToken || publicRefreshInFlight || document.visibilityState === "hidden") return;
+  if ((!publicToken && !ownerControlsAllowed) || publicRefreshInFlight || document.visibilityState === "hidden") return;
   publicRefreshInFlight = true;
   try {
-    const response = await fetch(`/api/public/polls/${encodeURIComponent(publicToken)}`, {
-      headers: { accept: "application/json" }
-    });
+    const response = await currentPollResponse();
     if (response.ok) renderPublicPoll((await response.json()) as PublicPollDetails);
   } finally {
     publicRefreshInFlight = false;
@@ -1248,9 +1302,62 @@ async function readError(response: Response): Promise<string> {
 
 async function loadDraft(id: string): Promise<void> {
   const response = await request(`/api/organiser/polls/${encodeURIComponent(id)}`);
-  if (!response.ok) { errorMessage.hidden = false; errorMessage.textContent = await readError(response); return; }
-  applyPoll((await response.json()) as PollDetails);
+  if (!response.ok) { editor.hidden = false; errorMessage.hidden = false; errorMessage.textContent = await readError(response); return; }
+  const poll = (await response.json()) as PollDetails | PublicPollDetails;
+  if (poll.status === "draft") { editor.hidden = false; applyPoll(poll); }
+  else {
+    ownerControlsAllowed = true;
+    renderPublicPoll(poll as PublicPollDetails);
+  }
 }
+
+async function loadMyPolls(): Promise<void> {
+  const generation = ++ownedListRequest;
+  const context = myPollsContext(url.searchParams);
+  myPollsList.replaceChildren();
+  myPollsError.hidden = true;
+  myPollsStatus.textContent = "Loading your polls…";
+  for (const button of document.querySelectorAll<HTMLButtonElement>(".my-polls-filters button")) {
+    button.setAttribute("aria-pressed", String(button.dataset.filter === context.filter));
+  }
+  try {
+    const params = new URLSearchParams({ filter: context.filter, search: context.search, pageSize: "25" });
+    const response = await request(`/api/organiser/polls?${params}`);
+    if (generation !== ownedListRequest) return;
+    if (!response.ok) {
+      myPollsStatus.textContent = "";
+      myPollsError.textContent = response.status === 401 ? "Sign in to view your polls." : await readError(response);
+      myPollsError.hidden = false;
+      return;
+    }
+    const page = (await response.json()) as OwnedPollListResponse;
+    if (generation !== ownedListRequest) return;
+    for (const poll of page.items) {
+      const item = document.createElement("li");
+      const link = document.createElement("a");
+      link.textContent = poll.title;
+      link.href = ownedPollDestination(poll, testRunId, context);
+      const state = document.createElement("span");
+      state.textContent = poll.status === "draft" ? "Draft" : poll.status === "open" ? "Open" : "Closed";
+      item.append(link, state);
+      myPollsList.append(item);
+    }
+    myPollsStatus.textContent = page.items.length || page.nextCursor ? "" : "No polls to show.";
+  } catch {
+    if (generation !== ownedListRequest) return;
+    myPollsStatus.textContent = "";
+    myPollsError.textContent = "Could not load your polls. Try again.";
+    myPollsError.hidden = false;
+  }
+}
+
+requireElement<HTMLElement>(".my-polls-filters").addEventListener("click", (event) => {
+  const filter = (event.target as Element).closest<HTMLButtonElement>("button[data-filter]")?.dataset.filter;
+  if (!filter) return;
+  url.searchParams.set("filter", filter);
+  window.history.replaceState({}, "", url);
+  void loadMyPolls();
+});
 
 locationField.addEventListener("input", () => { updatePreview(); updatePublicationReadiness(); });
 requireElement<HTMLButtonElement>(".edit-location").addEventListener("click", () => {
@@ -1516,9 +1623,6 @@ const publicPath = /^\/p\/([^/]+)$/.exec(window.location.pathname);
 updatePreview(); renderChoices(); updatePublicationReadiness(); void checkApi();
 if (publicPath?.[1]) {
   void loadPublicPoll(publicPath[1]);
-  window.setInterval(() => void refreshPublicPoll(), 750);
-  document.addEventListener("visibilitychange", () => void refreshPublicPoll());
-  window.addEventListener("focus", () => void refreshPublicPoll());
 }
 else if (pollId && historyView) {
   editor.hidden = true;
@@ -1527,7 +1631,12 @@ else if (pollId && historyView) {
   publicPollScreen.hidden = true;
   historyScreen.hidden = true;
   historyAccessDenied.hidden = true;
-  historyBack.href = `/?pollId=${encodeURIComponent(pollId)}&testRunId=${encodeURIComponent(testRunId)}`;
+  historyBack.href = organiserPollDestination(pollId, "manage", testRunId, pollReturnContext(url.searchParams));
   void loadHistory(pollId);
 }
 else if (pollId) void loadDraft(pollId);
+else if (creationView) editor.hidden = false;
+else { myPollsScreen.hidden = false; headerSaveStatus.hidden = true; void loadMyPolls(); }
+window.setInterval(() => void refreshPublicPoll(), 750);
+document.addEventListener("visibilitychange", () => void refreshPublicPoll());
+window.addEventListener("focus", () => void refreshPublicPoll());

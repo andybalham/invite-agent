@@ -99,7 +99,7 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
     const health = await smoke.call("GET", "/health");
     expect(health.response.status(), "API/DynamoDB readiness; inspect service logs").toBe(200);
     expect(health.body).toEqual({ status: "ok" });
-    await page.goto(`/?testRunId=${smoke.runId}`);
+    await page.goto(`/?view=create&testRunId=${smoke.runId}`);
     await page.getByLabel("Title").fill(initialTitle);
     await page.getByLabel("Description").fill(data.description);
     await page.getByLabel("Instructions").fill(data.instructions);
@@ -170,7 +170,8 @@ test("deterministic local smoke journey SM-01 through SM-11", async ({ smoke, pa
     // Publish deliberately saves draft details first: assert one revision for each of these two writes.
     await smoke.accepted(page, "owner", "publish prepared draft", ["POLL_DETAILS_UPDATED", "POLL_PUBLISHED"], async () => {
       await page.getByRole("button", { name: "Publish", exact: true }).click();
-      await expect(page.getByRole("heading", { name: "Share this link" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: finalTitle, exact: true })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Organiser controls" })).toBeVisible();
       smoke.publicUrl = await page.getByLabel("Public poll link").inputValue();
     }, { type: "poll", id: smoke.pollId });
     const url = new URL(smoke.publicUrl);

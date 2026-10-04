@@ -4,7 +4,7 @@ test("an organiser adds, edits, reorders, removes, and revisits ordered choices"
   page,
   testRunId
 }) => {
-  await page.goto(`/?testRunId=${encodeURIComponent(testRunId)}`);
+  await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
   await page.getByLabel("Title").fill("Autumn get-together");
 
   await page.getByLabel("New proposed date").fill("2026-10-10");
@@ -32,7 +32,7 @@ test("duplicates, invalid dates, DST gaps, and folds are explained without addin
   page,
   testRunId
 }) => {
-  await page.goto(`/?testRunId=${encodeURIComponent(testRunId)}`);
+  await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
 
   await page.getByLabel("New proposed date").fill("2026-10-17");
   await page.getByLabel("New proposed time").fill("18:00");

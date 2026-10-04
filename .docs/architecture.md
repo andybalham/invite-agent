@@ -323,6 +323,8 @@ All endpoints are versioned under `/api/v1`. JSON is used for requests and respo
 
 Ownership is checked on every organiser request after JWT validation.
 
+The S-045 navigation implementation uses the existing query-based organiser routes: normal `/` entry opens My polls, `view=create` opens the creation editor, and `pollId` loads the owned poll before selecting its editor or management view from the current lifecycle. Owned title links include `view=editor|manage` and carry `returnFilter`/`returnSearch`; these are navigation context only, never authority. New draft saves reset return context to default Active with blank search. The protected implemented `GET /api/organiser/polls/{pollId}` retains draft details for Draft and reuses the existing public-view projection for Open/Closed after checking ownership, including participants, ranking and final/provisional selection. It returns no capability token/hash or public URL. Management reached by poll ID renders responses read-only because participant mutations continue to require a public capability; existing organiser location, close/reopen and history actions use their protected routes. Publication displays management with the issued share link in the same document. Direct public capabilities take precedence over conflicting organiser query parameters.
+
 ### 8.2 Public endpoints
 
 | Method and path | Purpose |

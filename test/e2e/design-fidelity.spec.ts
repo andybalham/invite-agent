@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 
 test.describe("primary Gather design", () => {
   test("uses the Gather chrome and Modernist draft hierarchy", async ({ page, testRunId }, testInfo) => {
-    await page.goto(`/?testRunId=${encodeURIComponent(testRunId)}`);
+    await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
 
     await expect(page.getByRole("link", { name: "Gather home" })).toBeVisible();
     await expect(page.getByText("Draft · only you can see this", { exact: true })).toBeVisible();
@@ -39,7 +39,7 @@ test.describe("primary Gather design", () => {
 
   test("keeps the draft usable and fluid on a mobile viewport", async ({ page, testRunId }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`/?testRunId=${encodeURIComponent(testRunId)}`);
+    await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
 
     await expect(page.getByRole("heading", { name: "New poll" })).toBeVisible();
     await expect(page.getByLabel("Location — plain text or Markdown, e.g. [map](https://…)")).toBeVisible();
