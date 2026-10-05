@@ -3,12 +3,12 @@ id: E-008
 type: epic
 title: "E8 — Production AWS platform"
 parent: null
-dependsOn: [E-007, E-010, E-011, E-012]
+dependsOn: [E-007, E-010, E-011, E-012, E-014]
 estimate: 12
 tags: [aws, cdk, infrastructure, production, security]
 archived: false
 created: 2026-09-27T18:05:21.827Z
-updated: 2026-10-03T16:38:46.478Z
+updated: 2026-10-05T18:52:06.465Z
 ---
 Visible deliverable:
 A CDK deployment provisions a production-like Invite-a-Gent environment with private web hosting, authenticated organiser APIs, public poll APIs, durable audited data, vanity-domain HTTPS, and operational safeguards.

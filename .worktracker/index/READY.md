@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — todo
+- [ ] [T-128 · Specify the E2E isolation boundary and prohibit shared-table writes](../entities/T-128-specify-the-e2e-isolation-boundary-and-prohibit-shared-table-writes.md) — todo

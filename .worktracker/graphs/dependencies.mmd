@@ -12,11 +12,12 @@ graph LR
     E005["E-005 E5 — Live popular-date ranking"]:::done
     E006["E-006 E6 — Immutable history and safe undo"]:::done
     E007["E-007 E7 — Final decision and reversible poll lifecycle"]:::done
-    E008["E-008 E8 — Production AWS platform"]:::todo
+    E008["E-008 E8 — Production AWS platform"]:::blocked
     E009["E-009 E9 — Tested production release and operations"]:::blocked
     E010["E-010 E10 — Local onboarding and full-journey smoke testing"]:::done
     E011["E-011 E11 — Ephemeral smoke data and safe local cleanup"]:::done
     E012["E-012 E12 — My polls organiser dashboard"]:::done
+    E014["E-014 E14 — Isolated and performant E2E test system"]:::todo
     E001 --> E002
     E002 --> E003
     E003 --> E004
@@ -31,6 +32,8 @@ graph LR
     E011 --> E008
     E011 --> E012
     E012 --> E008
+    E012 --> E014
+    E014 --> E008
   end
   subgraph Stories
     S001["S-001 Establish the TypeScript workspace and shared contracts"]:::done
@@ -57,7 +60,7 @@ graph LR
     S022["S-022 Enforce closed read-only state and frozen ranking"]:::done
     S023["S-023 Maintain safe location details in every lifecycle state"]:::done
     S024["S-024 Reopen collaboration and close again with preserved history"]:::done
-    S025["S-025 Provision durable DynamoDB application and audit data"]:::todo
+    S025["S-025 Provision durable DynamoDB application and audit data"]:::blocked
     S026["S-026 Deploy least-privilege Lambda APIs with Cognito authorization"]:::blocked
     S027["S-027 Serve the SPA through private S3, CloudFront, DNS, and TLS"]:::blocked
     S028["S-028 Add production observability, limits, and security safeguards"]:::blocked
@@ -82,6 +85,10 @@ graph LR
     S047["S-047 Find owned polls with lifecycle filters title search and creation ordering"]:::done
     S048["S-048 Reflect create publish close and reopen workflows in My polls"]:::done
     S049["S-049 Document My polls operation and verify acceptance and regression coverage"]:::done
+    S050["S-050 Define the isolated E2E execution and performance contract"]:::todo
+    S051["S-051 Provision and clean up per-run E2E data safely"]:::blocked
+    S052["S-052 Reduce E2E data setup and verification cost"]:::blocked
+    S053["S-053 Operationalize fast and exhaustive E2E suites"]:::blocked
     S001 --> S002
     S002 --> S003
     S003 --> S004
@@ -134,6 +141,9 @@ graph LR
     S046 --> S048
     S047 --> S049
     S048 --> S049
+    S050 --> S051
+    S051 --> S052
+    S052 --> S053
   end
   subgraph Tasks
     T001["T-001 Specify workspace and shared contracts with failing automated tests"]:::done
@@ -187,7 +197,7 @@ graph LR
     T049["T-049 Implement and verify location maintenance across lifecycle states"]:::done
     T050["T-050 Specify reopen and close-again lifecycle with failing automated tests"]:::done
     T051["T-051 Implement and verify reopen and close-again lifecycle"]:::done
-    T052["T-052 Specify production DynamoDB stacks with failing automated tests"]:::todo
+    T052["T-052 Specify production DynamoDB stacks with failing automated tests"]:::blocked
     T053["T-053 Implement and verify production DynamoDB stacks"]:::blocked
     T054["T-054 Specify Lambda, API Gateway, and Cognito stacks with failing automated tests"]:::blocked
     T055["T-055 Implement and verify Lambda, API Gateway, and Cognito stacks"]:::blocked
@@ -263,6 +273,19 @@ graph LR
     T125["T-125 Document My polls user navigation and local operational guidance in README"]:::done
     T126["T-126 Integrate My polls into the isolated local smoke journey and its contract"]:::done
     T127["T-127 Run dashboard acceptance and regression checks and record implementation evidence"]:::done
+    T128["T-128 Specify the E2E isolation boundary and prohibit shared-table writes"]:::todo
+    T129["T-129 Define per-run table ownership, manifest, cleanup, and recovery contract"]:::blocked
+    T130["T-130 Set E2E suite tiers, coverage boundaries, and runtime budgets"]:::blocked
+    T131["T-131 Implement per-run E2E table provisioning and API configuration"]:::blocked
+    T132["T-132 Implement owned-table teardown and failure diagnostics"]:::blocked
+    T133["T-133 Verify E2E cleanup isolation, repeatability, and failure recovery"]:::blocked
+    T134["T-134 Implement efficient test-only data seeding fixtures"]:::blocked
+    T135["T-135 Replace unnecessary full-partition snapshots with targeted invariants"]:::blocked
+    T136["T-136 Split discovery coverage and remove duplicated expensive viewport setup"]:::blocked
+    T137["T-137 Benchmark and tune E2E workers, contention, and suite budgets"]:::blocked
+    T138["T-138 Add commands for isolated fast, discovery, smoke, and exhaustive E2E suites"]:::blocked
+    T139["T-139 Update CI and documentation for E2E isolation and cleanup"]:::blocked
+    T140["T-140 Run final E2E acceptance, repeatability, and no-cruft verification"]:::blocked
     T001 --> T002
     T002 --> T003
     T003 --> T004
@@ -399,6 +422,20 @@ graph LR
     T125 --> T127
     T126 --> T127
     T127 --> T052
+    T128 --> T129
+    T128 --> T130
+    T129 --> T131
+    T130 --> T134
+    T131 --> T132
+    T132 --> T133
+    T133 --> T138
+    T134 --> T135
+    T134 --> T136
+    T135 --> T137
+    T136 --> T137
+    T137 --> T138
+    T138 --> T139
+    T139 --> T140
   end
   click E001 "../entities/E-001-e1-runnable-local-engineering-foundation.md"
   click E002 "../entities/E-002-e2-organiser-draft-builder-and-preview.md"
@@ -412,6 +449,7 @@ graph LR
   click E010 "../entities/E-010-e10-local-onboarding-and-full-journey-smoke-testing.md"
   click E011 "../entities/E-011-e11-ephemeral-smoke-data-and-safe-local-cleanup.md"
   click E012 "../entities/E-012-e12-my-polls-organiser-dashboard.md"
+  click E014 "../entities/E-014-e13-isolated-and-performant-e2e-test-system.md"
   click S001 "../entities/S-001-establish-the-typescript-workspace-and-shared-contracts.md"
   click S002 "../entities/S-002-run-shared-services-locally-with-dynamodb-and-guarded-authentication.md"
   click S003 "../entities/S-003-provide-one-command-local-startup-and-browser-test-harness.md"
@@ -461,6 +499,10 @@ graph LR
   click S047 "../entities/S-047-find-owned-polls-with-lifecycle-filters-title-search-and-creation-ordering.md"
   click S048 "../entities/S-048-reflect-create-publish-close-and-reopen-workflows-in-my-polls.md"
   click S049 "../entities/S-049-document-my-polls-operation-and-verify-acceptance-and-regression-coverage.md"
+  click S050 "../entities/S-050-define-the-isolated-e2e-execution-and-performance-contract.md"
+  click S051 "../entities/S-051-provision-and-clean-up-per-run-e2e-data-safely.md"
+  click S052 "../entities/S-052-reduce-e2e-data-setup-and-verification-cost.md"
+  click S053 "../entities/S-053-operationalize-fast-and-exhaustive-e2e-suites.md"
   click T001 "../entities/T-001-specify-workspace-and-shared-contracts-with-failing-automated-tests.md"
   click T002 "../entities/T-002-implement-and-verify-workspace-and-shared-contracts.md"
   click T003 "../entities/T-003-specify-local-dynamodb-shared-services-and-guarded-auth-with-failing-automated-tests.md"
@@ -588,3 +630,16 @@ graph LR
   click T125 "../entities/T-125-document-my-polls-user-navigation-and-local-operational-guidance-in-readme.md"
   click T126 "../entities/T-126-integrate-my-polls-into-the-isolated-local-smoke-journey-and-its-contract.md"
   click T127 "../entities/T-127-run-dashboard-acceptance-and-regression-checks-and-record-implementation-evidence.md"
+  click T128 "../entities/T-128-specify-the-e2e-isolation-boundary-and-prohibit-shared-table-writes.md"
+  click T129 "../entities/T-129-define-per-run-table-ownership-manifest-cleanup-and-recovery-contract.md"
+  click T130 "../entities/T-130-set-e2e-suite-tiers-coverage-boundaries-and-runtime-budgets.md"
+  click T131 "../entities/T-131-implement-per-run-e2e-table-provisioning-and-api-configuration.md"
+  click T132 "../entities/T-132-implement-owned-table-teardown-and-failure-diagnostics.md"
+  click T133 "../entities/T-133-verify-e2e-cleanup-isolation-repeatability-and-failure-recovery.md"
+  click T134 "../entities/T-134-implement-efficient-test-only-data-seeding-fixtures.md"
+  click T135 "../entities/T-135-replace-unnecessary-full-partition-snapshots-with-targeted-invariants.md"
+  click T136 "../entities/T-136-split-discovery-coverage-and-remove-duplicated-expensive-viewport-setup.md"
+  click T137 "../entities/T-137-benchmark-and-tune-e2e-workers-contention-and-suite-budgets.md"
+  click T138 "../entities/T-138-add-commands-for-isolated-fast-discovery-smoke-and-exhaustive-e2e-suites.md"
+  click T139 "../entities/T-139-update-ci-and-documentation-for-e2e-isolation-and-cleanup.md"
+  click T140 "../entities/T-140-run-final-e2e-acceptance-repeatability-and-no-cruft-verification.md"

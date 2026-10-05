@@ -1,0 +1,61 @@
+graph LR
+  classDef done fill:#14532d,stroke:#86efac,color:#f0fdf4;
+  classDef blocked fill:#7f1d1d,stroke:#fca5a5,color:#fff7f7;
+  classDef inprogress fill:#78350f,stroke:#fbbf24,color:#fffbeb;
+  classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
+  classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
+  subgraph Stories
+    S050["S-050 Define the isolated E2E execution and performance contract"]:::todo
+    S051["S-051 Provision and clean up per-run E2E data safely"]:::blocked
+    S052["S-052 Reduce E2E data setup and verification cost"]:::blocked
+    S053["S-053 Operationalize fast and exhaustive E2E suites"]:::blocked
+    S050 --> S051
+    S051 --> S052
+    S052 --> S053
+  end
+  subgraph Tasks
+    T128["T-128 Specify the E2E isolation boundary and prohibit shared-table writes"]:::todo
+    T129["T-129 Define per-run table ownership, manifest, cleanup, and recovery contract"]:::blocked
+    T130["T-130 Set E2E suite tiers, coverage boundaries, and runtime budgets"]:::blocked
+    T131["T-131 Implement per-run E2E table provisioning and API configuration"]:::blocked
+    T132["T-132 Implement owned-table teardown and failure diagnostics"]:::blocked
+    T133["T-133 Verify E2E cleanup isolation, repeatability, and failure recovery"]:::blocked
+    T134["T-134 Implement efficient test-only data seeding fixtures"]:::blocked
+    T135["T-135 Replace unnecessary full-partition snapshots with targeted invariants"]:::blocked
+    T136["T-136 Split discovery coverage and remove duplicated expensive viewport setup"]:::blocked
+    T137["T-137 Benchmark and tune E2E workers, contention, and suite budgets"]:::blocked
+    T138["T-138 Add commands for isolated fast, discovery, smoke, and exhaustive E2E suites"]:::blocked
+    T139["T-139 Update CI and documentation for E2E isolation and cleanup"]:::blocked
+    T140["T-140 Run final E2E acceptance, repeatability, and no-cruft verification"]:::blocked
+    T128 --> T129
+    T128 --> T130
+    T129 --> T131
+    T130 --> T134
+    T131 --> T132
+    T132 --> T133
+    T133 --> T138
+    T134 --> T135
+    T134 --> T136
+    T135 --> T137
+    T136 --> T137
+    T137 --> T138
+    T138 --> T139
+    T139 --> T140
+  end
+  click S050 "../entities/S-050-define-the-isolated-e2e-execution-and-performance-contract.md"
+  click S051 "../entities/S-051-provision-and-clean-up-per-run-e2e-data-safely.md"
+  click S052 "../entities/S-052-reduce-e2e-data-setup-and-verification-cost.md"
+  click S053 "../entities/S-053-operationalize-fast-and-exhaustive-e2e-suites.md"
+  click T128 "../entities/T-128-specify-the-e2e-isolation-boundary-and-prohibit-shared-table-writes.md"
+  click T129 "../entities/T-129-define-per-run-table-ownership-manifest-cleanup-and-recovery-contract.md"
+  click T130 "../entities/T-130-set-e2e-suite-tiers-coverage-boundaries-and-runtime-budgets.md"
+  click T131 "../entities/T-131-implement-per-run-e2e-table-provisioning-and-api-configuration.md"
+  click T132 "../entities/T-132-implement-owned-table-teardown-and-failure-diagnostics.md"
+  click T133 "../entities/T-133-verify-e2e-cleanup-isolation-repeatability-and-failure-recovery.md"
+  click T134 "../entities/T-134-implement-efficient-test-only-data-seeding-fixtures.md"
+  click T135 "../entities/T-135-replace-unnecessary-full-partition-snapshots-with-targeted-invariants.md"
+  click T136 "../entities/T-136-split-discovery-coverage-and-remove-duplicated-expensive-viewport-setup.md"
+  click T137 "../entities/T-137-benchmark-and-tune-e2e-workers-contention-and-suite-budgets.md"
+  click T138 "../entities/T-138-add-commands-for-isolated-fast-discovery-smoke-and-exhaustive-e2e-suites.md"
+  click T139 "../entities/T-139-update-ci-and-documentation-for-e2e-isolation-and-cleanup.md"
+  click T140 "../entities/T-140-run-final-e2e-acceptance-repeatability-and-no-cruft-verification.md"
