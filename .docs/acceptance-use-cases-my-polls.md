@@ -4,7 +4,7 @@
 
 This supplement translates [My polls requirements](user-requirements-my-polls.md) into observable acceptance scenarios. It complements the existing [acceptance use cases](acceptance-use-cases.md); existing poll creation, publication, collaboration, closing, reopening, and authorization scenarios continue to apply.
 
-These scenarios describe required behaviour. S-043–S-048 implement the local dashboard and owned-list API; the traceability below maps MP-US-01–11 to executable coverage. Scenario wording avoids prescribing routes, selectors, API contracts or storage details; implementation notes describe the current code and its limits. Coverage references are not a claim that these suites were rerun for this documentation update or that production Cognito/AWS behavior was verified.
+These scenarios describe required behaviour. S-043–S-048 implement the local dashboard and owned-list API; the traceability below maps MP-US-01–11 to executable coverage. Scenario wording avoids prescribing routes, selectors, API contracts or storage details; implementation notes describe the current code and its limits. The [T-127 verification record](t127-verification.md) separately records the 5 October 2026 executions and cleanup proof. Coverage references alone are not execution evidence or a claim that production Cognito/AWS behavior was verified.
 
 ## Test conventions
 
@@ -320,7 +320,7 @@ Paths below refer to actual test files. Component suites render the real TypeScr
 
 Across these stories, [repository](../test/integration/my-polls-repository.test.mjs), [discovery browser](../test/e2e/my-polls-search.spec.ts) and [lifecycle browser](../test/e2e/my-polls-lifecycle.spec.ts) cases compare complete paginated application/audit snapshots around reads. Lifecycle cases retain existing mutation audit/version assertions. [Fixture isolation](../test/integration/my-polls-fixture.test.mjs) and [failure-path teardown](../test/integration/integration-cleanup.test.mjs) cover disposable integration tables.
 
-Resolved loading/error/date/continuation decisions are covered by the referenced component suites and server tests. Native back/forward-cache acceptance, Cognito sign-in, production deployment/index migration and live AWS smoke checks are not established by these tests. The browser has no sign-in control, automatic dashboard polling or inline close/reopen actions. Link recovery on a later owned-detail visit is not delivered. T-125–T-127 own README guidance, smoke integration and final regression evidence; they are not completed by T-124.
+Resolved loading/error/date/continuation decisions are covered by the referenced component suites and server tests. Native back/forward-cache acceptance, Cognito sign-in, production deployment/index migration and live AWS smoke checks are not established by these tests. The browser has no sign-in control, automatic dashboard polling or inline close/reopen actions. Link recovery on a later owned-detail visit is not delivered. T-125 supplies README guidance, T-126 integrates the isolated smoke journey, and [T-127 records acceptance/regression execution](t127-verification.md); these are separate from T-124's documentation mapping.
 
 Shared ownership, ownership transfer, site-wide administration, archiving, duplication, reminders, and bulk actions are outside this supplement's initial scope.
 

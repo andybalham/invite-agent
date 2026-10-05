@@ -5,7 +5,7 @@ test("an organiser adds, edits, reorders, removes, and revisits ordered choices"
   testRunId
 }) => {
   await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
-  await page.getByLabel("Title").fill("Autumn get-together");
+  await page.getByRole("textbox", { name: "Title", exact: true }).fill("Autumn get-together");
 
   await page.getByLabel("New proposed date").fill("2026-10-10");
   await page.getByLabel("New proposed time").fill("18:00");

@@ -52,9 +52,9 @@ test.describe("primary Gather design", () => {
     expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
     expect(layout.mainPadding).toBe("16px");
 
-    await page.getByLabel("Title").focus();
-    await expect(page.getByLabel("Title")).toHaveCSS("outline-style", "solid");
-    await expect(page.getByLabel("Title")).toHaveCSS("outline-width", "2px");
+    await page.getByRole("textbox", { name: "Title", exact: true }).focus();
+    await expect(page.getByRole("textbox", { name: "Title", exact: true })).toHaveCSS("outline-style", "solid");
+    await expect(page.getByRole("textbox", { name: "Title", exact: true })).toHaveCSS("outline-width", "2px");
     await testInfo.attach("gather-draft-mobile.png", {
       body: await page.screenshot({ fullPage: true }),
       contentType: "image/png"

@@ -67,7 +67,7 @@ My polls requests up to 25 matching summaries initially; the API allows page siz
 
 Failures are distinct from empty successful lists, and responses from earlier queries or identities cannot replace current results. Continuations expire after 15 minutes; API restart without a stable cursor secret also invalidates them. These failures use the generic later-page error: Try again does not refresh an invalid cursor. Reload My polls or change the query to start page one. Dashboard reads never change poll versions or append audit events.
 
-See the [My polls requirements](.docs/user-requirements-my-polls.md), [MP-US-01–11 acceptance and evidence](.docs/acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries), and [storage/authentication architecture](.docs/architecture.md#56-my-polls-contract-and-storage-implementation-s-043--s-044) with [browser routes and freshness](.docs/architecture.md#57-my-polls-browser-routes-freshness-and-identity-boundaries).
+See the [My polls requirements](.docs/user-requirements-my-polls.md), [MP-US-01–11 acceptance and evidence](.docs/acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries), and [storage/authentication architecture](.docs/architecture.md#56-my-polls-contract-and-storage-implementation-s-043--s-044) with [browser routes and freshness](.docs/architecture.md#57-my-polls-browser-routes-freshness-and-identity-boundaries). The [T-127 verification record](.docs/t127-verification.md) records the 5 October 2026 commands, results, cleanup evidence and production-readiness limits.
 
 ## Architecture
 
@@ -79,10 +79,10 @@ The production target is a serverless AWS application in `eu-west-2`:
 - **Data**: DynamoDB, with a current-state table and a separate immutable audit table. Writes are transactional and use last-update-wins semantics with a poll-wide version.
 - **Infrastructure**: AWS CDK v2 (TypeScript).
 
-For local development and testing, the whole application runs offline. Thin local adapters replace the AWS edge services, and the domain services, repositories and validation stay the same:
+The implemented local frontend uses TypeScript DOM rendering with Vite; React and the AWS topology above remain production design targets. Local adapters replace the AWS edge services, while domain services, repositories and validation are shared:
 
 ```text
-Browser / Playwright ──▶ Vite dev server (React SPA) ──/api/* proxy──▶ Local Node.js HTTP adapter
+Browser / Playwright ──▶ Vite dev server (TypeScript SPA) ──/api/* proxy──▶ Local Node.js HTTP adapter
                                                                         ├─ local auth adapter
                                                                         └─ DynamoDB Local (Docker)
 ```
@@ -103,7 +103,7 @@ Full design documentation lives in [`.docs/`](.docs/):
 ```text
 .docs/               Requirements, architecture, acceptance cases, UI design
 backend/             Domain services, DynamoDB repositories, Lambda + local adapters
-frontend/            React/Vite SPA
+frontend/            TypeScript DOM-rendered/Vite SPA
 infra/               AWS CDK app
 packages/contracts/  Shared API schemas, types and error codes
 scripts/             Dev-stack, table initialisation and quality-check scripts
@@ -292,7 +292,7 @@ node --test test/integration/my-polls-lifecycle.test.mjs
 npx playwright test test/e2e/organiser-navigation.spec.ts test/e2e/navigation-guards.spec.ts test/e2e/my-polls-search.spec.ts test/e2e/my-polls-lifecycle.spec.ts --project=chromium --workers=1 --retries=0
 ```
 
-Keep the stack's `DYNAMODB_ENDPOINT`/`DYNAMODB_PORT`, `APP_TABLE_NAME`, `AUDIT_TABLE_NAME` and `WEB_PORT` consistent in the test shell. These direct commands and `test:discovery` leave service ownership with the caller. Integration fixtures own disposable table pairs; direct browser tests create fresh identities but retain polls in the configured local tables until explicit cleanup. The smoke wrapper alone supplies its per-run table teardown. Test references and known production/native-cache limits are in [My polls acceptance evidence](.docs/acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries); this guide does not claim a new regression or smoke run.
+Keep the stack's `DYNAMODB_ENDPOINT`/`DYNAMODB_PORT`, `APP_TABLE_NAME`, `AUDIT_TABLE_NAME` and `WEB_PORT` consistent in the test shell. These direct commands and `test:discovery` leave service ownership with the caller. Integration fixtures own disposable table pairs; direct browser tests create fresh identities but retain polls in the configured local tables until explicit cleanup. The smoke wrapper supplies its per-run table teardown. T-127 also uses those existing manifest-owned resources for the broader acceptance run; this does not change the default direct-run data lifetime. See [My polls acceptance evidence](.docs/acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries) and [measured T-127 results](.docs/t127-verification.md) for executed checks and production/native-cache limits.
 
 ### Local smoke test
 

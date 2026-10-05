@@ -19,7 +19,7 @@ test("an organiser publishes a valid draft and copies the active public link", a
 }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
-  await page.getByLabel("Title").fill(poll.title);
+  await page.getByRole("textbox", { name: "Title", exact: true }).fill(poll.title);
   for (const choice of poll.proposedDates) {
     await page.getByLabel("New proposed date").fill(
       choice.kind === "date" ? choice.localDate : choice.localDateTime.split("T")[0]

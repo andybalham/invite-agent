@@ -10,6 +10,8 @@ S-035 provides the executable browser journey in `test/e2e/smoke.spec.ts`, with 
 
 T-126 extends that same eleven-checkpoint journey with My polls entry, title navigation, refreshed summaries and close/reopen membership. It retains the E-010/E-011 run resources, manifests, diagnostics and owned-table teardown. Dashboard acceptance references below come from [My polls use cases](acceptance-use-cases-my-polls.md) and [resolved requirements](user-requirements-my-polls.md).
 
+The [T-127 verification record](t127-verification.md) records the 5 October 2026 acceptance/regression and smoke executions, including owned-table cleanup evidence. Those results supplement, without rewriting, the historical T-126 and S-036 measurements below.
+
 Authoritative behaviour: [user requirements](user-requirements.md) and [acceptance use cases](acceptance-use-cases.md). Local installation, ports, startup, shutdown, and troubleshooting remain in the [README](../README.md). Local authentication is a test adapter; this journey cannot verify Cognito or deployed AWS services.
 
 ## Checkpoints and acceptance traceability

@@ -94,9 +94,9 @@ _Generated. Do not edit by hand._
   - [x] [T-050 · Specify reopen and close-again lifecycle with failing automated tests](../entities/T-050-specify-reopen-and-close-again-lifecycle-with-failing-automated-tests.md) — done
   - [x] [T-051 · Implement and verify reopen and close-again lifecycle](../entities/T-051-implement-and-verify-reopen-and-close-again-lifecycle.md) — done
 
-## [E-008 · E8 — Production AWS platform](./E-008.md) — blocked
-- [ ] **S-025 · Provision durable DynamoDB application and audit data** — blocked · waiting on E-008
-  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — blocked · waiting on T-127
+## [E-008 · E8 — Production AWS platform](./E-008.md) — todo
+- [ ] **S-025 · Provision durable DynamoDB application and audit data** — todo
+  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — todo
   - [ ] [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [ ] **S-026 · Deploy least-privilege Lambda APIs with Cognito authorization** — blocked · waiting on S-025
   - [ ] [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053
@@ -163,7 +163,7 @@ _Generated. Do not edit by hand._
   - [x] [T-096 · Implement the guarded all-local-data cleanup script](../entities/T-096-implement-the-guarded-all-local-data-cleanup-script.md) — done
   - [x] [T-097 · Verify and document complete local-data clear-down](../entities/T-097-verify-and-document-complete-local-data-clear-down.md) — done
 
-## [E-012 · E12 — My polls organiser dashboard](./E-012.md) — todo
+## [E-012 · E12 — My polls organiser dashboard](./E-012.md) — done
 - [x] **S-043 · Resolve My polls decisions and define tested dashboard contracts** — done
   - [x] [T-098 · Resolve dashboard search date pagination and state-copy decisions](../entities/T-098-resolve-dashboard-search-date-pagination-and-state-copy-decisions.md) — done
   - [x] [T-099 · Define the owned-summary API and creation-ordered query strategy](../entities/T-099-define-the-owned-summary-api-and-creation-ordered-query-strategy.md) — done
@@ -196,8 +196,8 @@ _Generated. Do not edit by hand._
   - [x] [T-121 · Integrate saved poll and lifecycle results with dashboard refresh](../entities/T-121-integrate-saved-poll-and-lifecycle-results-with-dashboard-refresh.md) — done
   - [x] [T-122 · Verify lifecycle summaries and read-only list behavior with server integration tests](../entities/T-122-verify-lifecycle-summaries-and-read-only-list-behavior-with-server-integration-tests.md) — done
   - [x] [T-123 · Verify complete dashboard lifecycle journeys and public-link isolation in browsers](../entities/T-123-verify-complete-dashboard-lifecycle-journeys-and-public-link-isolation-in-browsers.md) — done
-- [ ] **S-049 · Document My polls operation and verify acceptance and regression coverage** — todo
+- [x] **S-049 · Document My polls operation and verify acceptance and regression coverage** — done
   - [x] [T-124 · Update dashboard requirements acceptance traceability and architecture documentation](../entities/T-124-update-dashboard-requirements-acceptance-traceability-and-architecture-documentation.md) — done
   - [x] [T-125 · Document My polls user navigation and local operational guidance in README](../entities/T-125-document-my-polls-user-navigation-and-local-operational-guidance-in-readme.md) — done
   - [x] [T-126 · Integrate My polls into the isolated local smoke journey and its contract](../entities/T-126-integrate-my-polls-into-the-isolated-local-smoke-journey-and-its-contract.md) — done
-  - [ ] [T-127 · Run dashboard acceptance and regression checks and record implementation evidence](../entities/T-127-run-dashboard-acceptance-and-regression-checks-and-record-implementation-evidence.md) — todo
+  - [x] [T-127 · Run dashboard acceptance and regression checks and record implementation evidence](../entities/T-127-run-dashboard-acceptance-and-regression-checks-and-record-implementation-evidence.md) — done

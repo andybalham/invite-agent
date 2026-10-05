@@ -11,7 +11,7 @@ test("preview shows participant-facing draft details without response capability
   testRunId
 }) => {
   await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
-  await page.getByLabel("Title").fill("Autumn get-together");
+  await page.getByRole("textbox", { name: "Title", exact: true }).fill("Autumn get-together");
   await page.getByLabel("Description").fill("Choose every date you could attend.");
   await page.getByLabel("Location").fill("**Community Hall** — [map](https://example.test/map)");
   await page.getByLabel("Instructions").fill("Please reply by Friday.");
@@ -40,7 +40,7 @@ test("readiness stays blocked until every required field is valid", async ({ pag
   await expect(page.getByRole("alert")).toContainText("Add a title.");
   await expect(page.getByRole("alert")).toContainText("Add at least two proposed dates.");
 
-  await page.getByLabel("Title").fill("Autumn get-together");
+  await page.getByRole("textbox", { name: "Title", exact: true }).fill("Autumn get-together");
   await addDate(page, "2026-10-10");
   await expect(page.getByRole("alert")).toContainText("Add at least one more proposed date");
   await addDate(page, "2026-10-17");
@@ -53,7 +53,7 @@ test("unauthenticated draft reads and responses disclose nothing and change noth
   testRunId
 }) => {
   await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
-  await page.getByLabel("Title").fill("Private planning notes");
+  await page.getByRole("textbox", { name: "Title", exact: true }).fill("Private planning notes");
   await addDate(page, "2026-10-10");
   await addDate(page, "2026-10-17");
   await page.getByRole("button", { name: "Save draft" }).click();

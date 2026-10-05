@@ -6,7 +6,7 @@ test("an organiser creates, revisits, and edits a private draft with safe locati
 }) => {
   await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
 
-  await page.getByLabel("Title").fill("Autumn get-together");
+  await page.getByRole("textbox", { name: "Title", exact: true }).fill("Autumn get-together");
   await page.getByLabel("Description").fill("Choose every date you could attend.");
   await page
     .getByLabel("Location")
@@ -23,12 +23,12 @@ test("an organiser creates, revisits, and edits a private draft with safe locati
 
   const savedUrl = page.url();
   await page.reload();
-  await expect(page.getByLabel("Title")).toHaveValue("Autumn get-together");
+  await expect(page.getByRole("textbox", { name: "Title", exact: true })).toHaveValue("Autumn get-together");
   await expect(page.getByLabel("Location")).toHaveValue(
     "**Community Hall** — [map](https://example.test/map)"
   );
 
-  await page.getByLabel("Title").fill("Autumn planning session");
+  await page.getByRole("textbox", { name: "Title", exact: true }).fill("Autumn planning session");
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page.getByRole("status")).toContainText("Changes saved");
   await expect(page).toHaveURL(savedUrl);
@@ -39,7 +39,7 @@ test("hostile or excessive location input stays editable and never replaces save
   testRunId
 }) => {
   await page.goto(`/?view=create&testRunId=${encodeURIComponent(testRunId)}`);
-  await page.getByLabel("Title").fill("Security review");
+  await page.getByRole("textbox", { name: "Title", exact: true }).fill("Security review");
   await page.getByLabel("Location").fill("Community Hall");
   await page.getByRole("button", { name: "Save draft" }).click();
   await expect(page.getByRole("status")).toContainText("Draft saved");
