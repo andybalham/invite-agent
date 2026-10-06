@@ -103,3 +103,42 @@ intentional browser failure, partial cleanup/recovery and catchable interruption
 with overridden ports/region/hash configuration. It requires installed Playwright
 Chromium and preserves evidence under `.devstack/`; its database is in memory.
 Real DynamoDB Local interoperability remains a separate integration check.
+
+## T-133 cleanup verification
+
+`node --test test/foundation/e2e-cleanup-isolation.test.mjs` adds controlled
+connectivity outages, repeated/idempotent recovery, ownership changes between
+inspection and deletion, and simultaneous recovery with one actual lock holder.
+It compares protected and unrelated-run records, original binary evidence, and
+the append-only cleanup journal rather than treating a delete response as absence.
+
+`node --test --test-concurrency=1 test/integration/e2e-runner.test.mjs test/integration/e2e-cleanup-local.test.mjs`
+checks real API/Vite/Chromium invocations against both a controlled JSON transport
+and DynamoDB Local. The Docker test creates its own named container from the
+already-installed `amazon/dynamodb-local:2.6.1` image, publishes a random loopback
+port, uses `-inMemory -sharedDb`, and mounts no filesystem data. It never consumes
+the caller's database endpoint. Its exact default development names and custom
+caller names are synthetic copies inside that private database, alongside another
+manifest-owned run. The test removes only its exact container ID in an after hook.
+Docker Engine, PowerShell, built workspaces and installed Chromium are required;
+missing dependencies fail the check instead of silently skipping it.
+
+The opt-in `cleanup-isolation.spec.ts` probe creates drafts through the UI and
+verifies untracked participant, name, capability and audit fixture records. Two
+successive two-worker runs must use distinct pairs, reconcile every poll artifact,
+stop owned writers and leave both tables absent. Paginated consistent snapshots
+prove every protected and unrelated-run record remains unchanged. Assertion,
+per-test timeout and browser-launch failures retain the primary outcome, HTML
+report, runner/service logs, and browser trace/screenshot/video when a browser
+started. Subsequent runs and recovery must retain every original artifact's SHA-256.
+The JSON transport also checks catchable interruption and a diagnostic retry:
+the original failure and both attempts remain evidence, and the reporter returns
+a failed process status matching the summary even when Playwright labels the
+recovered retry flaky.
+
+An injected audit-delete failure over the real database proves independent app
+cleanup, read-only preview, exact-run confirmation, deletion of only the remaining
+audit table, and an idempotent second recovery. All original error history remains.
+Evidence stays under `.devstack/e2e-runs/`; temporary manifests used by controlled
+fixtures are removed by their registered hooks. This verifies the runner lifecycle,
+not suite budgets or final full-suite acceptance (T-137/T-140).

@@ -5,6 +5,8 @@ import { createServer } from "node:http";
 import net from "node:net";
 import path from "node:path";
 import test from "node:test";
+import { stripVTControlCharacters } from "node:util";
+import { assertFailureEvidence, evidenceSnapshot, runCleanupProbe } from "../support/e2e-verification.mjs";
 
 async function freePort() {
   const server = net.createServer();
@@ -16,7 +18,7 @@ async function freePort() {
 
 // Run the real API, Vite, config, coordinator and browser workers against a
 // controlled AWS JSON transport. No developer database or Docker is required.
-test("Playwright pass, failure, partial cleanup and interruption preserve diagnostics and protected data", { timeout: 180_000 }, async (t) => {
+test("Playwright pass, failure, partial cleanup and interruption preserve diagnostics and protected data", { timeout: 360_000 }, async (t) => {
   const tables = new Map([
     ["invite-agent-local-app", { retained: ["browser poll"] }],
     ["invite-agent-local-audit", { retained: ["browser history"] }],
@@ -24,6 +26,8 @@ test("Playwright pass, failure, partial cleanup and interruption preserve diagno
   ]);
   const before = structuredClone([...tables]);
   const calls = [];
+  const deletedRecords = [];
+  const keyOf = (item) => JSON.stringify([item.PK.S, item.SK.S]);
   let refuseAuditDelete = false;
   const server = createServer(async (request, response) => {
     const chunks = [];
@@ -37,23 +41,38 @@ test("Playwright pass, failure, partial cleanup and interruption preserve diagno
       response.end(JSON.stringify({ __type: "com.amazonaws.dynamodb.v20120810#ResourceNotFoundException", message: "absent" }));
     };
     const table = tables.get(input.TableName);
-    if (operation === "CreateTable") {
+    if (operation === "TransactWriteItems") {
+      // This transport double covers fresh-draft persistence only. Real
+      // transaction/condition semantics are checked by the Docker-backed test.
+      for (const { Put } of input.TransactItems) {
+        assert.ok(Put, "Probe unexpectedly requires a non-Put transaction");
+        const target = tables.get(Put.TableName);
+        assert.ok(target, "Transaction targeted a missing table");
+        assert.ok(!target.items[keyOf(Put.Item)], "Fresh probe record collided");
+      }
+      for (const { Put } of input.TransactItems) tables.get(Put.TableName).items[keyOf(Put.Item)] = Put.Item;
+      response.end("{}");
+    } else if (operation === "CreateTable") {
       if (table) { response.statusCode = 400; response.end(JSON.stringify({ __type: "ResourceInUseException", message: "collision" })); return; }
       const schema = { ...input, TableStatus: "ACTIVE", CreationDateTime: Date.now() / 1000,
         BillingModeSummary: { BillingMode: "PAY_PER_REQUEST" },
         GlobalSecondaryIndexes: input.GlobalSecondaryIndexes?.map((index) => ({ ...index, IndexStatus: "ACTIVE" })) };
-      tables.set(input.TableName, { schema });
+      tables.set(input.TableName, { schema, items: {} });
       response.end(JSON.stringify({ TableDescription: schema }));
     } else if (!table) missing();
     else if (operation === "DescribeTable") response.end(JSON.stringify({ Table: table.schema }));
-    else if (operation === "PutItem") { table.marker = input.Item; response.end("{}"); }
-    else if (operation === "GetItem") response.end(JSON.stringify({ Item: table.marker }));
+    else if (operation === "PutItem") {
+      if (input.ConditionExpression && table.items[keyOf(input.Item)]) {
+        response.statusCode = 400; response.end(JSON.stringify({ __type: "ConditionalCheckFailedException", message: "marker collision" }));
+      } else { table.items[keyOf(input.Item)] = input.Item; response.end("{}"); }
+    }
+    else if (operation === "GetItem") response.end(JSON.stringify({ Item: table.items[keyOf(input.Key)] }));
     else if (operation === "Query") response.end(JSON.stringify({ Items: [], Count: 0 }));
     else if (operation === "DeleteTable") {
       if (refuseAuditDelete && input.TableName.includes("-audit-")) {
         response.statusCode = 400;
         response.end(JSON.stringify({ __type: "ValidationException", message: "injected audit delete failure" }));
-      } else { tables.delete(input.TableName); response.end("{}"); }
+      } else { deletedRecords.push({ name: input.TableName, items: structuredClone(Object.values(table.items)) }); tables.delete(input.TableName); response.end("{}"); }
     }
     else { response.statusCode = 500; response.end(JSON.stringify({ message: `Unexpected ${operation}` })); }
   });
@@ -112,6 +131,7 @@ test("Playwright pass, failure, partial cleanup and interruption preserve diagno
     for (const artifact of ["playwright-report/index.html", "service-logs/api.out.log", "service-logs/web.out.log", "shutdown.log", "table-cleanup.log"]) {
       assert.ok(await readFile(path.join(directory, artifact)), artifact);
     }
+    if (invocation === 2) await assertFailureEvidence(directory);
     assert.ok(!JSON.stringify(manifest).includes(environment.PUBLIC_TOKEN_HASH_KEY));
     for (const identity of manifest.services.processes) assert.throws(() => process.kill(identity.pid, 0), /ESRCH|EPERM/);
   }
@@ -121,13 +141,38 @@ test("Playwright pass, failure, partial cleanup and interruption preserve diagno
   const { recoverE2ERun } = await import("../../scripts/e2e-run-cleanup.mjs");
   assert.equal((await recoverE2ERun(path.join(partialDirectory, "manifest.json"), partialManifest.runId)).recoveryRequired, false);
   assert.equal(await readFile(path.join(partialDirectory, "summary.json"), "utf8"), originalSummary);
+  const retainedEvidence = await evidenceSnapshot(partialDirectory);
+  for (const options of [{ repeat: 2 }, { mode: "retry", retries: 1 }, { mode: "timeout" }, { browserMissing: true }]) {
+    const run = await runCleanupProbe(`http://127.0.0.1:${dynamodbPort}`, options);
+    t.diagnostic(`E2E evidence: ${run.directory}`);
+    assert.equal(run.exit, options.mode || options.browserMissing ? 1 : 0, run.output);
+    if (options.mode === "retry") {
+      assert.match(run.output, /1 flaky/);
+      assert.equal(run.summary.testExitCode, 1, "Recovered diagnostic retry retains its original browser failure");
+      assert.match(stripVTControlCharacters(run.summary.failure), /intentional cleanup probe failure/);
+    }
+    assert.equal(run.summary.recoveryRequired, false);
+    assert.deepEqual(run.summary.remainingTables, []);
+    assert.ok(run.manifest.tables.every(({ name, cleanup }) => cleanup === "deleted" && !tables.has(name)));
+    const count = options.browserMissing ? 0 : options.mode === "retry" || options.repeat ? 2 : 1;
+    assert.equal(run.manifest.pollIds.length, count, "Each worker/retry poll ID survives coordinator reconciliation");
+    const records = deletedRecords.filter(({ name }) => run.manifest.tables.some((table) => table.name === name)).flatMap(({ items }) => items);
+    assert.equal(records.filter((item) => item.GSI1PK).length, count);
+    for (const prefix of ["PARTICIPANT#", "NAME#", "EVENT#"]) assert.ok(records.filter((item) => item.SK.S.startsWith(prefix)).length >= count);
+    assert.equal(records.filter((item) => item.PK.S.startsWith("TOKEN#")).length, count);
+    if (options.mode || options.browserMissing) await assertFailureEvidence(run.directory, { media: !options.browserMissing });
+    assert.deepEqual(await evidenceSnapshot(partialDirectory), retainedEvidence, "A new invocation preserves earlier failure/recovery evidence");
+    assert.deepEqual([...tables], before);
+    runIds.push(run.manifest.runId);
+  }
   assert.notEqual(runIds[0], runIds[1]);
   assert.deepEqual([...tables].filter(([name]) => !name.startsWith("invite-agent-e2e-")), before);
   const creates = calls.filter(({ operation }) => operation === "CreateTable");
-  assert.equal(creates.length, 10, "API must not reinitialize/migrate exclusively provisioned tables");
-  assert.equal(new Set(creates.map(({ input }) => input.TableName)).size, 10);
+  assert.equal(creates.length, runIds.length * 2, "API must not reinitialize/migrate exclusively provisioned tables");
+  assert.equal(new Set(creates.map(({ input }) => input.TableName)).size, creates.length);
+  assert.equal(new Set(runIds).size, runIds.length);
   assert.ok(calls.every(({ regionMatches }) => regionMatches));
-  assert.ok(calls.every(({ input }) => input.TableName.startsWith("invite-agent-e2e-")));
+  assert.ok(calls.every(({ input }) => (input.TransactItems?.map(({ Put }) => Put.TableName) ?? [input.TableName]).every((name) => name.startsWith("invite-agent-e2e-"))));
   assert.deepEqual([...tables], before, "All run-owned pairs removed while complete protected data is unchanged");
   assert.ok(!calls.some(({ operation }) => ["UpdateTable", "Scan"].includes(operation)));
 });

@@ -32,7 +32,7 @@ export default class RunReporter implements Reporter {
     this.log(`${test.title}: ${result.status}\n`);
     if (result.status !== test.expectedStatus && result.status !== "skipped") this.failures.push(this.safe(result.errors[0]?.message ?? `${test.title}: ${result.status}`));
   }
-  async onEnd(result: FullResult): Promise<void> {
+  async onEnd(result: FullResult): Promise<void | { status: FullResult["status"] }> {
     if (!this.directory || !existsSync(this.directory)) return;
     const file = path.join(this.directory, "summary.json");
     const summary = await readFile(file, "utf8").then((text) => JSON.parse(text)).catch(() => null);
@@ -47,5 +47,8 @@ export default class RunReporter implements Reporter {
       if (!existsSync(path.join(this.directory, artifact))) summary.diagnosticFailures.push(`Unavailable artifact: ${artifact}`);
     }
     await writeFile(file, `${JSON.stringify(summary, null, 2)}\n`);
+    // A diagnostic retry retains the first failure in the summary. Make the
+    // actual CLI outcome agree instead of returning success for a flaky run.
+    if (result.status === "passed" && summary.finalExitCode !== 0) return { status: "failed" };
   }
 }
