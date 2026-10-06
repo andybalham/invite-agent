@@ -250,7 +250,9 @@ node --test test/integration/publication.test.mjs
 
 ### End-to-end (Playwright) tests
 
-Playwright does **not** start the servers. Start the stack first:
+The [T-128 E2E isolation contract](.docs/e2e-isolation-contract.md) forbids ordinary E2E writes to the browser-development tables `invite-agent-local-app` and `invite-agent-local-audit`, and requires validated per-run targets, explicit legacy/shared opt-in, consistent child configuration, and checks before initialization or test setup. T-128 specifies these requirements; the general runner and opt-in guard are not implemented yet (T-131/T-138). The current direct runner still defaults to shared tables. Fresh organiser identities do not isolate tables. Until the general runner is delivered, use `npm run test:smoke` for the existing managed disposable-table journey; `test:foundation` and the browser stage of `test:discovery` also still use the caller's stack and are not isolated by default.
+
+The following commands describe the current caller-managed legacy workflow, which can write to and retain data in that stack's tables. They are not the ordinary isolated workflow specified above. Playwright does **not** start the servers:
 
 ```sh
 npm run dev
@@ -292,7 +294,7 @@ node --test test/integration/my-polls-lifecycle.test.mjs
 npx playwright test test/e2e/organiser-navigation.spec.ts test/e2e/navigation-guards.spec.ts test/e2e/my-polls-search.spec.ts test/e2e/my-polls-lifecycle.spec.ts --project=chromium --workers=1 --retries=0
 ```
 
-Keep the stack's `DYNAMODB_ENDPOINT`/`DYNAMODB_PORT`, `APP_TABLE_NAME`, `AUDIT_TABLE_NAME` and `WEB_PORT` consistent in the test shell. These direct commands and `test:discovery` leave service ownership with the caller. Integration fixtures own disposable table pairs; direct browser tests create fresh identities but retain polls in the configured local tables until explicit cleanup. The smoke wrapper supplies its per-run table teardown. T-127 also uses those existing manifest-owned resources for the broader acceptance run; this does not change the default direct-run data lifetime. See [My polls acceptance evidence](.docs/acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries) and [measured T-127 results](.docs/t127-verification.md) for executed checks and production/native-cache limits.
+Keep the stack's `DYNAMODB_ENDPOINT`/`DYNAMODB_PORT`, `APP_TABLE_NAME`, `AUDIT_TABLE_NAME`, `AWS_REGION`, `PUBLIC_TOKEN_HASH_KEY`, API routing and `WEB_PORT` consistent in the test shell. These direct commands and `test:discovery` currently leave service ownership with the caller. Integration fixtures own disposable table pairs; direct browser tests create fresh identities but retain polls in the configured local tables until explicit cleanup. This current legacy behavior does not satisfy the [ordinary E2E isolation boundary](.docs/e2e-isolation-contract.md). The smoke wrapper supplies its per-run table teardown. T-127 also uses those existing manifest-owned resources for the broader acceptance run; its evidence does not establish default direct-run isolation. See [My polls acceptance evidence](.docs/acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries) and [measured T-127 results](.docs/t127-verification.md) for executed checks and production/native-cache limits.
 
 ### Local smoke test
 
@@ -379,7 +381,7 @@ The wrapper shares startup's effective `WEB_PORT`, `API_PORT`, `DYNAMODB_PORT`, 
 npx playwright test test/e2e/smoke.spec.ts --project=chromium --workers=1 --retries=0
 ```
 
-Keep the same configuration used at startup in that shell, especially `WEB_PORT` and table/hash overrides. This direct command leaves the stack running and retains its created poll in that stack's tables; automatic disposable tables apply to the wrapper only.
+Keep the same configuration used at startup in that shell, especially `WEB_PORT` and table/hash overrides. This is the current legacy direct workflow: it leaves the stack running and retains its created poll in that stack's tables; automatic disposable tables apply to the wrapper only. The [T-128 contract](.docs/e2e-isolation-contract.md#explicit-legacyshared-opt-in) requires explicit shared opt-in and validation before any test writes once enforcement is implemented; the specified opt-in variable does not provide a guard today.
 
 The wrapper prints a unique evidence directory under `.devstack/smoke-runs/<runId>/`. It contains `manifest.json`, `summary.json` (phase, ports, exit codes, elapsed time, cleanup and diagnostic errors), `startup.log`, `playwright.log` once tests run, `shutdown.log` when the wrapper shuts down, and copies of service logs, `test-results/`, and `playwright-report/`. The wrapper and browser summary use the same run ID. These copies survive subsequent runs; top-level Playwright reports are replaced by the next run. Startup failures are labelled `startup` and do not copy an older browser report; service logs may be from an earlier start if failure precedes service launch. Logs missing during collection do not hide the original failure.
 

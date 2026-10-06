@@ -88,6 +88,8 @@ Assertions at intermediate checkpoints:
 
 ## Isolation, repeatability, and data lifetime
 
+The [T-128 E2E isolation boundary](e2e-isolation-contract.md) specifies the general browser-run policy: development tables are forbidden ordinary targets; all writers require consistent configuration and validation before setup can persist data. Its explicit shared opt-in and general runner checks remain future implementation work. The wrapper ownership rules below describe the existing smoke implementation; retained-data statements for direct invocation describe current legacy behavior, not an exemption from that policy.
+
 - Generate a new lowercase alphanumeric/hyphen `runId` for every invocation and retry, including a random invocation component, project, worker, and retry number. Apply frontend normalization consistently when deriving owner headers. The existing fixture's project/worker/retry/title identifier alone is not unique across repeated invocations.
 - Navigate the owner to `/?testRunId=<runId>` and retain that identity for draft/history navigation and organiser public views (`organiser=1`). Public contexts must use the plain issued URL and no `x-local-organiser-id` header; do not inherit an authenticated request context for negative authorization checks.
 - Capture poll, date, participant, and revision IDs from responses. Map A/B/C by payload and saved order; do not guess IDs or locate an old poll by title. Restored Charlie receives a new participant ID.
