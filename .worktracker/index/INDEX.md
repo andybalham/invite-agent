@@ -209,8 +209,8 @@ _Generated. Do not edit by hand._
   - [x] [T-130 · Set E2E suite tiers, coverage boundaries, and runtime budgets](../entities/T-130-set-e2e-suite-tiers-coverage-boundaries-and-runtime-budgets.md) — done
 - [ ] **S-051 · Provision and clean up per-run E2E data safely** — todo
   - [x] [T-131 · Implement per-run E2E table provisioning and API configuration](../entities/T-131-implement-per-run-e2e-table-provisioning-and-api-configuration.md) — done
-  - [ ] [T-132 · Implement owned-table teardown and failure diagnostics](../entities/T-132-implement-owned-table-teardown-and-failure-diagnostics.md) — todo
-  - [ ] [T-133 · Verify E2E cleanup isolation, repeatability, and failure recovery](../entities/T-133-verify-e2e-cleanup-isolation-repeatability-and-failure-recovery.md) — blocked · waiting on T-132
+  - [x] [T-132 · Implement owned-table teardown and failure diagnostics](../entities/T-132-implement-owned-table-teardown-and-failure-diagnostics.md) — done
+  - [ ] [T-133 · Verify E2E cleanup isolation, repeatability, and failure recovery](../entities/T-133-verify-e2e-cleanup-isolation-repeatability-and-failure-recovery.md) — todo
 - [ ] **S-052 · Reduce E2E data setup and verification cost** — blocked · waiting on S-051
   - [ ] [T-134 · Implement efficient test-only data seeding fixtures](../entities/T-134-implement-efficient-test-only-data-seeding-fixtures.md) — blocked · waiting on S-052
   - [ ] [T-135 · Replace unnecessary full-partition snapshots with targeted invariants](../entities/T-135-replace-unnecessary-full-partition-snapshots-with-targeted-invariants.md) — blocked · waiting on T-134

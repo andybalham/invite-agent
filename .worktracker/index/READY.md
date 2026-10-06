@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-132 · Implement owned-table teardown and failure diagnostics](../entities/T-132-implement-owned-table-teardown-and-failure-diagnostics.md) — todo
+- [ ] [T-133 · Verify E2E cleanup isolation, repeatability, and failure recovery](../entities/T-133-verify-e2e-cleanup-isolation-repeatability-and-failure-recovery.md) — todo

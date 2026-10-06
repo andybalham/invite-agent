@@ -16,7 +16,7 @@ async function freePort() {
 
 // Run the real API, Vite, config, coordinator and browser workers against a
 // controlled AWS JSON transport. No developer database or Docker is required.
-test("ordinary Playwright runs own distinct pairs; workers use the attested custom configuration without API initialization", { timeout: 120_000 }, async (t) => {
+test("Playwright pass, failure, partial cleanup and interruption preserve diagnostics and protected data", { timeout: 180_000 }, async (t) => {
   const tables = new Map([
     ["invite-agent-local-app", { retained: ["browser poll"] }],
     ["invite-agent-local-audit", { retained: ["browser history"] }],
@@ -24,6 +24,7 @@ test("ordinary Playwright runs own distinct pairs; workers use the attested cust
   ]);
   const before = structuredClone([...tables]);
   const calls = [];
+  let refuseAuditDelete = false;
   const server = createServer(async (request, response) => {
     const chunks = [];
     for await (const chunk of request) chunks.push(chunk);
@@ -48,13 +49,21 @@ test("ordinary Playwright runs own distinct pairs; workers use the attested cust
     else if (operation === "PutItem") { table.marker = input.Item; response.end("{}"); }
     else if (operation === "GetItem") response.end(JSON.stringify({ Item: table.marker }));
     else if (operation === "Query") response.end(JSON.stringify({ Items: [], Count: 0 }));
+    else if (operation === "DeleteTable") {
+      if (refuseAuditDelete && input.TableName.includes("-audit-")) {
+        response.statusCode = 400;
+        response.end(JSON.stringify({ __type: "ValidationException", message: "injected audit delete failure" }));
+      } else { tables.delete(input.TableName); response.end("{}"); }
+    }
     else { response.statusCode = 500; response.end(JSON.stringify({ message: `Unexpected ${operation}` })); }
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   t.after(() => new Promise((resolve) => server.close(resolve)));
   const dynamodbPort = server.address().port;
   const runIds = [];
-  for (let invocation = 0; invocation < 2; invocation += 1) {
+  let partialDirectory;
+  for (let invocation = 0; invocation < 5; invocation += 1) {
+    refuseAuditDelete = invocation === 3;
     const apiPort = await freePort();
     let webPort = await freePort();
     while (webPort === apiPort) webPort = await freePort();
@@ -62,33 +71,63 @@ test("ordinary Playwright runs own distinct pairs; workers use the attested cust
       DYNAMODB_ENDPOINT: `http://localhost:${dynamodbPort}`, DYNAMODB_PORT: String(dynamodbPort), API_PORT: String(apiPort), WEB_PORT: String(webPort),
       APP_TABLE_NAME: "invite-agent-local-app", AUDIT_TABLE_NAME: "caller-audit", AWS_REGION: "us-east-1", PUBLIC_TOKEN_HASH_KEY: "runner-private-key" };
     for (const key of ["E2E_MODE", "E2E_RUN_ID", "E2E_RUN_MANIFEST_PATH", "E2E_COORDINATOR_PID", "E2E_API_INSTANCE_ID", "SMOKE_RUN_MANIFEST_PATH", "PUBLIC_BASE_URL"]) delete environment[key];
-    const child = spawn(process.execPath, ["node_modules/@playwright/test/cli.js", "test", "test/e2e/shell.spec.ts", "--workers=2", "--repeat-each=2", "--retries=0"], { env: environment, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+    environment.HARNESS_DIAGNOSTIC_PROBE = invocation === 2 ? "1" : "0";
+    environment.HARNESS_INTERRUPT_PROBE = invocation === 4 ? "1" : "0";
+    const args = ["--require", "./test/support/e2e-interrupt-hook.cjs", "node_modules/@playwright/test/cli.js", "test",
+      invocation === 2 || invocation === 4 ? "test/e2e/diagnostics.spec.ts" : "test/e2e/shell.spec.ts", "--workers=2", "--retries=0",
+      ...(invocation < 2 ? ["--repeat-each=2"] : [])];
+    const child = spawn(process.execPath, args, { env: environment, windowsHide: true, stdio: ["ignore", "pipe", "pipe", "ipc"] });
     let output = "";
-    child.stdout.on("data", (chunk) => { output += chunk; });
+    let interrupted = false;
+    child.stdout.on("data", (chunk) => {
+      output += chunk;
+      if (!interrupted && invocation === 4 && output.includes("Interruption probe ready")) { interrupted = true; child.send("interrupt-e2e"); }
+    });
     child.stderr.on("data", (chunk) => { output += chunk; });
     const exit = await new Promise((resolve, reject) => { child.once("error", reject); child.once("exit", resolve); });
-    assert.equal(exit, 0, output);
-    assert.match(output, /2 passed/);
+    assert.equal(exit, invocation < 2 ? 0 : invocation === 4 ? 130 : 1, output);
+    if (invocation < 2) assert.match(output, /2 passed/);
     const directory = /E2E evidence: ([^\r\n]+)/.exec(output)?.[1];
     assert.ok(directory, output);
     const manifest = JSON.parse(await readFile(path.join(directory, "manifest.json"), "utf8"));
     runIds.push(manifest.runId);
-    assert.equal(manifest.phase, "teardown");
+    assert.equal(manifest.phase, invocation === 4 ? "interrupted" : "finished");
     assert.equal(manifest.configuration.apiPort, apiPort);
     assert.equal(manifest.configuration.webPort, webPort);
     assert.equal(manifest.region, "us-east-1");
     assert.equal(manifest.coordinator.pid, child.pid);
     assert.equal(manifest.services.processes.length, 2);
-    assert.ok(manifest.tables.every((entry) => entry.owned && tables.get(entry.name)?.marker.nonce.S === manifest.ownershipNonce));
+    assert.ok(manifest.tables.every((entry) => entry.owned));
+    if (invocation === 3) {
+      partialDirectory = directory;
+      assert.equal(manifest.tables[0].cleanup, "deleted");
+      assert.equal(manifest.tables[1].cleanup, "failed");
+    } else assert.ok(manifest.tables.every((entry) => entry.cleanup === "deleted" && !tables.has(entry.name)));
+    const summary = JSON.parse(await readFile(path.join(directory, "summary.json"), "utf8"));
+    assert.equal(summary.finalExitCode, exit);
+    assert.equal(summary.testExitCode, invocation < 2 || invocation === 3 ? 0 : invocation === 2 ? 1 : null);
+    assert.equal(summary.recoveryRequired, invocation === 3);
+    assert.ok(summary.failure || invocation !== 2);
+    assert.ok(summary.interruption || invocation !== 4);
+    for (const artifact of ["playwright-report/index.html", "service-logs/api.out.log", "service-logs/web.out.log", "shutdown.log", "table-cleanup.log"]) {
+      assert.ok(await readFile(path.join(directory, artifact)), artifact);
+    }
     assert.ok(!JSON.stringify(manifest).includes(environment.PUBLIC_TOKEN_HASH_KEY));
     for (const identity of manifest.services.processes) assert.throws(() => process.kill(identity.pid, 0), /ESRCH|EPERM/);
   }
+  refuseAuditDelete = false;
+  const originalSummary = await readFile(path.join(partialDirectory, "summary.json"), "utf8");
+  const partialManifest = JSON.parse(await readFile(path.join(partialDirectory, "manifest.json"), "utf8"));
+  const { recoverE2ERun } = await import("../../scripts/e2e-run-cleanup.mjs");
+  assert.equal((await recoverE2ERun(path.join(partialDirectory, "manifest.json"), partialManifest.runId)).recoveryRequired, false);
+  assert.equal(await readFile(path.join(partialDirectory, "summary.json"), "utf8"), originalSummary);
   assert.notEqual(runIds[0], runIds[1]);
   assert.deepEqual([...tables].filter(([name]) => !name.startsWith("invite-agent-e2e-")), before);
   const creates = calls.filter(({ operation }) => operation === "CreateTable");
-  assert.equal(creates.length, 4, "API must not reinitialize/migrate exclusively provisioned tables");
-  assert.equal(new Set(creates.map(({ input }) => input.TableName)).size, 4);
+  assert.equal(creates.length, 10, "API must not reinitialize/migrate exclusively provisioned tables");
+  assert.equal(new Set(creates.map(({ input }) => input.TableName)).size, 10);
   assert.ok(calls.every(({ regionMatches }) => regionMatches));
   assert.ok(calls.every(({ input }) => input.TableName.startsWith("invite-agent-e2e-")));
-  assert.ok(!calls.some(({ operation }) => ["UpdateTable", "DeleteTable", "Scan"].includes(operation)));
+  assert.deepEqual([...tables], before, "All run-owned pairs removed while complete protected data is unchanged");
+  assert.ok(!calls.some(({ operation }) => ["UpdateTable", "Scan"].includes(operation)));
 });

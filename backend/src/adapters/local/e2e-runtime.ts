@@ -15,6 +15,14 @@ export async function processStartTime(pid: number): Promise<string> {
   return value;
 }
 
+export async function observeProcess(pid: number): Promise<string | null> {
+  if (!Number.isInteger(pid) || pid <= 0) throw new Error("Invalid E2E process identity");
+  const { stdout } = await promisify(execFile)("pwsh", ["-NoProfile", "-Command", `$ErrorActionPreference = 'Stop'; try { $p = Get-Process -Id ${pid}; $p.StartTime.ToFileTimeUtc().ToString() } catch { if ($_.FullyQualifiedErrorId -notlike 'NoProcessFoundForGivenId*') { throw } }; exit 0`], { windowsHide: true, timeout: 5000 });
+  const value = stdout.trim();
+  if (value && !/^\d+$/.test(value)) throw new Error("Cannot inspect E2E process identity");
+  return value || null;
+}
+
 export function effectiveE2EConfiguration(environment: NodeJS.ProcessEnv): E2EConfiguration {
   const config = resolveE2EConfiguration(environment);
   assertEffectiveEnvironment(config, environment);

@@ -7,6 +7,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { assertEffectiveEnvironment, e2eEnvironment } from "../backend/dist/adapters/local/e2e-config.js";
 import { createE2EManifest, readE2EManifest, provisionE2ETables, saveE2EManifest } from "../backend/dist/adapters/local/e2e-resources.js";
 import { preflightE2E, processStartTime } from "../backend/dist/adapters/local/e2e-runtime.js";
+import { finishE2ERun } from "./e2e-run-cleanup.mjs";
 
 export async function assertFreePort(port) {
   const server = net.createServer();
@@ -42,32 +43,49 @@ export async function startE2ERun(config, { root = process.cwd(), environment = 
   let manifest = await createE2EManifest(config, coordinator, process.argv.slice(2));
   const children = [];
   const streams = [];
-  let stopped = false;
-  // Register shutdown before provisioning; table teardown/recovery is T-132.
-  const stop = async () => {
-    if (stopped) return;
-    stopped = true;
-    const failures = [];
-    for (const { child, identity } of children.toReversed()) {
-      if (child.exitCode !== null || child.signalCode !== null) continue;
-      try {
-        if (!identity) throw new Error(`E2E child ${child.pid} has no verified start time; inspect retained process`);
-        if (await processStartTime(child.pid) !== identity.startTimeUtcFileTime) throw new Error(`E2E ${identity.role} process identity changed; retained`);
-        const exited = new Promise((resolve) => child.once("exit", resolve));
-        child.kill("SIGTERM");
-        await Promise.race([exited, delay(5000).then(() => { throw new Error(`E2E ${identity.role} did not stop`); })]);
-      } catch (error) { failures.push(error.message); }
+  let stopping;
+  let interruption = null;
+  let startupFailure = null;
+  // Playwright handles SIGINT by stopping workers and running global finalizers.
+  // Observe it without racing a second teardown; relay catchable SIGTERM through
+  // that same worker/context flush path. Forced termination remains recoverable.
+  const onInterrupt = () => { interruption ??= "SIGINT"; };
+  const onTerminate = () => { interruption = "SIGTERM"; process.emit("SIGINT"); };
+  process.on("SIGINT", onInterrupt);
+  process.on("SIGTERM", onTerminate);
+  const stop = () => stopping ??= (async () => {
+    try {
+      const summary = await finishE2ERun(config.manifestPath, {
+        interruption, failure: startupFailure,
+        writerErrors: children.filter(({ child, identity }) => !identity && child.pid && child.exitCode === null && child.signalCode === null)
+          .map(({ child }) => `Unverified child ${child.pid}; retained, table deletion deferred`),
+        flushLogs: async () => {
+          const errors = [];
+          for (const stream of streams) {
+            if (stream.destroyed) { if (stream.errored) errors.push(stream.errored.message); continue; }
+            await new Promise((resolve) => {
+              const timer = setTimeout(() => { errors.push("Service log flush timed out"); resolve(); }, 2000);
+              const done = () => { clearTimeout(timer); resolve(); };
+              stream.once("close", done);
+              stream.once("error", (error) => { errors.push(error.message); done(); });
+              stream.end();
+            });
+          }
+          return errors;
+        }
+      });
+      if (summary.cleanupFailure) throw new Error(summary.cleanupFailure);
+    } finally {
+      process.off("SIGINT", onInterrupt);
+      process.off("SIGTERM", onTerminate);
     }
-    for (const stream of streams) stream.end();
-    manifest.finishedAt = new Date().toISOString();
-    manifest.phase = "teardown";
-    await saveE2EManifest(config.manifestPath, manifest);
-    await writeFile(path.join(runDirectory, "shutdown.log"), `${failures.length ? failures.join("\n") : "Run-owned API/web writers stopped."}\nTable teardown remains pending (T-132); tables and manifest retained.\n`);
-    if (failures.length) throw new Error(failures.join("; "));
-  };
+  })();
   async function launch(role, args, cwd = root) {
     const out = createWriteStream(path.join(logs, `${role}.out.log`));
     const error = createWriteStream(path.join(logs, `${role}.error.log`));
+    // Log I/O failure is diagnostic; retain it without crashing the coordinator.
+    out.on("error", () => {});
+    error.on("error", () => {});
     streams.push(out, error);
     const child = spawn(process.execPath, args, { cwd, env: effective, windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
     child.stdout.pipe(out);
@@ -106,9 +124,9 @@ export async function startE2ERun(config, { root = process.cwd(), environment = 
     await writeFile(path.join(runDirectory, "startup.log"), "Owned tables and API/web configuration verified.\n");
     return stop;
   } catch (error) {
+    startupFailure = error.message;
     await writeFile(path.join(runDirectory, "startup.log"), `${error.message}\n`).catch(() => {});
     // Reload creation evidence after partial provisioning; never erase its flags.
-    manifest = await readE2EManifest(config.manifestPath);
     await stop().catch((cleanupError) => process.stderr.write(`${cleanupError.message}\n`));
     throw error;
   }

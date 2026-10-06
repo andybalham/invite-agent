@@ -32,13 +32,47 @@ separate test-attempt artifacts for later coordinator reconciliation. Partial
 provisioning records per-role creation intent and acknowledged live ownership.
 The manifest never contains the token-hash key or credentials.
 
-T-131 stops its own API/web processes at completion/startup failure, but leaves
-v2 tables and their manifest with cleanup pending. Table teardown, full signal
-handling, recovery, summary finalization and poll-artifact reconciliation belong
-to T-132. A passing browser result is not evidence of completed table cleanup.
+T-132 now stops verified run-owned API/web writers and deletes only live-proven
+owned tables after Playwright closes workers/contexts. Startup failures enter the
+same cleanup path. Catchable SIGINT and SIGTERM use Playwright's interruption
+finalizers; a forced kill or second interruption can still leave recovery work.
+Each table's deletion intent is saved before the request, and completion requires
+confirmed absence. Ownership mismatches and unmarked partial creations are
+retained for investigation. An independent failure does not suppress cleanup of
+the other eligible table. Reused DynamoDB stays running.
+
+The retained `summary.json` records browser and cleanup outcomes separately,
+remaining resources, diagnostic failures and recovery instructions. The reporter
+finalizes the browser outcome after global teardown. A cleanup failure makes a
+passing browser invocation fail. Worker poll artifacts are merged into the
+manifest without scanning tables. Reports, traces/media, startup/shutdown logs,
+`playwright.log`, service logs, `table-cleanup.log` and cleanup attempt history
+remain in the run directory; missing artifacts are reported where available.
+
+For a retained v2 run, build first, then select its exact absolute manifest:
+
+```powershell
+node scripts/recover-e2e-run.mjs preview 'C:\path\<runId>\manifest.json'
+node scripts/recover-e2e-run.mjs cleanup 'C:\path\<runId>\manifest.json' --confirm-run '<previewed-runId>'
+```
+
+Preview is read-only and reports eligible, absent, deleting and refused targets
+plus writer identities. Confirmation revalidates the original coordinator is
+stopped and the writer identities, acquires exclusive per-run coordination, then
+stops only matching abandoned writers. Live ownership/creation identity is
+checked again before a new delete. A matching already-deleting table with saved
+intent permits only bounded read-only waiting. Completed names are rechecked for
+absence; replacements are retained even when an old marker was copied.
+
+Recovery appends an attempt and `recovery/<attemptId>/` logs/summary without
+overwriting the original browser report or summary. Connectivity/ownership errors
+remain retryable after the underlying issue is resolved. A concurrent recovery
+or leftover `recovery.lock` is refused. After hard termination during recovery,
+inspect the lock and prove its holder and original writers stopped before
+manually removing that exact lock; a stale lock alone grants no takeover.
 Existing v1 cleanup utilities intentionally reject v2; do not substitute broad
-clear-down or edit ownership fields to delete these resources. Normal DynamoDB
-Local connectivity is required before ordinary E2E can provision tables.
+clear-down, edit ownership fields or add a marker to an unmarked resource.
+Normal DynamoDB Local connectivity is required for provisioning and recovery.
 
 For deliberate shared debugging, supply exactly `E2E_ALLOW_SHARED_TABLES=1`, with
 `CI` unset/empty, explicit `APP_ENV=local` or `test`, an explicit local
@@ -60,10 +94,12 @@ guard, so wrappers that start a shared stack on the selected ports can now fail
 safely until migrated. Suite selection, worker/retry defaults and performance
 budgets are unchanged.
 
-Verification: `node --test test/foundation/e2e-provisioning.test.mjs` uses controlled
-clients for refusals, collisions, partial provisioning and attestation drift.
+Verification: `node --test test/foundation/e2e-provisioning.test.mjs test/foundation/e2e-cleanup.test.mjs`
+uses controlled clients for refusals, collisions, partial provisioning,
+acknowledgement loss, interruption, writer/ownership drift and retryable cleanup.
 `node --test test/integration/e2e-runner.test.mjs` runs real API/Vite/Chromium
-workers against a controlled DynamoDB JSON transport, using two fresh invocations
-and overridden ports/region/hash configuration. It requires installed Playwright
+workers against a controlled DynamoDB JSON transport, using two passing runs,
+intentional browser failure, partial cleanup/recovery and catchable interruption
+with overridden ports/region/hash configuration. It requires installed Playwright
 Chromium and preserves evidence under `.devstack/`; its database is in memory.
 Real DynamoDB Local interoperability remains a separate integration check.

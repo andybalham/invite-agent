@@ -24,7 +24,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   outputDir: evidenceDirectory ? path.join(evidenceDirectory, "test-results") : "test-results",
-  reporter: [["line"], ["html", { outputFolder: evidenceDirectory ? path.join(evidenceDirectory, "playwright-report") : "playwright-report", open: "never" }]],
+  reporter: [["line"], ["html", { outputFolder: evidenceDirectory ? path.join(evidenceDirectory, "playwright-report") : "playwright-report", open: "never" }], ["./test/e2e/run-reporter.ts"]],
   use: {
     baseURL: config.webOrigin,
     trace: "retain-on-failure",

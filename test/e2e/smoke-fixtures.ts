@@ -235,7 +235,7 @@ export class SmokeHarness {
       for (const { role, page } of [{ role: "owner", page: this.owner }, ...this.contexts]) {
         if (!page.isClosed()) await page.screenshot({ fullPage: true }).then((body) => safeAttach(`${role}.png`, body, "image/png")).catch(() => {});
       }
-      for (const name of ["api.out.log", "api.error.log", "vite.out.log", "vite.error.log"]) {
+      for (const name of ["api.out.log", "api.error.log", ...(process.env.E2E_RUN_MANIFEST_PATH ? ["web.out.log", "web.error.log"] : ["vite.out.log", "vite.error.log"])]) {
         const contents = await readFile(path.join(serviceLogsDirectory(), name), "utf8").catch(() => `[log unavailable: ${name}]`);
         await safeAttach(`service-${name}`, sanitize(contents), "text/plain");
       }
@@ -259,7 +259,7 @@ export class SmokeHarness {
       limitations: [
         "SM-11 checks revocation via a test-only repository hook; organiser regeneration has no supported route/UI.",
         "History availability Before/After cells show Changed values; exact values are asserted in the action summary and owner API.",
-        process.env.SMOKE_RUN_MANIFEST_PATH ? "Wrapper deletes owned tables after collecting diagnostics." : process.env.E2E_RUN_MANIFEST_PATH ? "Owned E2E v2 tables retained pending T-132 teardown." : "Explicit shared mode retains data in caller tables."
+        process.env.SMOKE_RUN_MANIFEST_PATH ? "Wrapper deletes owned tables after collecting diagnostics." : process.env.E2E_RUN_MANIFEST_PATH ? "Coordinator removes proven owned E2E tables after browser diagnostics and writer shutdown; inspect the run summary for cleanup/recovery status." : "Explicit shared mode retains data in caller tables."
       ]
     }, null, 2));
     // Keep an inspectable file on successful runs as well as an HTML attachment.

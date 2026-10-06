@@ -15,7 +15,17 @@ export interface ProcessIdentity {
   manifestPath: string;
   role?: string;
 }
-interface CreationIdentity { creationDateTime: number; tableId?: string }
+export interface CreationIdentity { creationDateTime: number; tableId?: string }
+export interface CleanupAttempt {
+  attemptId: string;
+  startedAt: string;
+  finishedAt: string | null;
+  origin: "automatic" | "recovery";
+  outcome: "complete" | "failed" | "interrupted" | null;
+  interruption: string | null;
+  phases: { writers: string[]; tables: string[]; diagnostics: string[]; dynamodb: "reused" };
+  tables: { role: string; name: string; observation: string; error: string | null }[];
+}
 export interface E2ETable {
   role: "app" | "audit";
   name: string;
@@ -45,7 +55,7 @@ export interface E2EManifest {
   tables: E2ETable[];
   coordinator: ProcessIdentity;
   services: { processes: ProcessIdentity[]; dynamodb: { state: "reused"; endpoint: string } };
-  cleanupAttempts: unknown[];
+  cleanupAttempts: CleanupAttempt[];
   cleanupFinishedAt: string | null;
 }
 
@@ -89,7 +99,13 @@ export function validateE2EManifest(manifest: E2EManifest): E2EManifest {
       !processIdentity(manifest.coordinator, manifest.runId, file) ||
       !Array.isArray(manifest.services?.processes) || !manifest.services.processes.every((p) => processIdentity(p, manifest.runId, file) && ["api", "web"].includes(p.role ?? "")) ||
       manifest.services.dynamodb?.state !== "reused" || manifest.services.dynamodb.endpoint !== manifest.endpoint ||
-      !Array.isArray(manifest.cleanupAttempts) || (manifest.cleanupFinishedAt !== null && !iso(manifest.cleanupFinishedAt))) {
+      !Array.isArray(manifest.cleanupAttempts) || !manifest.cleanupAttempts.every((attempt) =>
+        uuid.test(attempt?.attemptId) && iso(attempt.startedAt) && (attempt.finishedAt === null || iso(attempt.finishedAt)) &&
+        ["automatic", "recovery"].includes(attempt.origin) && [null, "complete", "failed", "interrupted"].includes(attempt.outcome) &&
+        (attempt.finishedAt === null) === (attempt.outcome === null) && (attempt.interruption === null || typeof attempt.interruption === "string") &&
+        attempt.phases?.dynamodb === "reused" && [attempt.phases.writers, attempt.phases.tables, attempt.phases.diagnostics].every((errors) => Array.isArray(errors) && errors.every((error) => typeof error === "string")) &&
+        Array.isArray(attempt.tables) && attempt.tables.every((table, index) => table?.role === manifest.tables[index]?.role && table.name === manifest.tables[index]?.name && typeof table.observation === "string" && (table.error === null || typeof table.error === "string"))) ||
+      (manifest.cleanupFinishedAt !== null && !iso(manifest.cleanupFinishedAt))) {
     throw new Error("Invalid E2E v2 ownership manifest");
   }
   if (path.basename(file) !== "manifest.json" || path.basename(path.dirname(file)) !== manifest.runId || manifest.coordinator.manifestPath !== file) throw new Error("Invalid E2E manifest path");
