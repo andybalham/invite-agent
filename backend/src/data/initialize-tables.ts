@@ -25,10 +25,12 @@ const primaryKey: KeySchemaElement[] = [
 
 interface InitializationOptions {
   readonly exclusive?: boolean;
+  readonly onCreating?: (tableName: string) => Promise<void>;
   readonly onCreated?: (tableName: string) => Promise<void>;
 }
 
 async function createIfMissing(client: DynamoDBClient, command: CreateTableCommand, options: InitializationOptions): Promise<void> {
+  await options.onCreating?.(command.input.TableName!);
   try {
     await client.send(command);
     if (options.onCreated) {

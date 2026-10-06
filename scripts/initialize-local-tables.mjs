@@ -1,5 +1,7 @@
 import { createLocalComposition, readLocalConfig } from "../backend/dist/adapters/local/index.js";
 
+if (process.env.E2E_MODE) throw new Error("Managed E2E tables must be exclusively provisioned by their coordinator; tables:init is not an E2E writer");
+
 const defaults = {
   APP_ENV: "local",
   AUTH_MODE: "local",

@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { expect, test as existingTest } from "./fixtures";
+import { expect, test as existingTest, serviceLogsDirectory, validatedE2EConfiguration } from "./fixtures";
 
 export function redact(text: string): string {
   return text
@@ -50,6 +50,10 @@ export class SmokeHarness {
       const { recordPoll } = await import(pathToFileURL(path.resolve("scripts/smoke-run-resources.mjs")).href);
       await recordPoll(process.env.SMOKE_RUN_MANIFEST_PATH, pollId);
     }
+    if (process.env.E2E_RUN_MANIFEST_PATH) {
+      // Separate immutable attempt artifact: only the coordinator writes v2.
+      await writeFile(this.info.outputPath(`poll-${pollId}.json`), `${JSON.stringify({ pollId })}\n`, { flag: "wx" });
+    }
   }
 
   private observe(page: Page, role: string): void {
@@ -68,6 +72,7 @@ export class SmokeHarness {
   async publicPage(role: string): Promise<Page> {
     const context = await this.browser.newContext({
       baseURL: this.baseURL,
+      extraHTTPHeaders: { "x-local-e2e-instance": process.env.E2E_API_INSTANCE_ID! },
       recordVideo: { dir: this.info.outputPath(`${role}-video`) }
     });
     context.setDefaultTimeout(15_000);
@@ -192,21 +197,17 @@ export class SmokeHarness {
 
   // Test-only setup: no route, no table initialization or deletion, and only this attempt's capability.
   async revokeOwnCapability(): Promise<void> {
-    const state = JSON.parse(await readFile(path.resolve(".devstack/processes.json"), "utf8"));
-    expect(new URL(this.baseURL).port).toBe(String(state.ports.web));
-    const endpoint = process.env.DYNAMODB_ENDPOINT ?? `http://127.0.0.1:${state.ports.dynamodb}`;
-    const parsed = new URL(endpoint);
-    expect(["127.0.0.1", "localhost"]).toContain(parsed.hostname);
-    expect(parsed.port).toBe(String(state.ports.dynamodb));
+    const config = await validatedE2EConfiguration();
+    expect(this.baseURL).toBe(config.webOrigin);
     const moduleUrl = pathToFileURL(path.resolve("backend/dist/adapters/local/composition.js")).href;
     const { createLocalComposition } = await import(moduleUrl);
     const { hashPublicToken } = await import(pathToFileURL(path.resolve("backend/dist/security/public-token.js")).href);
-    const hashKey = process.env.PUBLIC_TOKEN_HASH_KEY ?? "local-development-token-hash-key";
+    const hashKey = process.env.PUBLIC_TOKEN_HASH_KEY!;
     const app = await createLocalComposition({
-      appEnv: "test", authMode: "local", awsRegion: process.env.AWS_REGION ?? "eu-west-2",
-      dynamodbEndpoint: endpoint,
-      appTableName: process.env.APP_TABLE_NAME ?? "invite-agent-local-app",
-      auditTableName: process.env.AUDIT_TABLE_NAME ?? "invite-agent-local-audit",
+      appEnv: config.appEnv, authMode: config.authMode, awsRegion: config.region,
+      dynamodbEndpoint: config.endpoint,
+      appTableName: config.appTableName,
+      auditTableName: config.auditTableName,
       publicBaseUrl: this.baseURL, publicTokenHashKey: hashKey
     });
     try {
@@ -235,7 +236,7 @@ export class SmokeHarness {
         if (!page.isClosed()) await page.screenshot({ fullPage: true }).then((body) => safeAttach(`${role}.png`, body, "image/png")).catch(() => {});
       }
       for (const name of ["api.out.log", "api.error.log", "vite.out.log", "vite.error.log"]) {
-        const contents = await readFile(path.resolve(".devstack/service-logs", name), "utf8").catch(() => `[log unavailable: ${name}]`);
+        const contents = await readFile(path.join(serviceLogsDirectory(), name), "utf8").catch(() => `[log unavailable: ${name}]`);
         await safeAttach(`service-${name}`, sanitize(contents), "text/plain");
       }
     }
@@ -251,14 +252,14 @@ export class SmokeHarness {
     if (failed) await safeAttach("smoke-api.log", sanitize(`${this.apiLog.join("\n")}\n`), "text/plain");
     const summary = sanitize(JSON.stringify({
       runId: this.runId, pollId: this.pollId || null, checkpoint: this.checkpoint,
-      manifestPath: process.env.SMOKE_RUN_MANIFEST_PATH ?? null,
+      manifestPath: process.env.E2E_RUN_MANIFEST_PATH ?? process.env.SMOKE_RUN_MANIFEST_PATH ?? null,
       browserRole: this.browserRole, lastAction: this.lastAction, completed: this.completed,
       result: this.info.status, errors: this.info.errors.map(({ message }) => message),
       lastAuthoritativeSnapshot: failed ? this.lastSnapshot : undefined,
       limitations: [
         "SM-11 checks revocation via a test-only repository hook; organiser regeneration has no supported route/UI.",
         "History availability Before/After cells show Changed values; exact values are asserted in the action summary and owner API.",
-        process.env.SMOKE_RUN_MANIFEST_PATH ? "Wrapper deletes owned tables after collecting diagnostics." : "Direct invocation retains its poll in the running stack."
+        process.env.SMOKE_RUN_MANIFEST_PATH ? "Wrapper deletes owned tables after collecting diagnostics." : process.env.E2E_RUN_MANIFEST_PATH ? "Owned E2E v2 tables retained pending T-132 teardown." : "Explicit shared mode retains data in caller tables."
       ]
     }, null, 2));
     // Keep an inspectable file on successful runs as well as an HTML attachment.
@@ -284,7 +285,7 @@ export const test = existingTest.extend<{ smoke: SmokeHarness }>({
   // Replace the injected-page-only collector; SmokeHarness observes all roles and tolerates absent logs.
   diagnostics: async ({}, use) => { await use(); },
   smoke: async ({ playwright, browser, page, baseURL, testRunId }, use, info) => {
-    const api = await playwright.request.newContext({ baseURL: baseURL!, timeout: 15_000 });
+    const api = await playwright.request.newContext({ baseURL: baseURL!, timeout: 15_000, extraHTTPHeaders: { "x-local-e2e-instance": process.env.E2E_API_INSTANCE_ID! } });
     const smoke = new SmokeHarness(testRunId, api, browser, page, baseURL!, info);
     try { await use(smoke); }
     finally {

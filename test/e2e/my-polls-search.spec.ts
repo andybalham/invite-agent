@@ -13,16 +13,12 @@ type SeededPoll = Pick<PollRecord, "id" | "title" | "createdAt"> & { status: Sta
 type Layout = "desktop" | "mobile";
 type Store = { client: DynamoDBClient; appTableName: string; auditTableName: string };
 const test = base.extend<{ store: Store }>({
-  store: async ({}, use) => {
-    const endpoint = process.env.DYNAMODB_ENDPOINT ?? `http://127.0.0.1:${process.env.DYNAMODB_PORT ?? "18000"}`;
-    const url = new URL(endpoint);
-    expect(url.protocol).toBe("http:");
-    expect(["127.0.0.1", "localhost"]).toContain(url.hostname);
-    const client = new DynamoDBClient({ endpoint, region: "eu-west-2",
+  store: async ({ e2eConfiguration }, use) => {
+    const client = new DynamoDBClient({ endpoint: e2eConfiguration.endpoint, region: e2eConfiguration.region,
       credentials: { accessKeyId: "local", secretAccessKey: "local" } });
     try {
-      await use({ client, appTableName: process.env.APP_TABLE_NAME ?? "invite-agent-local-app",
-        auditTableName: process.env.AUDIT_TABLE_NAME ?? "invite-agent-local-audit" });
+      await use({ client, appTableName: e2eConfiguration.appTableName,
+        auditTableName: e2eConfiguration.auditTableName });
     } finally { client.destroy(); }
   }
 });

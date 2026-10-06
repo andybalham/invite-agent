@@ -18,6 +18,29 @@ if (Test-Path -LiteralPath $statePath) {
 
 $runId = "$(Get-Date -AsUTC -Format 'yyyyMMddTHHmmssfffZ')-$([guid]::NewGuid().ToString('N'))".ToLowerInvariant()
 $runDirectory = Join-Path $repoRoot ".devstack/smoke-runs/$runId"
+$manifestPath = Join-Path $runDirectory 'manifest.json'
+# Resolve and refuse unsafe input before any service or table write.
+$configurationJson = & node (Join-Path $PSScriptRoot 'resolve-smoke-configuration.mjs') $manifestPath $runId $DynamoDbPort $ApiPort $WebPort
+if ($LASTEXITCODE -ne 0) { throw 'Unsafe smoke configuration; startup refused.' }
+$configuration = $configurationJson | ConvertFrom-Json
+$DynamoDbPort = $configuration.dynamodbPort
+$ApiPort = $configuration.apiPort
+$WebPort = $configuration.webPort
+$env:DYNAMODB_ENDPOINT = $configuration.endpoint
+$env:DYNAMODB_PORT = $DynamoDbPort.ToString()
+$env:API_PORT = $ApiPort.ToString()
+$env:WEB_PORT = $WebPort.ToString()
+$env:PUBLIC_BASE_URL = $configuration.publicBaseUrl
+$env:AWS_REGION = $configuration.region
+$env:APP_ENV = $configuration.appEnv
+$env:AUTH_MODE = $configuration.authMode
+$env:APP_TABLE_NAME = $configuration.appTableName
+$env:AUDIT_TABLE_NAME = $configuration.auditTableName
+$env:E2E_MODE = 'smoke'
+$env:E2E_ALLOW_SHARED_TABLES = '0'
+$env:E2E_SMOKE_COORDINATOR_PID = $PID.ToString()
+$env:E2E_SMOKE_COORDINATOR_START = (Get-Process -Id $PID).StartTime.ToFileTimeUtc().ToString()
+if ($null -eq $env:PUBLIC_TOKEN_HASH_KEY) { $env:PUBLIC_TOKEN_HASH_KEY = 'local-development-token-hash-key' }
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 $startedAt = [datetime]::UtcNow
 $exitCode = 1
@@ -27,13 +50,11 @@ $ports = $null
 $failure = $null
 $cleanupFailure = $null
 $diagnosticFailures = @()
-$manifestPath = Join-Path $runDirectory 'manifest.json'
 
 Push-Location $repoRoot
 try {
     Write-Output "Smoke evidence: $runDirectory"
-    $effectiveDynamoDbPort = if ($DynamoDbPort) { $DynamoDbPort } elseif ($env:DYNAMODB_PORT) { [int]$env:DYNAMODB_PORT } else { 18000 }
-    & node (Join-Path $PSScriptRoot 'smoke-run-resources.mjs') init $manifestPath $runId "http://127.0.0.1:$effectiveDynamoDbPort"
+    & node (Join-Path $PSScriptRoot 'smoke-run-resources.mjs') init $manifestPath $runId $configuration.endpoint
     if ($LASTEXITCODE -ne 0) { throw 'Smoke manifest initialization failed.' }
     # Startup sets the effective port/endpoint environment for both services and Playwright.
     & (Join-Path $PSScriptRoot 'Start-DevStack.ps1') -SmokeRunManifestPath $manifestPath -ReadinessTimeoutSeconds $ReadinessTimeoutSeconds -DynamoDbPort $DynamoDbPort -ApiPort $ApiPort -WebPort $WebPort *>&1 |

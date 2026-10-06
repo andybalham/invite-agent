@@ -1,15 +1,32 @@
 import { defineConfig } from "@playwright/test";
+import path from "node:path";
+import { assertEffectiveEnvironment, e2eEnvironment, newRunId, resolveE2EConfiguration } from "./backend/src/adapters/local/e2e-config";
+
+const worker = process.env.TEST_WORKER_INDEX !== undefined;
+if (!worker && (process.env.E2E_RUN_ID || process.env.E2E_RUN_MANIFEST_PATH) && process.env.E2E_COORDINATOR_PID !== String(process.pid)) {
+  throw new Error("Direct Playwright refuses a stale isolated run context; unset E2E_RUN_ID/E2E_RUN_MANIFEST_PATH for a fresh run");
+}
+const config = resolveE2EConfiguration(process.env, worker ? process.env.E2E_RUN_ID : newRunId());
+if (config.mode === "isolated") {
+  config.manifestPath = path.resolve(".devstack/e2e-runs", config.runId!, "manifest.json");
+  if (!worker) process.env.E2E_COORDINATOR_PID = String(process.pid);
+}
+if (worker) assertEffectiveEnvironment(config, process.env);
+else Object.assign(process.env, e2eEnvironment(config, process.env));
+const evidenceDirectory = config.mode === "isolated" ? path.dirname(config.manifestPath!) : null;
 
 export default defineConfig({
   testDir: "./test/e2e",
+  globalSetup: "./test/e2e/global-setup.ts",
+  metadata: { e2e: config },
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  outputDir: "test-results",
-  reporter: [["line"], ["html", { outputFolder: "playwright-report", open: "never" }]],
+  outputDir: evidenceDirectory ? path.join(evidenceDirectory, "test-results") : "test-results",
+  reporter: [["line"], ["html", { outputFolder: evidenceDirectory ? path.join(evidenceDirectory, "playwright-report") : "playwright-report", open: "never" }]],
   use: {
-    baseURL: `http://127.0.0.1:${process.env.WEB_PORT ?? "15173"}`,
+    baseURL: config.webOrigin,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure"

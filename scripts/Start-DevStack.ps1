@@ -32,6 +32,27 @@ $DynamoDbPort = Resolve-Port -EnvironmentName 'DYNAMODB_PORT' -ParameterValue $D
 $ApiPort = Resolve-Port -EnvironmentName 'API_PORT' -ParameterValue $ApiPort -DefaultValue 14000
 $WebPort = Resolve-Port -EnvironmentName 'WEB_PORT' -ParameterValue $WebPort -DefaultValue 15173
 
+if ($env:E2E_MODE -and -not $SmokeRunManifestPath) {
+    throw 'Managed E2E uses its coordinator; Start-DevStack requires the smoke manifest for E2E.'
+}
+if ($SmokeRunManifestPath) {
+    $smokeIdentity = Get-Content -Raw -LiteralPath $SmokeRunManifestPath | ConvertFrom-Json
+    $configurationJson = & node (Join-Path $PSScriptRoot 'resolve-smoke-configuration.mjs') $SmokeRunManifestPath $smokeIdentity.runId $DynamoDbPort $ApiPort $WebPort
+    if ($LASTEXITCODE -ne 0) { throw 'Unsafe smoke configuration; startup refused.' }
+    $configuration = $configurationJson | ConvertFrom-Json
+    if ($smokeIdentity.endpoint -ne $configuration.endpoint -or $smokeIdentity.region -ne $configuration.region) { throw 'Smoke manifest endpoint/region does not match the effective stack configuration.' }
+    foreach ($port in @($ApiPort, $WebPort)) {
+        $probe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, $port)
+        try { $probe.Start() } catch { throw "E2E service port $port is occupied; refusing caller service reuse." } finally { $probe.Stop() }
+    }
+    $env:E2E_MODE = 'smoke'
+    $env:E2E_ALLOW_SHARED_TABLES = '0'
+    $env:APP_ENV = $configuration.appEnv
+    $env:AUTH_MODE = $configuration.authMode
+    $env:AWS_REGION = $configuration.region
+    if ($null -eq $env:PUBLIC_TOKEN_HASH_KEY) { $env:PUBLIC_TOKEN_HASH_KEY = 'local-development-token-hash-key' }
+}
+
 function Wait-ForTcpPort {
     param([string]$HostName, [int]$Port, [datetime]$Deadline)
     while ((Get-Date) -lt $Deadline) {

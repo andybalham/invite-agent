@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-131 · Implement per-run E2E table provisioning and API configuration](../entities/T-131-implement-per-run-e2e-table-provisioning-and-api-configuration.md) — todo
+- [ ] [T-132 · Implement owned-table teardown and failure diagnostics](../entities/T-132-implement-owned-table-teardown-and-failure-diagnostics.md) — todo

@@ -11,16 +11,12 @@ type SavedPoll = { id: string; title: string; createdAt: string; creationKey: st
 type ExpectedPoll = SavedPoll & { status: "draft" | "open" | "closed"; count: number };
 
 const test = base.extend<{ store: Store }>({
-  store: async ({}, use) => {
-    const endpoint = process.env.DYNAMODB_ENDPOINT ?? `http://127.0.0.1:${process.env.DYNAMODB_PORT ?? "18000"}`;
-    const url = new URL(endpoint);
-    expect(url.protocol).toBe("http:");
-    expect(["127.0.0.1", "localhost"]).toContain(url.hostname);
-    const client = new DynamoDBClient({ endpoint, region: "eu-west-2",
+  store: async ({ e2eConfiguration }, use) => {
+    const client = new DynamoDBClient({ endpoint: e2eConfiguration.endpoint, region: e2eConfiguration.region,
       credentials: { accessKeyId: "local", secretAccessKey: "local" } });
     try {
-      await use({ client, appTable: process.env.APP_TABLE_NAME ?? "invite-agent-local-app",
-        auditTable: process.env.AUDIT_TABLE_NAME ?? "invite-agent-local-audit" });
+      await use({ client, appTable: e2eConfiguration.appTableName,
+        auditTable: e2eConfiguration.auditTableName });
     } finally { client.destroy(); }
   }
 });
