@@ -8,6 +8,8 @@ This is a specification, not runtime enforcement. As of T-128, `playwright.confi
 
 The existing `npm run test:smoke` wrapper is the available managed path: it provisions manifest-owned smoke tables and passes their names to its API and helpers. It refuses a recorded running stack before startup. T-129 defines the general run naming/manifest/ownership contract; T-131 implements provisioning, API configuration, and safety checks; T-132 implements teardown; T-133 verifies failure recovery; T-138/T-139 integrate commands and CI. The mode variable specified here is not implemented yet. Do not set it expecting the current runner to enforce isolation.
 
+The [T-129 per-run resource lifecycle](e2e-run-lifecycle-contract.md) specifies the E2E naming family, version 2 manifest, ownership markers, teardown phases, interruption handling, preserved reports, and safe recovery. It retains the existing smoke version 1 format as a separate supported implementation and does not implement either the general runner or recovery command.
+
 ## Protected targets and permitted writes
 
 The normal browser-development tables are forbidden targets for ordinary E2E runs:

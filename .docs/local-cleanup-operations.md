@@ -2,6 +2,8 @@
 
 S-040 / T-089–T-091 documents the scoped cleanup implementation. S-042 adds a separate [all-local clear-down contract and commands](all-local-data-cleanup.md). Start with the [README lifecycle](../README.md#local-smoke-test), [cleanup commands](../README.md#retained-local-data-cleanup), and [ports/evidence](../README.md#smoke-configuration-and-evidence). This supports the [smoke isolation contract](local-smoke-test-contract.md#isolation-repeatability-and-data-lifetime) and [local development architecture, section 16](architecture.md#16-local-development-and-testing).
 
+The [T-129 E2E lifecycle and recovery contract](e2e-run-lifecycle-contract.md) specifies the future general E2E version 2 manifest and table family. The commands below support existing smoke version 1 and scoped maintenance; they do not implement that new recovery contract or accept its manifests. Follow the existing smoke recovery procedure here until the downstream runner/recovery tasks are delivered.
+
 ## Flags and safeguards
 
 `npm run cleanup:local -- ...` invokes `node scripts/cleanup-local-data.mjs ...`. Dry runs read DynamoDB and require a reachable database. Both examples in README explicitly preview before confirmation.

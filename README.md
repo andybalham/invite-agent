@@ -252,6 +252,8 @@ node --test test/integration/publication.test.mjs
 
 The [T-128 E2E isolation contract](.docs/e2e-isolation-contract.md) forbids ordinary E2E writes to the browser-development tables `invite-agent-local-app` and `invite-agent-local-audit`, and requires validated per-run targets, explicit legacy/shared opt-in, consistent child configuration, and checks before initialization or test setup. T-128 specifies these requirements; the general runner and opt-in guard are not implemented yet (T-131/T-138). The current direct runner still defaults to shared tables. Fresh organiser identities do not isolate tables. Until the general runner is delivered, use `npm run test:smoke` for the existing managed disposable-table journey; `test:foundation` and the browser stage of `test:discovery` also still use the caller's stack and are not isolated by default.
 
+The [T-129 run ownership, manifest, teardown, and recovery contract](.docs/e2e-run-lifecycle-contract.md) defines the future E2E table family and version 2 manifest, phased cleanup, interruption handling, and report preservation. Existing smoke version 1 resources and cleanup commands retain their current scope; the new general lifecycle and recovery operation await T-131/T-132.
+
 The following commands describe the current caller-managed legacy workflow, which can write to and retain data in that stack's tables. They are not the ordinary isolated workflow specified above. Playwright does **not** start the servers:
 
 ```sh

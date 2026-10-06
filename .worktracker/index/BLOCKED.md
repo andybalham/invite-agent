@@ -28,7 +28,7 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-131 · Implement per-run E2E table provisioning and API configuration](../entities/T-131-implement-per-run-e2e-table-provisioning-and-api-configuration.md) — blocked · waiting on T-129
+- [T-131 · Implement per-run E2E table provisioning and API configuration](../entities/T-131-implement-per-run-e2e-table-provisioning-and-api-configuration.md) — blocked · waiting on S-051
 - [T-132 · Implement owned-table teardown and failure diagnostics](../entities/T-132-implement-owned-table-teardown-and-failure-diagnostics.md) — blocked · waiting on T-131
 - [T-133 · Verify E2E cleanup isolation, repeatability, and failure recovery](../entities/T-133-verify-e2e-cleanup-isolation-repeatability-and-failure-recovery.md) — blocked · waiting on T-132
 - [T-134 · Implement efficient test-only data seeding fixtures](../entities/T-134-implement-efficient-test-only-data-seeding-fixtures.md) — blocked · waiting on T-130
