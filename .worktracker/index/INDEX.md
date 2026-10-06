@@ -203,16 +203,16 @@ _Generated. Do not edit by hand._
   - [x] [T-127 · Run dashboard acceptance and regression checks and record implementation evidence](../entities/T-127-run-dashboard-acceptance-and-regression-checks-and-record-implementation-evidence.md) — done
 
 ## [E-014 · E14 — Isolated and performant E2E test system](./E-014.md) — todo
-- [ ] **S-050 · Define the isolated E2E execution and performance contract** — todo
+- [x] **S-050 · Define the isolated E2E execution and performance contract** — done
   - [x] [T-128 · Specify the E2E isolation boundary and prohibit shared-table writes](../entities/T-128-specify-the-e2e-isolation-boundary-and-prohibit-shared-table-writes.md) — done
   - [x] [T-129 · Define per-run table ownership, manifest, cleanup, and recovery contract](../entities/T-129-define-per-run-table-ownership-manifest-cleanup-and-recovery-contract.md) — done
-  - [ ] [T-130 · Set E2E suite tiers, coverage boundaries, and runtime budgets](../entities/T-130-set-e2e-suite-tiers-coverage-boundaries-and-runtime-budgets.md) — todo
-- [ ] **S-051 · Provision and clean up per-run E2E data safely** — blocked · waiting on S-050
-  - [ ] [T-131 · Implement per-run E2E table provisioning and API configuration](../entities/T-131-implement-per-run-e2e-table-provisioning-and-api-configuration.md) — blocked · waiting on S-051
+  - [x] [T-130 · Set E2E suite tiers, coverage boundaries, and runtime budgets](../entities/T-130-set-e2e-suite-tiers-coverage-boundaries-and-runtime-budgets.md) — done
+- [ ] **S-051 · Provision and clean up per-run E2E data safely** — todo
+  - [ ] [T-131 · Implement per-run E2E table provisioning and API configuration](../entities/T-131-implement-per-run-e2e-table-provisioning-and-api-configuration.md) — todo
   - [ ] [T-132 · Implement owned-table teardown and failure diagnostics](../entities/T-132-implement-owned-table-teardown-and-failure-diagnostics.md) — blocked · waiting on T-131
   - [ ] [T-133 · Verify E2E cleanup isolation, repeatability, and failure recovery](../entities/T-133-verify-e2e-cleanup-isolation-repeatability-and-failure-recovery.md) — blocked · waiting on T-132
 - [ ] **S-052 · Reduce E2E data setup and verification cost** — blocked · waiting on S-051
-  - [ ] [T-134 · Implement efficient test-only data seeding fixtures](../entities/T-134-implement-efficient-test-only-data-seeding-fixtures.md) — blocked · waiting on T-130
+  - [ ] [T-134 · Implement efficient test-only data seeding fixtures](../entities/T-134-implement-efficient-test-only-data-seeding-fixtures.md) — blocked · waiting on S-052
   - [ ] [T-135 · Replace unnecessary full-partition snapshots with targeted invariants](../entities/T-135-replace-unnecessary-full-partition-snapshots-with-targeted-invariants.md) — blocked · waiting on T-134
   - [ ] [T-136 · Split discovery coverage and remove duplicated expensive viewport setup](../entities/T-136-split-discovery-coverage-and-remove-duplicated-expensive-viewport-setup.md) — blocked · waiting on T-134
   - [ ] [T-137 · Benchmark and tune E2E workers, contention, and suite budgets](../entities/T-137-benchmark-and-tune-e2e-workers-contention-and-suite-budgets.md) — blocked · waiting on T-135, T-136

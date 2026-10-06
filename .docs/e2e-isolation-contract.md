@@ -10,6 +10,8 @@ The existing `npm run test:smoke` wrapper is the available managed path: it prov
 
 The [T-129 per-run resource lifecycle](e2e-run-lifecycle-contract.md) specifies the E2E naming family, version 2 manifest, ownership markers, teardown phases, interruption handling, preserved reports, and safe recovery. It retains the existing smoke version 1 format as a separate supported implementation and does not implement either the general runner or recovery command.
 
+The [T-130 suite contract](e2e-suite-contract.md) maps fast regression, smoke, focused discovery and exhaustive pagination/integrity coverage, with worker/retry expectations and proposed runtime budgets. Every selection retains this isolation boundary; budgets never authorize shared targets or skipping owned-resource cleanup. Suite selection and deadline enforcement await downstream implementation.
+
 ## Protected targets and permitted writes
 
 The normal browser-development tables are forbidden targets for ordinary E2E runs:

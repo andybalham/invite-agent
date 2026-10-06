@@ -254,6 +254,8 @@ The [T-128 E2E isolation contract](.docs/e2e-isolation-contract.md) forbids ordi
 
 The [T-129 run ownership, manifest, teardown, and recovery contract](.docs/e2e-run-lifecycle-contract.md) defines the future E2E table family and version 2 manifest, phased cleanup, interruption handling, and report preservation. Existing smoke version 1 resources and cleanup commands retain their current scope; the new general lifecycle and recovery operation await T-131/T-132.
 
+The [T-130 suite tiers and runtime contract](.docs/e2e-suite-contract.md) specifies a fast default regression suite, the existing eleven-checkpoint smoke journey, focused layered discovery, and explicit exhaustive pagination/integrity coverage. It maps current specs to required coverage, requires one worker and zero retries initially, and proposes warm whole-command targets of 3 minutes / 90 seconds / 6 minutes / 10 minutes respectively, with separate ceilings and a cleanup reserve. These are downstream selection and benchmark requirements, not current command behavior or measured performance. `test:e2e` and `test:foundation` still select all browser specs, and `test:discovery` still includes heavy search cases; command splitting, runtime enforcement and CI migration belong to T-136 through T-139.
+
 The following commands describe the current caller-managed legacy workflow, which can write to and retain data in that stack's tables. They are not the ordinary isolated workflow specified above. Playwright does **not** start the servers:
 
 ```sh
@@ -272,7 +274,7 @@ npx playwright test --ui                           # interactive UI mode
 npx playwright show-report                         # open the last HTML report
 ```
 
-By default, Playwright runs tests in parallel across several workers locally. Under that load, a few tests in `collaborative-availability.spec.ts` can intermittently time out waiting for a newly added row or validation message. CI avoids this by running with one worker and two retries. For a reliable local run, do the same:
+By default, Playwright runs tests in parallel across several workers locally. Under that load, a few tests in `collaborative-availability.spec.ts` can intermittently time out waiting for a newly added row or validation message. Current CI uses one worker and two retries. For a less contended local run with zero retries, select one worker explicitly:
 
 ```sh
 npx playwright test --workers=1

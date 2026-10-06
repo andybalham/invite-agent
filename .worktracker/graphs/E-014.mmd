@@ -5,8 +5,8 @@ graph LR
   classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
   classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
   subgraph Stories
-    S050["S-050 Define the isolated E2E execution and performance contract"]:::todo
-    S051["S-051 Provision and clean up per-run E2E data safely"]:::blocked
+    S050["S-050 Define the isolated E2E execution and performance contract"]:::done
+    S051["S-051 Provision and clean up per-run E2E data safely"]:::todo
     S052["S-052 Reduce E2E data setup and verification cost"]:::blocked
     S053["S-053 Operationalize fast and exhaustive E2E suites"]:::blocked
     S050 --> S051
@@ -16,8 +16,8 @@ graph LR
   subgraph Tasks
     T128["T-128 Specify the E2E isolation boundary and prohibit shared-table writes"]:::done
     T129["T-129 Define per-run table ownership, manifest, cleanup, and recovery contract"]:::done
-    T130["T-130 Set E2E suite tiers, coverage boundaries, and runtime budgets"]:::todo
-    T131["T-131 Implement per-run E2E table provisioning and API configuration"]:::blocked
+    T130["T-130 Set E2E suite tiers, coverage boundaries, and runtime budgets"]:::done
+    T131["T-131 Implement per-run E2E table provisioning and API configuration"]:::todo
     T132["T-132 Implement owned-table teardown and failure diagnostics"]:::blocked
     T133["T-133 Verify E2E cleanup isolation, repeatability, and failure recovery"]:::blocked
     T134["T-134 Implement efficient test-only data seeding fixtures"]:::blocked

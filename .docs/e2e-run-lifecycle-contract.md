@@ -6,6 +6,8 @@ T-129 / S-050 / E-014 defines the resource lifecycle required by the [T-128 isol
 
 This document specifies future behavior. T-131 implements provisioning/configuration, T-132 implements teardown/recovery diagnostics, and T-133 verifies them. Command and CI integration belong to T-138/T-139. T-129 adds no runtime runner, manifest parser, cleanup command, process lock, or tests of future behavior.
 
+The [T-130 suite/runtime contract](e2e-suite-contract.md) defines selections, measurement boundaries and proposed deadlines, including a cleanup reserve. A budget expiry is a primary failure that still enters the teardown phases below; it never establishes table absence or changes ownership requirements.
+
 The reference infrastructure is [smoke resources](../scripts/smoke-run-resources.mjs), [smoke orchestration](../scripts/Run-SmokeTests.ps1), [stack startup](../scripts/Start-DevStack.ps1), [stack shutdown](../scripts/Stop-DevStack.ps1), [table initialization](../backend/src/data/initialize-tables.ts), and [integration fixtures](../test/support/integration-fixture.mjs). Reuse their exclusive creation, normal schemas, loopback clients, ownership checks, bounded deletion waits, independent cleanup attempts, and separate primary/cleanup error reporting when implementing this contract. Their current limitations are listed below; referencing them does not claim the new contract is enforced.
 
 ## Identity, names, and ownership

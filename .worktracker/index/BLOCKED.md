@@ -11,7 +11,6 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [S-051 · Provision and clean up per-run E2E data safely](../entities/S-051-provision-and-clean-up-per-run-e2e-data-safely.md) — blocked · waiting on S-050
 - [S-052 · Reduce E2E data setup and verification cost](../entities/S-052-reduce-e2e-data-setup-and-verification-cost.md) — blocked · waiting on S-051
 - [S-053 · Operationalize fast and exhaustive E2E suites](../entities/S-053-operationalize-fast-and-exhaustive-e2e-suites.md) — blocked · waiting on S-052
 - [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — blocked · waiting on E-008
@@ -28,10 +27,9 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-131 · Implement per-run E2E table provisioning and API configuration](../entities/T-131-implement-per-run-e2e-table-provisioning-and-api-configuration.md) — blocked · waiting on S-051
 - [T-132 · Implement owned-table teardown and failure diagnostics](../entities/T-132-implement-owned-table-teardown-and-failure-diagnostics.md) — blocked · waiting on T-131
 - [T-133 · Verify E2E cleanup isolation, repeatability, and failure recovery](../entities/T-133-verify-e2e-cleanup-isolation-repeatability-and-failure-recovery.md) — blocked · waiting on T-132
-- [T-134 · Implement efficient test-only data seeding fixtures](../entities/T-134-implement-efficient-test-only-data-seeding-fixtures.md) — blocked · waiting on T-130
+- [T-134 · Implement efficient test-only data seeding fixtures](../entities/T-134-implement-efficient-test-only-data-seeding-fixtures.md) — blocked · waiting on S-052
 - [T-135 · Replace unnecessary full-partition snapshots with targeted invariants](../entities/T-135-replace-unnecessary-full-partition-snapshots-with-targeted-invariants.md) — blocked · waiting on T-134
 - [T-136 · Split discovery coverage and remove duplicated expensive viewport setup](../entities/T-136-split-discovery-coverage-and-remove-duplicated-expensive-viewport-setup.md) — blocked · waiting on T-134
 - [T-137 · Benchmark and tune E2E workers, contention, and suite budgets](../entities/T-137-benchmark-and-tune-e2e-workers-contention-and-suite-budgets.md) — blocked · waiting on T-135, T-136
