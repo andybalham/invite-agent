@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import test from "node:test";
 import { createIntegrationApp } from "../support/integration-fixture.mjs";
+import { dashboardSnapshot } from "../support/my-polls-fixture.mjs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -43,10 +44,57 @@ async function createAndPublish(app) {
   return { pollId: created.body.id, token: published.body.publicUrl.split("/").at(-1) };
 }
 
+test("discovery preserves complete app rows and immutable audit history across filters, searches and continuations", async (t) => {
+  const app = await fixture(t, "discovery-integrity");
+  const { pollId, token } = await createAndPublish(app);
+  const created = await app.http.handle({ method: "POST", path: "/api/organiser/polls",
+    headers: ownerHeaders, body: { ...pollInput, title: "Integrity draft" } });
+  assert.equal(created.status, 201);
+  const foreign = await app.http.handle({ method: "POST", path: "/api/organiser/polls",
+    headers: otherHeaders, body: pollInput });
+  assert.equal(foreign.status, 201);
+  const added = await app.http.handle({ method: "POST", path: `/api/public/polls/${token}/participants`,
+    headers: {}, body: { displayName: "Integrity participant" } });
+  assert.equal(added.status, 201);
+
+  // This small dedicated fixture covers metadata, participant/name/capability rows,
+  // other ownership and every stored audit document. Broad discovery matrices use point reads.
+  const before = await dashboardSnapshot(app);
+  let continued = false;
+  for (const filter of ["active", "draft", "open", "closed"]) {
+    for (const search of ["", "audited", "No integrity match"]) {
+      const cursors = new Set();
+      let cursor;
+      do {
+        const query = new URLSearchParams({ filter, search, pageSize: "1", ...(cursor ? { cursor } : {}) });
+        const response = await app.http.handle({ method: "GET", path: "/api/organiser/polls",
+          rawQuery: query.toString(), headers: ownerHeaders });
+        assert.equal(response.status, 200);
+        assert.ok(response.body.items.every(({ id }) => id === pollId || id === created.body.id));
+        cursor = response.body.nextCursor;
+        if (cursor) {
+          continued = true;
+          assert.ok(!cursors.has(cursor), "integrity traversal advances");
+          cursors.add(cursor);
+          assert.ok(cursors.size <= 2, "integrity traversal is bounded");
+        }
+      } while (cursor);
+    }
+  }
+  assert.ok(continued, "integrity coverage exercises a real continuation");
+  assert.deepEqual(await dashboardSnapshot(app), before, "discovery changes no app rows or audit documents");
+});
+
 test("every successful poll, date, location, publication, participant, and availability mutation appends exactly one complete immutable event", async (t) => {
   const app = await fixture(t, "complete");
   const { pollId, token } = await createAndPublish(app);
-  const count = async () => (await app.repository.listAuditEvents(pollId)).length;
+  let prior = [];
+  const count = async () => {
+    const events = await app.repository.listAuditEvents(pollId);
+    assert.deepEqual(events.slice(0, prior.length), prior, "every previous complete audit event remains unchanged");
+    prior = structuredClone(events);
+    return events.length;
+  };
   assert.equal(await count(), 2);
 
   const updatedInput = {

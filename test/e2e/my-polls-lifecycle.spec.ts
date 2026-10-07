@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { DynamoDBClient, QueryCommand, type AttributeValue } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import type { Page, Request } from "@playwright/test";
 import type { OwnedPollFilter, OwnedPollListResponse, PublicPollResponse } from "@invite-a-gent/contracts";
-import type { PollRecord } from "../../backend/src/data/types";
+import { latestAuditEvents, pollInvariants } from "./poll-invariants";
 import { expect, test as base } from "./fixtures";
 
 type Store = { client: DynamoDBClient; appTable: string; auditTable: string };
@@ -21,30 +21,8 @@ const test = base.extend<{ store: Store }>({
   }
 });
 
-async function partition(store: Store, table: string, id: string) {
-  const items: Record<string, AttributeValue>[] = [];
-  let cursor: Record<string, AttributeValue> | undefined;
-  do {
-    const result = await store.client.send(new QueryCommand({ TableName: table, ConsistentRead: true,
-      KeyConditionExpression: "PK = :pk", ExpressionAttributeValues: { ":pk": { S: `POLL#${id}` } },
-      ExclusiveStartKey: cursor }));
-    items.push(...(result.Items ?? []));
-    cursor = result.LastEvaluatedKey;
-  } while (cursor);
-  return items;
-}
-
 async function snapshot(store: Store, id: string) {
-  const app = await partition(store, store.appTable, id);
-  const audit = (await partition(store, store.auditTable, id))
-    .sort((a, b) => Number(a.revision!.N) - Number(b.revision!.N));
-  const metadata = app.find((item) => item.SK?.S === "METADATA")!;
-  expect(metadata).toBeDefined();
-  const poll: PollRecord = JSON.parse(metadata.document!.S!);
-  expect(audit.map((item) => Number(item.revision!.N)))
-    .toEqual(Array.from({ length: poll.version }, (_, index) => index + 1));
-  expect(metadata.GSI1SK?.S).toBe(`POLL#${poll.createdAt}#${id}`);
-  return { app, audit, poll, creationKey: metadata.GSI1SK!.S! };
+  return pollInvariants(store.client, store.appTable, id);
 }
 
 function observeApi(page: Page) {
@@ -80,8 +58,9 @@ async function mutation(store: Store, poll: SavedPoll, actions: string[], catego
   expect(after.poll.createdAt).toBe(poll.createdAt);
   expect(after.creationKey).toBe(poll.creationKey);
   expect(after.poll.version).toBe(before.poll.version + actions.length);
-  expect(after.audit.slice(0, before.audit.length)).toEqual(before.audit);
-  const added = after.audit.slice(before.audit.length);
+  const added = await latestAuditEvents(store.client, store.auditTable, poll.id, actions.length);
+  expect(added.map((event) => Number(event.revision!.N)))
+    .toEqual(actions.map((_, index) => before.poll.version + index + 1));
   expect(added.map((event) => event.action!.S)).toEqual(actions);
   expect(added.map((event) => event.actorCategory!.S)).toEqual(actions.map(() => category));
   return after;
@@ -157,8 +136,10 @@ async function create(page: Page, store: Store, title: string, runId: string): P
   const saved = await snapshot(store, id);
   expect(saved.poll).toMatchObject({ title, status: "draft", participantCount: 0, version: 1,
     organiserId: `local-organiser-${runId}` });
-  expect(saved.audit.map((event) => event.action!.S)).toEqual(["POLL_CREATED"]);
-  expect(saved.audit[0]!.actorCategory!.S).toBe("organiser");
+  const [event] = await latestAuditEvents(store.client, store.auditTable, id, 1);
+  expect(event!.revision!.N).toBe("1");
+  expect(event!.action!.S).toBe("POLL_CREATED");
+  expect(event!.actorCategory!.S).toBe("organiser");
   return { id, title, createdAt: saved.poll.createdAt, creationKey: saved.creationKey };
 }
 

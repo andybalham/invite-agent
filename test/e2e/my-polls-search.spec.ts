@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { DynamoDBClient, QueryCommand, type AttributeValue } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import type { APIRequestContext, Page, Request, Response } from "@playwright/test";
 import type { OwnedPollFilter, OwnedPollListResponse, PublicPollResponse } from "@invite-a-gent/contracts";
 import type { PollRecord } from "../../backend/src/data/types";
@@ -7,6 +7,7 @@ import { ownedPollListResponseSchema, resolveOwnedPollListQuery } from "@invite-
 import { selectOwnedPolls } from "../../backend/src/domain/my-polls";
 import { discoveryCases, discoveryFilters, discoveryTitle, expectedDiscovery } from "../support/my-polls-discovery-cases.mjs";
 import { seedDraftPoll } from "./data-seeding";
+import { latestAuditEvents, pollInvariants } from "./poll-invariants";
 import { expect, test as base } from "./fixtures";
 
 type Status = "draft" | "open" | "closed";
@@ -48,32 +49,12 @@ async function seedPoll(request: APIRequestContext, store: Store, runId: string,
   return { id: poll.id, title: poll.title, createdAt: poll.createdAt, status, runId };
 }
 
-async function partition(store: Store, tableName: string, id: string) {
-  const items: Record<string, AttributeValue>[] = [];
-  let cursor: Record<string, AttributeValue> | undefined;
-  do {
-    const result = await store.client.send(new QueryCommand({ TableName: tableName, ConsistentRead: true,
-      KeyConditionExpression: "PK = :pk", ExpressionAttributeValues: { ":pk": { S: `POLL#${id}` } },
-      ExclusiveStartKey: cursor }));
-    items.push(...(result.Items ?? []));
-    cursor = result.LastEvaluatedKey;
-  } while (cursor);
-  return items;
-}
-
 async function snapshot(store: Store, polls: SeededPoll[]) {
   const snapshots = [];
   for (const poll of polls) {
-    // Compare complete stored partitions, including metadata/index keys and every audit page.
-    // Protected detail responses omit createdAt, so they cannot prove creation immutability.
-    const appItems = await partition(store, store.appTableName, poll.id);
-    const auditItems = await partition(store, store.auditTableName, poll.id);
-    const metadata = appItems.find((item) => item.SK?.S === "METADATA")!;
-    expect(metadata).toBeDefined();
-    const record: PollRecord = JSON.parse(metadata.document!.S!);
-    expect(record.organiserId).toBe(headers(poll.runId)["x-local-organiser-id"]);
-    expect(auditItems).toHaveLength(record.version);
-    snapshots.push({ id: poll.id, poll: record, appItems, auditItems });
+    const state = await pollInvariants(store.client, store.appTableName, poll.id);
+    expect(state.poll.organiserId).toBe(headers(poll.runId)["x-local-organiser-id"]);
+    snapshots.push(state);
   }
   return snapshots;
 }
@@ -141,136 +122,284 @@ async function returnToList(page: Page, runId: string, filter: OwnedPollFilter, 
     page.getByRole("link", { name: /^(?:←\s*)?My polls$/ }).click());
 }
 
-for (const [layout, viewport] of [
+const discoveryLayouts = [
   ["desktop", { width: 1280, height: 900 }], ["mobile", { width: 390, height: 844 }]
-] as const) {
+] as const;
+
+test.describe("My polls dense pagination", () => {
+  test("dense pagination loads 25+1 and resets query and return state on both viewports", async ({
+    page, request, testRunId, store
+  }) => {
+    test.setTimeout(90_000);
+    const runId = `${testRunId}-${randomUUID()}`;
+    const own: SeededPoll[] = [];
+    for (let index = 0; index < 26; index += 1) {
+      own.push(await seedPoll(request, store, runId, `Dense match ${String(index).padStart(2, "0")}`, "open"));
+    }
+    const closed = await seedPoll(request, store, runId, "Dense match closed", "closed");
+    const foreign = await seedPoll(request, store, `${runId}-other`, own[0]!.title, "open");
+    const all = [...own, closed, foreign];
+    const before = await snapshot(store, all);
+    const ordered = newestFirst(own);
+    const requests = observeApi(page);
+    for (const [layout, viewport] of discoveryLayouts) {
+      await test.step(layout, async () => {
+        await page.setViewportSize(viewport);
+        requests.length = 0;
+        let body = await queryResponse(page, runId, "open", "Dense match", () =>
+          page.goto(`/?${new URLSearchParams({ testRunId: runId, filter: "open", search: "Dense match" })}`));
+        expect(body.items.map(({ id }) => id)).toEqual(ordered.slice(0, 25).map(({ id }) => id));
+        expect(body.nextCursor).toBeTruthy();
+        await entries(page, layout, ordered.slice(0, 25));
+        body = await queryResponse(page, runId, "open", "Dense match", async () => {
+          await moreButton(page).focus();
+          await moreButton(page).press("Enter");
+        }, body.nextCursor!);
+        expect(body.items.map(({ id }) => id)).toEqual([ordered[25]!.id]);
+        expect(body.nextCursor).toBeUndefined();
+        await entries(page, layout, ordered);
+        await expect(moreButton(page)).not.toBeVisible();
+        await page.locator(`.my-polls-${layout} a[href*="pollId=${ordered[25]!.id}"]`).click();
+        await expect(page.getByRole("heading", { name: ordered[25]!.title, exact: true })).toBeVisible();
+        body = await returnToList(page, runId, "open", "Dense match");
+        expect(body.items.map(({ id }) => id)).toEqual(ordered.slice(0, 25).map(({ id }) => id));
+        expect(body.nextCursor).toBeTruthy();
+        await entries(page, layout, ordered.slice(0, 25));
+        await queryResponse(page, runId, "closed", "Dense match", async () => {
+          await filterButton(page, "closed").focus();
+          await filterButton(page, "closed").press("Enter");
+        });
+        await entries(page, layout, [closed]);
+        await expect(moreButton(page)).not.toBeVisible();
+        await queryResponse(page, runId, "closed", "missing title", () => searchField(page).fill("missing title"));
+        await entries(page, layout, []);
+        await expect(page.locator(".my-polls-status")).toHaveText("No polls match your search.");
+        await queryResponse(page, runId, "closed", "", () =>
+          page.getByRole("button", { name: "Clear search", exact: true }).press("Enter"));
+        await expect(searchField(page)).toBeFocused();
+        await entries(page, layout, [closed]);
+        assertReads(requests, runId);
+        expect(await snapshot(store, all)).toEqual(before);
+      });
+    }
+  });
+
+});
+
+test.describe("My polls exhaustive discovery", { tag: "@exhaustive" }, () => {
+  test("T-119 pure rules, live API pages and keyboard controls agree for every discovery mode on both viewports", async ({
+    page, context, request, testRunId, store
+  }) => {
+    // Seed once; both read-only layouts still traverse all sixty query modes.
+    test.setTimeout(1_200_000);
+    const runId = `${testRunId}-${randomUUID()}`;
+    const own: SeededPoll[] = [];
+    const other: SeededPoll[] = [];
+    const foreignTitle = "Other owner's exclusive title";
+    for (const status of ["draft", "open", "closed"] as const) {
+      // Each lifecycle crosses the UI's 25-summary page boundary. Active spans three pages.
+      for (let index = 0; index < 26; index += 1) {
+        own.push(await seedPoll(request, store, runId, discoveryTitle, status));
+      }
+      own.push(await seedPoll(request, store, runId, `Winter ${status}`, status));
+      other.push(await seedPoll(request, store, `${runId}-other`, discoveryTitle, status));
+      other.push(await seedPoll(request, store, `${runId}-other`, foreignTitle, status));
+    }
+    const all = [...own, ...other];
+    const before = await snapshot(store, all);
+    const requests = observeApi(page);
+    for (const [layout, viewport] of discoveryLayouts) {
+      await test.step(layout, async () => {
+        await page.setViewportSize(viewport);
+        requests.length = 0;
+        const unauthPage = await context.newPage();
+        await unauthPage.setViewportSize(viewport);
+        const unauthRequests = observeApi(unauthPage);
+        try {
+          const owner = headers(runId)["x-local-organiser-id"];
+          const candidates = all.map((poll) => ({ ...poll, organiserId: headers(poll.runId)["x-local-organiser-id"] }));
+          let body = await queryResponse(page, runId, "active", "", () => page.goto(`/?testRunId=${runId}`));
+          await entries(page, layout, expectedDiscovery(candidates, owner, "active", "all").slice(0, 25));
+          await expect(searchField(page)).toHaveAttribute("aria-controls", "my-polls-results");
+          await expect(filterButton(page, "active")).toHaveAccessibleDescription("Active includes draft and open polls.");
+          await searchField(page).focus();
+          for (const filter of Object.keys(discoveryFilters) as OwnedPollFilter[]) {
+            // Real tab traversal proves every lifecycle control is reachable in the live layout.
+            await page.keyboard.press("Tab");
+            await expect(filterButton(page, filter)).toBeFocused();
+            await expect(filterButton(page, filter)).toHaveAttribute("aria-controls", "my-polls-results");
+          }
+          for (const filter of Object.keys(discoveryFilters) as OwnedPollFilter[]) {
+            for (const [index, { name, search, matches }] of discoveryCases(foreignTitle).entries()) {
+              await test.step(`${filter}: ${name}`, async () => {
+                if (index === 0) {
+                  body = await queryResponse(page, runId, filter, search, async () => {
+                    // Keyboard clearing retains the previous filter and returns focus to search.
+                    if (await searchField(page).inputValue()) {
+                      const clear = page.getByRole("button", { name: "Clear search", exact: true });
+                      await clear.focus();
+                      await clear.press("Enter");
+                      await expect(searchField(page)).toBeFocused();
+                    }
+                    await filterButton(page, filter).focus();
+                    await filterButton(page, filter).press(filter === "open" ? "Space" : "Enter");
+                });
+            } else {
+              body = await queryResponse(page, runId, filter, search, () => searchField(page).fill(search));
+            }
+            const expected = expectedDiscovery(candidates, owner, filter, matches);
+            const resolved = resolveOwnedPollListQuery({ filter, search, pageSize: 25 });
+            expect(resolved.success).toBe(true);
+            if (!resolved.success) throw new Error("Discovery query must resolve");
+            expect(selectOwnedPolls(candidates, owner, resolved.data)).toEqual(expected);
+            const accumulated: OwnedPollListResponse["items"] = [];
+            const cursors = new Set<string>();
+            do {
+              expect(body.items).toHaveLength(Math.min(25, expected.length - accumulated.length));
+              expect(body.items.map(({ id, title, status, createdAt }) => ({ id, title, status, createdAt })))
+                .toEqual(expected.slice(accumulated.length, accumulated.length + 25)
+                  .map(({ id, title, status, createdAt }) => ({ id, title, status, createdAt })));
+              accumulated.push(...body.items);
+              await entries(page, layout, expected.slice(0, accumulated.length));
+              if (!body.nextCursor) break;
+              const cursor = body.nextCursor;
+              expect(cursors.has(cursor)).toBe(false);
+              cursors.add(cursor);
+              expect(cursors.size).toBeLessThanOrEqual(4);
+              const params = new URLSearchParams({ filter, search, pageSize: "25", cursor });
+              const foreign = await request.get(`/api/organiser/polls?${params}`, { headers: headers(`${runId}-other`) });
+              expect(foreign.status()).toBe(400);
+              expect((await foreign.json()).error.code).toBe("VALIDATION_ERROR");
+              const noAuth = await request.get(`/api/organiser/polls?${params}`);
+              expect(noAuth.status()).toBe(401);
+              expect((await noAuth.json()).error.code).toBe("UNAUTHENTICATED");
+              body = await queryResponse(page, runId, filter, search, async () => {
+                await moreButton(page).focus();
+                await moreButton(page).press("Enter");
+              }, cursor);
+            } while (true);
+            expect(accumulated.map(({ id }) => id)).toEqual(expected.map(({ id }) => id));
+            expect(new Set(accumulated.map(({ id }) => id)).size).toBe(accumulated.length);
+            await expect(moreButton(page)).not.toBeVisible();
+            if (!expected.length) await expect(page.getByRole("status")).toHaveText("No polls match your search.");
+
+            const params = new URLSearchParams({ filter, search, pageSize: "25" });
+            // Another owner's valid first page must contain only that owner's IDs.
+            const foreign = await request.get(`/api/organiser/polls?${params}`, { headers: headers(`${runId}-other`) });
+            expect(foreign.status()).toBe(200);
+            const foreignBody: OwnedPollListResponse = await foreign.json();
+            const foreignMatches = name === "foreign title"
+              ? other.filter((poll) => poll.title === foreignTitle && discoveryFilters[filter].includes(poll.status))
+              : expectedDiscovery(candidates, headers(`${runId}-other`)["x-local-organiser-id"], filter, matches);
+            expect(foreignBody.items.map(({ id }) => id)).toEqual(newestFirst(foreignMatches).map(({ id }) => id));
+            for (const deniedHeaders of [{}, { authorization: "Bearer public-token" }]) {
+              const denied = await request.get(`/api/organiser/polls?${params}`, { headers: deniedHeaders });
+              expect(denied.status()).toBe(401);
+              expect((await denied.json()).error.code).toBe("UNAUTHENTICATED");
+            }
+            // An explicit empty local identity exercises the existing unauthenticated UI boundary.
+            const deniedResponse = unauthPage.waitForResponse((response) =>
+              new URL(response.url()).pathname === "/api/organiser/polls");
+            await unauthPage.goto(`/?${new URLSearchParams({ testRunId: "", filter, search })}`, { waitUntil: "domcontentloaded" });
+            expect((await deniedResponse).status()).toBe(401);
+            await expect(unauthPage.getByRole("alert")).toHaveText("Sign in to view your polls.");
+            await expect(searchField(unauthPage)).toHaveValue(search);
+            await expect(filterButton(unauthPage, filter)).toHaveAttribute("aria-pressed", "true");
+            await entries(unauthPage, layout, []);
+            await expect(moreButton(unauthPage)).not.toBeVisible();
+            await expect(unauthPage.getByRole("status")).toBeEmpty();
+          });
+        }
+      }
+      assertReads(requests, runId);
+      assertReads(unauthRequests, "");
+      expect(await snapshot(store, all)).toEqual(before);
+    } finally {
+      await unauthPage.close();
+    }
+    });
+    }
+  });
+
+  test("sparse database continuations and API pages preserve search, ownership and creation order on both viewports", async ({
+    page, request, testRunId, store
+  }) => {
+    test.setTimeout(360_000);
+    const runId = `${testRunId}-${randomUUID()}`;
+    const matches: SeededPoll[] = [];
+    for (let index = 0; index < 26; index += 1) {
+      matches.push(await seedPoll(request, store, runId, `Archive match ${String(index).padStart(2, "0")}`, "open"));
+    }
+    const closed = await seedPoll(request, store, runId, "Archive match closed", "closed");
+    const other = await seedPoll(request, store, `${runId}-other`, matches[0]!.title, "open");
+    const distractions: SeededPoll[] = [];
+    // More than the repository's 200-candidate budget: older matches require an empty API page
+    // with a continuation, then span two matching API pages (25 + 1), without mocked responses.
+    for (let index = 0; index < 201; index += 1) {
+      distractions.push(await seedPoll(request, store, runId, `Recent distraction ${String(index).padStart(3, "0")}`, "draft"));
+    }
+    const all = [...matches, closed, other, ...distractions];
+    expect(new Set(all.map(({ createdAt }) => createdAt)).size).toBe(all.length);
+    const before = await snapshot(store, all);
+    const requests = observeApi(page);
+    for (const [layout, viewport] of discoveryLayouts) {
+      await test.step(layout, async () => {
+        await page.setViewportSize(viewport);
+        requests.length = 0;
+        const recent = newestFirst(distractions);
+        let body = await queryResponse(page, runId, "active", "", () => page.goto(`/?testRunId=${runId}`));
+        await entries(page, layout, recent.slice(0, 25));
+        expect(body.nextCursor).toBeTruthy();
+        body = await queryResponse(page, runId, "active", "", () => moreButton(page).click(), body.nextCursor!);
+        await entries(page, layout, recent.slice(0, 50));
+
+        const ordered = newestFirst(matches);
+        for (const filter of ["active", "open"] as const) {
+          body = await queryResponse(page, runId, filter, "Archive match", () => filter === "active"
+            ? searchField(page).fill("Archive match") : filterButton(page, filter).click());
+          expect(body.items).toEqual([]);
+          expect(body.nextCursor).toBeTruthy();
+          await entries(page, layout, []);
+          await expect(page.locator(".my-polls-status")).toHaveText("More polls may match.");
+          await expect(moreButton(page)).toBeVisible();
+          body = await queryResponse(page, runId, filter, "Archive match", () => moreButton(page).click(), body.nextCursor!);
+          expect(body.items.map(({ id }) => id)).toEqual(ordered.slice(0, 25).map(({ id }) => id));
+          expect(body.nextCursor).toBeTruthy();
+          await entries(page, layout, ordered.slice(0, 25));
+          body = await queryResponse(page, runId, filter, "Archive match", () => moreButton(page).click(), body.nextCursor!);
+          expect(body.items.map(({ id }) => id)).toEqual([ordered[25]!.id]);
+          expect(body.nextCursor).toBeUndefined();
+          await entries(page, layout, ordered);
+          await expect(moreButton(page)).not.toBeVisible();
+        }
+        // The oldest matching title can be opened from page two. Return refreshes page one
+        // while retaining the query, so accumulated entries/cursors cannot survive navigation.
+        await page.locator(`.my-polls-${layout} a[href*="pollId=${matches[0]!.id}"]`).click();
+        await expect(page.getByRole("heading", { name: matches[0]!.title, exact: true })).toBeVisible();
+        body = await returnToList(page, runId, "open", "Archive match");
+        expect(body.items).toEqual([]);
+        await entries(page, layout, []);
+        await expect(page.locator(".my-polls-status")).toHaveText("More polls may match.");
+        await queryResponse(page, runId, "closed", "Archive match", () => filterButton(page, "closed").click());
+        await entries(page, layout, []);
+        body = await queryResponse(page, runId, "closed", "", () =>
+          page.getByRole("button", { name: "Clear search", exact: true }).click());
+        expect(body.items).toEqual([]);
+        expect(body.nextCursor).toBeTruthy();
+        await expect(searchField(page)).toBeFocused();
+        body = await queryResponse(page, runId, "closed", "", () => moreButton(page).click(), body.nextCursor!);
+        expect(body.nextCursor).toBeUndefined();
+        await entries(page, layout, [closed]);
+        assertReads(requests, runId);
+        expect(await snapshot(store, all)).toEqual(before);
+      });
+    }
+  });
+});
+
+for (const [layout, viewport] of discoveryLayouts) {
   test.describe(`My polls discovery on ${layout}`, () => {
     test.use({ viewport });
-
-    test("T-119 pure rules, live API pages and keyboard controls agree for every discovery mode", async ({
-      page, context, request, testRunId, store
-    }) => {
-      // Sixty real query modes per layout, including full page traversal and both auth boundaries.
-      test.setTimeout(600_000);
-      const runId = `${testRunId}-${randomUUID()}`;
-      const own: SeededPoll[] = [];
-      const other: SeededPoll[] = [];
-      const foreignTitle = "Other owner's exclusive title";
-      for (const status of ["draft", "open", "closed"] as const) {
-        // Each lifecycle crosses the UI's 25-summary page boundary. Active spans three pages.
-        for (let index = 0; index < 26; index += 1) {
-          own.push(await seedPoll(request, store, runId, discoveryTitle, status));
-        }
-        own.push(await seedPoll(request, store, runId, `Winter ${status}`, status));
-        other.push(await seedPoll(request, store, `${runId}-other`, discoveryTitle, status));
-        other.push(await seedPoll(request, store, `${runId}-other`, foreignTitle, status));
-      }
-      const all = [...own, ...other];
-      const before = await snapshot(store, all);
-      const requests = observeApi(page);
-      const unauthPage = await context.newPage();
-      const unauthRequests = observeApi(unauthPage);
-      try {
-        const owner = headers(runId)["x-local-organiser-id"];
-        const candidates = all.map((poll) => ({ ...poll, organiserId: headers(poll.runId)["x-local-organiser-id"] }));
-        let body = await queryResponse(page, runId, "active", "", () => page.goto(`/?testRunId=${runId}`));
-        await entries(page, layout, expectedDiscovery(candidates, owner, "active", "all").slice(0, 25));
-        await expect(searchField(page)).toHaveAttribute("aria-controls", "my-polls-results");
-        await expect(filterButton(page, "active")).toHaveAccessibleDescription("Active includes draft and open polls.");
-        await searchField(page).focus();
-        for (const filter of Object.keys(discoveryFilters) as OwnedPollFilter[]) {
-          // Real tab traversal proves every lifecycle control is reachable in the live layout.
-          await page.keyboard.press("Tab");
-          await expect(filterButton(page, filter)).toBeFocused();
-          await expect(filterButton(page, filter)).toHaveAttribute("aria-controls", "my-polls-results");
-        }
-        for (const filter of Object.keys(discoveryFilters) as OwnedPollFilter[]) {
-          for (const [index, { name, search, matches }] of discoveryCases(foreignTitle).entries()) {
-            await test.step(`${filter}: ${name}`, async () => {
-              if (index === 0) {
-                body = await queryResponse(page, runId, filter, search, async () => {
-                  // Keyboard clearing retains the previous filter and returns focus to search.
-                  if (await searchField(page).inputValue()) {
-                    const clear = page.getByRole("button", { name: "Clear search", exact: true });
-                    await clear.focus();
-                    await clear.press("Enter");
-                    await expect(searchField(page)).toBeFocused();
-                  }
-                  await filterButton(page, filter).focus();
-                  await filterButton(page, filter).press(filter === "open" ? "Space" : "Enter");
-                });
-              } else {
-                body = await queryResponse(page, runId, filter, search, () => searchField(page).fill(search));
-              }
-              const expected = expectedDiscovery(candidates, owner, filter, matches);
-              const resolved = resolveOwnedPollListQuery({ filter, search, pageSize: 25 });
-              expect(resolved.success).toBe(true);
-              if (!resolved.success) throw new Error("Discovery query must resolve");
-              expect(selectOwnedPolls(candidates, owner, resolved.data)).toEqual(expected);
-              const accumulated: OwnedPollListResponse["items"] = [];
-              const cursors = new Set<string>();
-              do {
-                expect(body.items).toHaveLength(Math.min(25, expected.length - accumulated.length));
-                expect(body.items.map(({ id, title, status, createdAt }) => ({ id, title, status, createdAt })))
-                  .toEqual(expected.slice(accumulated.length, accumulated.length + 25)
-                    .map(({ id, title, status, createdAt }) => ({ id, title, status, createdAt })));
-                accumulated.push(...body.items);
-                await entries(page, layout, expected.slice(0, accumulated.length));
-                if (!body.nextCursor) break;
-                const cursor = body.nextCursor;
-                expect(cursors.has(cursor)).toBe(false);
-                cursors.add(cursor);
-                expect(cursors.size).toBeLessThanOrEqual(4);
-                const params = new URLSearchParams({ filter, search, pageSize: "25", cursor });
-                const foreign = await request.get(`/api/organiser/polls?${params}`, { headers: headers(`${runId}-other`) });
-                expect(foreign.status()).toBe(400);
-                expect((await foreign.json()).error.code).toBe("VALIDATION_ERROR");
-                const noAuth = await request.get(`/api/organiser/polls?${params}`);
-                expect(noAuth.status()).toBe(401);
-                expect((await noAuth.json()).error.code).toBe("UNAUTHENTICATED");
-                body = await queryResponse(page, runId, filter, search, async () => {
-                  await moreButton(page).focus();
-                  await moreButton(page).press("Enter");
-                }, cursor);
-              } while (true);
-              expect(accumulated.map(({ id }) => id)).toEqual(expected.map(({ id }) => id));
-              expect(new Set(accumulated.map(({ id }) => id)).size).toBe(accumulated.length);
-              await expect(moreButton(page)).not.toBeVisible();
-              if (!expected.length) await expect(page.getByRole("status")).toHaveText("No polls match your search.");
-
-              const params = new URLSearchParams({ filter, search, pageSize: "25" });
-              // Another owner's valid first page must contain only that owner's IDs.
-              const foreign = await request.get(`/api/organiser/polls?${params}`, { headers: headers(`${runId}-other`) });
-              expect(foreign.status()).toBe(200);
-              const foreignBody: OwnedPollListResponse = await foreign.json();
-              const foreignMatches = name === "foreign title"
-                ? other.filter((poll) => poll.title === foreignTitle && discoveryFilters[filter].includes(poll.status))
-                : expectedDiscovery(candidates, headers(`${runId}-other`)["x-local-organiser-id"], filter, matches);
-              expect(foreignBody.items.map(({ id }) => id)).toEqual(newestFirst(foreignMatches).map(({ id }) => id));
-              for (const deniedHeaders of [{}, { authorization: "Bearer public-token" }]) {
-                const denied = await request.get(`/api/organiser/polls?${params}`, { headers: deniedHeaders });
-                expect(denied.status()).toBe(401);
-                expect((await denied.json()).error.code).toBe("UNAUTHENTICATED");
-              }
-              // An explicit empty local identity exercises the existing unauthenticated UI boundary.
-              const deniedResponse = unauthPage.waitForResponse((response) =>
-                new URL(response.url()).pathname === "/api/organiser/polls");
-              await unauthPage.goto(`/?${new URLSearchParams({ testRunId: "", filter, search })}`, { waitUntil: "domcontentloaded" });
-              expect((await deniedResponse).status()).toBe(401);
-              await expect(unauthPage.getByRole("alert")).toHaveText("Sign in to view your polls.");
-              await expect(searchField(unauthPage)).toHaveValue(search);
-              await expect(filterButton(unauthPage, filter)).toHaveAttribute("aria-pressed", "true");
-              await entries(unauthPage, layout, []);
-              await expect(moreButton(unauthPage)).not.toBeVisible();
-              await expect(unauthPage.getByRole("status")).toBeEmpty();
-            });
-          }
-        }
-        assertReads(requests, runId);
-        assertReads(unauthRequests, "");
-        expect(await snapshot(store, all)).toEqual(before);
-      } finally { await unauthPage.close(); }
-    });
 
     test("lifecycle, resolved title search and navigation are read-only; editing retains creation order", async ({
       page, request, testRunId, store
@@ -362,10 +491,11 @@ for (const [layout, viewport] of [
       const afterEdit = await snapshot(store, all);
       expect(afterEdit[0]!.poll).toMatchObject({ title: editedTitle, createdAt: oldest.createdAt,
         status: "draft", version: before[0]!.poll.version + 1 });
-      expect(afterEdit[0]!.appItems[0]!.GSI1SK).toEqual(before[0]!.appItems[0]!.GSI1SK);
-      expect(afterEdit[0]!.auditItems).toHaveLength(before[0]!.auditItems.length + 1);
-      expect(afterEdit[0]!.auditItems.at(-1)!.action!.S).toBe("POLL_DETAILS_UPDATED");
-      expect(afterEdit[0]!.auditItems.slice(0, -1)).toEqual(before[0]!.auditItems);
+      expect(afterEdit[0]!.creationKey).toBe(before[0]!.creationKey);
+      const [editEvent] = await latestAuditEvents(store.client, store.auditTableName, oldest.id, 1);
+      expect(editEvent!.revision!.N).toBe(String(afterEdit[0]!.poll.version));
+      expect(editEvent!.action!.S).toBe("POLL_DETAILS_UPDATED");
+      expect(editEvent!.actorCategory!.S).toBe("organiser");
       expect(afterEdit.slice(1)).toEqual(before.slice(1));
       expect(requests.filter((request) => request.method() !== "GET").map((request) => request.method())).toEqual(["PUT"]);
       requests.length = 0;
@@ -378,73 +508,5 @@ for (const [layout, viewport] of [
       expect(await snapshot(store, all)).toEqual(afterEdit);
     });
 
-    test("sparse database continuations and API pages preserve search, ownership and creation order", async ({
-      page, request, testRunId, store
-    }) => {
-      test.setTimeout(180_000);
-      const runId = `${testRunId}-${randomUUID()}`;
-      const matches: SeededPoll[] = [];
-      for (let index = 0; index < 26; index += 1) {
-        matches.push(await seedPoll(request, store, runId, `Archive match ${String(index).padStart(2, "0")}`, "open"));
-      }
-      const closed = await seedPoll(request, store, runId, "Archive match closed", "closed");
-      const other = await seedPoll(request, store, `${runId}-other`, matches[0]!.title, "open");
-      const distractions: SeededPoll[] = [];
-      // More than the repository's 200-candidate budget: older matches require an empty API page
-      // with a continuation, then span two matching API pages (25 + 1), without mocked responses.
-      for (let index = 0; index < 201; index += 1) {
-        distractions.push(await seedPoll(request, store, runId, `Recent distraction ${String(index).padStart(3, "0")}`, "draft"));
-      }
-      const all = [...matches, closed, other, ...distractions];
-      expect(new Set(all.map(({ createdAt }) => createdAt)).size).toBe(all.length);
-      const before = await snapshot(store, all);
-      const requests = observeApi(page);
-      const recent = newestFirst(distractions);
-      let body = await queryResponse(page, runId, "active", "", () => page.goto(`/?testRunId=${runId}`));
-      await entries(page, layout, recent.slice(0, 25));
-      expect(body.nextCursor).toBeTruthy();
-      body = await queryResponse(page, runId, "active", "", () => moreButton(page).click(), body.nextCursor!);
-      await entries(page, layout, recent.slice(0, 50));
-
-      const ordered = newestFirst(matches);
-      for (const filter of ["active", "open"] as const) {
-        body = await queryResponse(page, runId, filter, "Archive match", () => filter === "active"
-          ? searchField(page).fill("Archive match") : filterButton(page, filter).click());
-        expect(body.items).toEqual([]);
-        expect(body.nextCursor).toBeTruthy();
-        await entries(page, layout, []);
-        await expect(page.locator(".my-polls-status")).toHaveText("More polls may match.");
-        await expect(moreButton(page)).toBeVisible();
-        body = await queryResponse(page, runId, filter, "Archive match", () => moreButton(page).click(), body.nextCursor!);
-        expect(body.items.map(({ id }) => id)).toEqual(ordered.slice(0, 25).map(({ id }) => id));
-        expect(body.nextCursor).toBeTruthy();
-        await entries(page, layout, ordered.slice(0, 25));
-        body = await queryResponse(page, runId, filter, "Archive match", () => moreButton(page).click(), body.nextCursor!);
-        expect(body.items.map(({ id }) => id)).toEqual([ordered[25]!.id]);
-        expect(body.nextCursor).toBeUndefined();
-        await entries(page, layout, ordered);
-        await expect(moreButton(page)).not.toBeVisible();
-      }
-      // The oldest matching title can be opened from page two. Return refreshes page one
-      // while retaining the query, so accumulated entries/cursors cannot survive navigation.
-      await page.locator(`.my-polls-${layout} a[href*="pollId=${matches[0]!.id}"]`).click();
-      await expect(page.getByRole("heading", { name: matches[0]!.title, exact: true })).toBeVisible();
-      body = await returnToList(page, runId, "open", "Archive match");
-      expect(body.items).toEqual([]);
-      await entries(page, layout, []);
-      await expect(page.locator(".my-polls-status")).toHaveText("More polls may match.");
-      await queryResponse(page, runId, "closed", "Archive match", () => filterButton(page, "closed").click());
-      await entries(page, layout, []);
-      body = await queryResponse(page, runId, "closed", "", () =>
-        page.getByRole("button", { name: "Clear search", exact: true }).click());
-      expect(body.items).toEqual([]);
-      expect(body.nextCursor).toBeTruthy();
-      await expect(searchField(page)).toBeFocused();
-      body = await queryResponse(page, runId, "closed", "", () => moreButton(page).click(), body.nextCursor!);
-      expect(body.nextCursor).toBeUndefined();
-      await entries(page, layout, [closed]);
-      assertReads(requests, runId);
-      expect(await snapshot(store, all)).toEqual(before);
-    });
   });
 }

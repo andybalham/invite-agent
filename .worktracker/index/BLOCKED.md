@@ -26,7 +26,6 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-137 · Benchmark and tune E2E workers, contention, and suite budgets](../entities/T-137-benchmark-and-tune-e2e-workers-contention-and-suite-budgets.md) — blocked · waiting on T-135, T-136
 - [T-138 · Add commands for isolated fast, discovery, smoke, and exhaustive E2E suites](../entities/T-138-add-commands-for-isolated-fast-discovery-smoke-and-exhaustive-e2e-suites.md) — blocked · waiting on T-137
 - [T-139 · Update CI and documentation for E2E isolation and cleanup](../entities/T-139-update-ci-and-documentation-for-e2e-isolation-and-cleanup.md) — blocked · waiting on T-138
 - [T-140 · Run final E2E acceptance, repeatability, and no-cruft verification](../entities/T-140-run-final-e2e-acceptance-repeatability-and-no-cruft-verification.md) — blocked · waiting on T-139

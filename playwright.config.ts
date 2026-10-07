@@ -17,6 +17,7 @@ const evidenceDirectory = config.mode === "isolated" ? path.dirname(config.manif
 
 export default defineConfig({
   testDir: "./test/e2e",
+  grepInvert: /@exhaustive/,
   globalSetup: "./test/e2e/global-setup.ts",
   metadata: { e2e: config },
   fullyParallel: true,
