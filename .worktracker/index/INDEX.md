@@ -212,9 +212,9 @@ _Generated. Do not edit by hand._
   - [x] [T-132 · Implement owned-table teardown and failure diagnostics](../entities/T-132-implement-owned-table-teardown-and-failure-diagnostics.md) — done
   - [x] [T-133 · Verify E2E cleanup isolation, repeatability, and failure recovery](../entities/T-133-verify-e2e-cleanup-isolation-repeatability-and-failure-recovery.md) — done
 - [ ] **S-052 · Reduce E2E data setup and verification cost** — todo
-  - [ ] [T-134 · Implement efficient test-only data seeding fixtures](../entities/T-134-implement-efficient-test-only-data-seeding-fixtures.md) — todo
-  - [ ] [T-135 · Replace unnecessary full-partition snapshots with targeted invariants](../entities/T-135-replace-unnecessary-full-partition-snapshots-with-targeted-invariants.md) — blocked · waiting on T-134
-  - [ ] [T-136 · Split discovery coverage and remove duplicated expensive viewport setup](../entities/T-136-split-discovery-coverage-and-remove-duplicated-expensive-viewport-setup.md) — blocked · waiting on T-134
+  - [x] [T-134 · Implement efficient test-only data seeding fixtures](../entities/T-134-implement-efficient-test-only-data-seeding-fixtures.md) — done
+  - [ ] [T-135 · Replace unnecessary full-partition snapshots with targeted invariants](../entities/T-135-replace-unnecessary-full-partition-snapshots-with-targeted-invariants.md) — todo
+  - [ ] [T-136 · Split discovery coverage and remove duplicated expensive viewport setup](../entities/T-136-split-discovery-coverage-and-remove-duplicated-expensive-viewport-setup.md) — todo
   - [ ] [T-137 · Benchmark and tune E2E workers, contention, and suite budgets](../entities/T-137-benchmark-and-tune-e2e-workers-contention-and-suite-budgets.md) — blocked · waiting on T-135, T-136
 - [ ] **S-053 · Operationalize fast and exhaustive E2E suites** — blocked · waiting on S-052
   - [ ] [T-138 · Add commands for isolated fast, discovery, smoke, and exhaustive E2E suites](../entities/T-138-add-commands-for-isolated-fast-discovery-smoke-and-exhaustive-e2e-suites.md) — blocked · waiting on T-137

@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { DynamoDBClient, GetItemCommand, QueryCommand, type AttributeValue } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient, QueryCommand, type AttributeValue } from "@aws-sdk/client-dynamodb";
 import type { APIRequestContext, Page, Request, Response } from "@playwright/test";
 import type { OwnedPollFilter, OwnedPollListResponse, PublicPollResponse } from "@invite-a-gent/contracts";
 import type { PollRecord } from "../../backend/src/data/types";
 import { ownedPollListResponseSchema, resolveOwnedPollListQuery } from "@invite-a-gent/contracts";
 import { selectOwnedPolls } from "../../backend/src/domain/my-polls";
 import { discoveryCases, discoveryFilters, discoveryTitle, expectedDiscovery } from "../support/my-polls-discovery-cases.mjs";
+import { seedDraftPoll } from "./data-seeding";
 import { expect, test as base } from "./fixtures";
 
 type Status = "draft" | "open" | "closed";
@@ -32,17 +33,8 @@ const newestFirst = (polls: SeededPoll[]) => [...polls].sort((a, b) => a.created
   ? (a.id === b.id ? 0 : a.id > b.id ? -1 : 1) : a.createdAt > b.createdAt ? -1 : 1);
 
 async function seedPoll(request: APIRequestContext, store: Store, runId: string, title: string, status: Status): Promise<SeededPoll> {
-  const created = await request.post("/api/organiser/polls", { headers: headers(runId), data: {
-    title, description: "description-only-needle", location: "location-only-needle", timeZone: "Europe/London",
-    proposedDates: [{ kind: "date", localDate: "2026-10-10" }, { kind: "date", localDate: "2026-10-17" }]
-  } });
-  expect(created.status()).toBe(201);
-  const { id } = await created.json() as { id: string };
-  const metadata = await store.client.send(new GetItemCommand({ TableName: store.appTableName,
-    Key: { PK: { S: `POLL#${id}` }, SK: { S: "METADATA" } }, ConsistentRead: true }));
-  expect(metadata.Item?.document?.S).toBeTruthy();
-  const poll: PollRecord = JSON.parse(metadata.Item!.document!.S!);
-  expect(poll.organiserId).toBe(headers(runId)["x-local-organiser-id"]);
+  const poll = await seedDraftPoll({ client: store.client, appTableName: store.appTableName,
+    auditTableName: store.auditTableName, organiserId: headers(runId)["x-local-organiser-id"]!, title });
   const path = `/api/organiser/polls/${poll.id}`;
   if (status !== "draft") expect((await request.post(`${path}/publish`, { headers: headers(runId) })).status()).toBe(200);
   if (status === "closed") {
