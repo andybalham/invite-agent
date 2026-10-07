@@ -26,6 +26,7 @@
     "test:e2e": "playwright test",
     "test:e2e:dashboard": "playwright test test/e2e/organiser-navigation.spec.ts test/e2e/navigation-guards.spec.ts test/e2e/my-polls-search.spec.ts test/e2e/my-polls-lifecycle.spec.ts --project=chromium --workers=1 --retries=0",
     "test:e2e:exhaustive": "playwright test --config playwright.exhaustive.config.ts --project=chromium --workers=1 --retries=0",
+    "test:e2e:benchmark": "npm run test:e2e:dashboard",
     "test:smoke": "pwsh -NoProfile -File scripts/Run-SmokeTests.ps1",
     "test:foundation": "pwsh -NoProfile -File scripts/Run-FoundationTests.ps1",
     "tables:init": "npm run build && node scripts/initialize-local-tables.mjs",

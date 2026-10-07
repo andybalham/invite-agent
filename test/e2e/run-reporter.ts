@@ -11,8 +11,12 @@ export default class RunReporter implements Reporter {
   private ended = 0;
   private diagnosticFailures: string[] = [];
   private errors: string[] = [];
+  private startedAt = 0;
+  private budgetMs = 0;
 
   onBegin(config: FullConfig): void {
+    this.startedAt = Date.now();
+    this.budgetMs = Number(config.metadata.suiteBudgetMs ?? process.env.E2E_SUITE_BUDGET_MS ?? 0) || 0;
     this.directory = config.metadata.e2e?.mode === "isolated" ? path.dirname(config.metadata.e2e.manifestPath) : null;
   }
   private safe(text: string): string {
@@ -38,6 +42,13 @@ export default class RunReporter implements Reporter {
     const summary = await readFile(file, "utf8").then((text) => JSON.parse(text)).catch(() => null);
     if (!summary) throw new Error(`Required E2E summary unavailable: ${file}; inspect manifest/logs and preview recovery`);
     summary.playwrightStatus = result.status;
+    summary.durationMs = Date.now() - this.startedAt;
+    const budgetMs = this.budgetMs || Number(summary.suiteBudgetMs ?? 0) || Number(process.env.E2E_SUITE_BUDGET_MS ?? 0);
+    if (budgetMs > 0) {
+      summary.suiteBudgetMs = budgetMs;
+      summary.budgetExceeded = summary.durationMs > budgetMs;
+      if (summary.budgetExceeded) this.failures.push(`Suite exceeded runtime budget: ${summary.durationMs}ms > ${budgetMs}ms`);
+    }
     summary.testExitCode = ["interrupted", "timedout"].includes(result.status) || !this.ended ? null : this.failures.length ? 1 : 0;
     summary.failure ??= this.failures[0] ?? (!summary.cleanupFailure && result.status === "failed" ? this.errors[0] ?? "Playwright failed" : null);
     summary.interruption ??= result.status === "interrupted" ? "Playwright interruption" : null;

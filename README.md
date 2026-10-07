@@ -258,7 +258,7 @@ The [T-130 suite tiers and runtime contract](.docs/e2e-suite-contract.md) specif
 
 For bounded dashboard regression, run `npm run test:e2e:dashboard`. This selects navigation/guards, lifecycle and search on desktop/mobile plus a real dense pagination case (25 + 1 matches, ownership/lifecycle sentinels, exhaustion, keyboard Load more, query reset and page-two return). Run `npm run test:e2e:exhaustive` for the full T-119 matrix and sparse pagination only. Both commands use Chromium, one worker, zero retries and the same isolated provisioning/evidence/cleanup. DynamoDB Local must be ready; the runner starts its own API/web services on free ports.
 
-The exhaustive matrix still checks all 4 filters × 15 search modes, API/pure-rule agreement, every continuation and authentication boundaries on both viewports. The sparse case still seeds 201 newer nonmatches ahead of 26 Open matches plus Closed/foreign sentinels, then checks the empty continuation and matching pages on both viewports. Each read-only scenario seeds once and navigates afresh for each layout; the small intentional-edit cases retain separate datasets. Shared seeds are local to one test attempt, so parallel tests, retries and new runs cannot reuse them. Their timeouts cover both viewport journeys; they are not measured suite budgets.
+The exhaustive matrix still checks all 4 filters × 15 search modes, API/pure-rule agreement, every continuation and authentication boundaries on both viewports. The sparse case still seeds 201 newer nonmatches ahead of 26 Open matches plus Closed/foreign sentinels, then checks the empty continuation and matching pages on both viewports. Each read-only scenario seeds once and navigates afresh for each layout; the small intentional-edit cases retain separate datasets. Shared seeds are local to one test attempt, so parallel tests, retries and new runs cannot reuse them. The runner uses one worker by default to avoid DynamoDB contention, accepts `E2E_WORKERS=1..4` for measured experiments, and enforces a six-minute default suite budget plus a twenty-minute exhaustive budget. Each isolated run records `durationMs`, `suiteBudgetMs`, and `budgetExceeded` in its summary.
 
 Inspect selections without provisioning resources using `npm run test:e2e:dashboard -- --list --reporter=line` and `npm run test:e2e:exhaustive -- --list --reporter=line`. The line reporter avoids the run-evidence reporter's requirement for an executed run summary during listing.
 
@@ -280,7 +280,7 @@ npx playwright test --ui                           # interactive UI mode
 npx playwright show-report                         # open the last HTML report
 ```
 
-By default, Playwright runs tests in parallel across several workers locally. Under that load, a few tests in `collaborative-availability.spec.ts` can intermittently time out waiting for a newly added row or validation message. Current CI uses one worker and two retries. For a less contended local run with zero retries, select one worker explicitly:
+By default, Playwright uses one worker for E2E runs because the local DynamoDB writer and table lifecycle are the measured contention points. Set `E2E_WORKERS=2` or higher only for a benchmark comparison; the value is capped at four and must be validated against the resulting run duration and cleanup behavior. CI retains one worker and two retries.
 
 ```sh
 npx playwright test --workers=1

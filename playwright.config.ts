@@ -14,16 +14,26 @@ if (config.mode === "isolated") {
 if (worker) assertEffectiveEnvironment(config, process.env);
 else Object.assign(process.env, e2eEnvironment(config, process.env));
 const evidenceDirectory = config.mode === "isolated" ? path.dirname(config.manifestPath!) : null;
+const requestedWorkers = process.env.E2E_WORKERS ?? "1";
+if (!/^\d+$/.test(requestedWorkers) || Number(requestedWorkers) < 1 || Number(requestedWorkers) > 4) {
+  throw new Error("E2E_WORKERS must be an integer between 1 and 4");
+}
+const e2eWorkers = Number(requestedWorkers);
+const suiteBudgetMs = Number(process.env.E2E_SUITE_BUDGET_MS ?? 6 * 60 * 1000);
+if (!Number.isSafeInteger(suiteBudgetMs) || suiteBudgetMs < 60_000) {
+  throw new Error("E2E_SUITE_BUDGET_MS must be at least 60000 milliseconds");
+}
 
 export default defineConfig({
   testDir: "./test/e2e",
   grepInvert: /@exhaustive/,
+  globalTimeout: suiteBudgetMs,
   globalSetup: "./test/e2e/global-setup.ts",
-  metadata: { e2e: config },
+  metadata: { e2e: config, suiteBudgetMs, e2eWorkers },
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: e2eWorkers,
   outputDir: evidenceDirectory ? path.join(evidenceDirectory, "test-results") : "test-results",
   reporter: [["line"], ["html", { outputFolder: evidenceDirectory ? path.join(evidenceDirectory, "playwright-report") : "playwright-report", open: "never" }], ["./test/e2e/run-reporter.ts"]],
   use: {
