@@ -13,7 +13,40 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $stateDirectory = Join-Path $repoRoot '.devstack'
 $logsDirectory = Join-Path $stateDirectory 'service-logs'
 $statePath = Join-Path $stateDirectory 'processes.json'
+$localEncryptionConfigPath = Join-Path $stateDirectory 'local-encryption.json'
 $composeProject = 'invite-a-gent-local'
+
+function Initialize-LocalEncryptionConfig {
+    # Smoke runs and callers with explicit secret configuration own their key ring.
+    $activeKeyId = $env:PUBLIC_TOKEN_ENCRYPTION_ACTIVE_KEY_ID
+    $encodedKeys = $env:PUBLIC_TOKEN_ENCRYPTION_KEYS
+    if ($activeKeyId -or $encodedKeys) {
+        if (-not $activeKeyId -or -not $encodedKeys) {
+            throw 'PUBLIC_TOKEN_ENCRYPTION_ACTIVE_KEY_ID and PUBLIC_TOKEN_ENCRYPTION_KEYS must be supplied together.'
+        }
+        return
+    }
+
+    if (Test-Path -LiteralPath $localEncryptionConfigPath) {
+        try {
+            $saved = Get-Content -Raw -LiteralPath $localEncryptionConfigPath | ConvertFrom-Json
+            if (-not $saved.activeKeyId -or -not $saved.keys) { throw 'missing key-ring fields' }
+            $env:PUBLIC_TOKEN_ENCRYPTION_ACTIVE_KEY_ID = [string]$saved.activeKeyId
+            $env:PUBLIC_TOKEN_ENCRYPTION_KEYS = $saved.keys | ConvertTo-Json -Compress
+            return
+        } catch {
+            throw "Invalid local encryption configuration at $localEncryptionConfigPath; remove or repair it before restarting."
+        }
+    }
+
+    $bytes = [System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32)
+    $encodedKey = [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+    $keyRing = [ordered]@{ activeKeyId = 'local'; keys = [ordered]@{ local = $encodedKey } }
+    New-Item -ItemType Directory -Path $stateDirectory -Force | Out-Null
+    $keyRing | ConvertTo-Json -Compress | Set-Content -LiteralPath $localEncryptionConfigPath -Encoding utf8
+    $env:PUBLIC_TOKEN_ENCRYPTION_ACTIVE_KEY_ID = $keyRing.activeKeyId
+    $env:PUBLIC_TOKEN_ENCRYPTION_KEYS = $keyRing.keys | ConvertTo-Json -Compress
+}
 
 function Resolve-Port {
     param([string]$EnvironmentName, [int]$ParameterValue, [int]$DefaultValue)
@@ -119,6 +152,7 @@ if (Test-Path -LiteralPath $statePath) {
 }
 
 New-Item -ItemType Directory -Path $logsDirectory -Force | Out-Null
+Initialize-LocalEncryptionConfig
 $deadline = (Get-Date).AddSeconds($ReadinessTimeoutSeconds)
 $recorded = @()
 $dynamoDbStarted = $false
