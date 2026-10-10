@@ -94,9 +94,9 @@ _Generated. Do not edit by hand._
   - [x] [T-050 · Specify reopen and close-again lifecycle with failing automated tests](../entities/T-050-specify-reopen-and-close-again-lifecycle-with-failing-automated-tests.md) — done
   - [x] [T-051 · Implement and verify reopen and close-again lifecycle](../entities/T-051-implement-and-verify-reopen-and-close-again-lifecycle.md) — done
 
-## [E-008 · E8 — Production AWS platform](./E-008.md) — blocked
-- [ ] **S-025 · Provision durable DynamoDB application and audit data** — blocked · waiting on E-008
-  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — blocked · waiting on E-008
+## [E-008 · E8 — Production AWS platform](./E-008.md) — todo
+- [ ] **S-025 · Provision durable DynamoDB application and audit data** — todo
+  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — todo
   - [ ] [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [ ] **S-026 · Deploy least-privilege Lambda APIs with Cognito authorization** — blocked · waiting on S-025
   - [ ] [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053
@@ -202,7 +202,7 @@ _Generated. Do not edit by hand._
   - [x] [T-126 · Integrate My polls into the isolated local smoke journey and its contract](../entities/T-126-integrate-my-polls-into-the-isolated-local-smoke-journey-and-its-contract.md) — done
   - [x] [T-127 · Run dashboard acceptance and regression checks and record implementation evidence](../entities/T-127-run-dashboard-acceptance-and-regression-checks-and-record-implementation-evidence.md) — done
 
-## [E-014 · E14 — Isolated and performant E2E test system](./E-014.md) — todo
+## [E-014 · E14 — Isolated and performant E2E test system](./E-014.md) — done
 - [x] **S-050 · Define the isolated E2E execution and performance contract** — done
   - [x] [T-128 · Specify the E2E isolation boundary and prohibit shared-table writes](../entities/T-128-specify-the-e2e-isolation-boundary-and-prohibit-shared-table-writes.md) — done
   - [x] [T-129 · Define per-run table ownership, manifest, cleanup, and recovery contract](../entities/T-129-define-per-run-table-ownership-manifest-cleanup-and-recovery-contract.md) — done
@@ -216,7 +216,7 @@ _Generated. Do not edit by hand._
   - [x] [T-135 · Replace unnecessary full-partition snapshots with targeted invariants](../entities/T-135-replace-unnecessary-full-partition-snapshots-with-targeted-invariants.md) — done
   - [x] [T-136 · Split discovery coverage and remove duplicated expensive viewport setup](../entities/T-136-split-discovery-coverage-and-remove-duplicated-expensive-viewport-setup.md) — done
   - [x] [T-137 · Benchmark and tune E2E workers, contention, and suite budgets](../entities/T-137-benchmark-and-tune-e2e-workers-contention-and-suite-budgets.md) — done
-- [ ] **S-053 · Operationalize fast and exhaustive E2E suites** — todo
-  - [ ] [T-138 · Add commands for isolated fast, discovery, smoke, and exhaustive E2E suites](../entities/T-138-add-commands-for-isolated-fast-discovery-smoke-and-exhaustive-e2e-suites.md) — todo
-  - [ ] [T-139 · Update CI and documentation for E2E isolation and cleanup](../entities/T-139-update-ci-and-documentation-for-e2e-isolation-and-cleanup.md) — blocked · waiting on T-138
-  - [ ] [T-140 · Run final E2E acceptance, repeatability, and no-cruft verification](../entities/T-140-run-final-e2e-acceptance-repeatability-and-no-cruft-verification.md) — blocked · waiting on T-139
+- [x] **S-053 · Operationalize fast and exhaustive E2E suites** — done
+  - [x] [T-138 · Add commands for isolated fast, discovery, smoke, and exhaustive E2E suites](../entities/T-138-add-commands-for-isolated-fast-discovery-smoke-and-exhaustive-e2e-suites.md) — done
+  - [x] [T-139 · Update CI and documentation for E2E isolation and cleanup](../entities/T-139-update-ci-and-documentation-for-e2e-isolation-and-cleanup.md) — done
+  - [x] [T-140 · Run final E2E acceptance, repeatability, and no-cruft verification](../entities/T-140-run-final-e2e-acceptance-repeatability-and-no-cruft-verification.md) — done

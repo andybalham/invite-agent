@@ -62,7 +62,7 @@ try {
     $ports = (Get-Content -Raw -LiteralPath $statePath | ConvertFrom-Json).ports
 
     $stage = 'smoke'
-    & node node_modules/@playwright/test/cli.js test test/e2e/smoke.spec.ts --project=chromium --workers=1 --retries=0 2>&1 |
+    & node node_modules/@playwright/test/cli.js test --config playwright.smoke.config.ts test/e2e/smoke.spec.ts --project=chromium --workers=1 --retries=0 2>&1 |
         Tee-Object -FilePath (Join-Path $runDirectory 'playwright.log')
     $testExitCode = $LASTEXITCODE
     $exitCode = $testExitCode

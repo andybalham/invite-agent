@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 
-// Requires the normal local stack. Preserve its endpoint/table/port environment;
-// API fixtures own disposable tables and browser cases use fresh organiser identities.
+// API fixtures own disposable tables. The browser stage uses Playwright's
+// isolated coordinator, which provisions and tears down its own per-run pair.
 const stages = [
   ["Build", ["node_modules/typescript/bin/tsc", "-b", "--pretty", "false"]],
   ["Pure discovery rules and contracts", ["--test",
@@ -11,7 +11,9 @@ const stages = [
   ["HTTP and persistence discovery", ["--test", "--test-concurrency=1", "test/integration/my-polls-api.test.mjs",
     "test/integration/my-polls-repository.test.mjs", "test/integration/my-polls-fixture.test.mjs"]],
   ["Live desktop/mobile discovery", ["node_modules/@playwright/test/cli.js", "test",
-    "test/e2e/my-polls-search.spec.ts", "--project=chromium", "--workers=1", "--retries=0"]]
+    "test/e2e/organiser-navigation.spec.ts", "test/e2e/navigation-guards.spec.ts",
+    "test/e2e/my-polls-search.spec.ts", "test/e2e/my-polls-lifecycle.spec.ts",
+    "--project=chromium", "--workers=1", "--retries=0"]]
 ];
 
 for (const [name, args] of stages) {

@@ -8,7 +8,7 @@ on:
 jobs:
   foundation:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -17,17 +17,67 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Start DynamoDB Local
+        run: docker compose -p invite-a-gent-ci up -d dynamodb
       - run: npm run test:foundation
-      - name: Stop local services
+      - name: Stop application stack
         if: always()
         run: npm run dev:stop
-      - name: Upload browser and service diagnostics
+      - name: Stop DynamoDB Local
+        if: always()
+        run: docker compose -p invite-a-gent-ci down
+      - name: Upload isolated E2E diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: foundation-diagnostics
+          retention-days: 7
           if-no-files-found: ignore
           path: |
             playwright-report
             test-results
             .devstack/service-logs
+            .devstack/e2e-runs
+
+  e2e:
+    name: E2E (${{ matrix.suite }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: discovery
+            command: npm run test:discovery
+          - suite: smoke
+            command: npm run test:e2e:smoke
+          - suite: exhaustive
+            command: npm run test:e2e:exhaustive
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Start DynamoDB Local
+        run: docker compose -p invite-a-gent-ci-${{ matrix.suite }} up -d dynamodb
+      - name: Run isolated ${{ matrix.suite }} suite
+        run: ${{ matrix.command }}
+      - name: Stop DynamoDB Local
+        if: always()
+        run: docker compose -p invite-a-gent-ci-${{ matrix.suite }} down
+      - name: Upload isolated E2E diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ matrix.suite }}-diagnostics
+          retention-days: 7
+          if-no-files-found: ignore
+          path: |
+            playwright-report
+            test-results
+            .devstack/service-logs
+            .devstack/e2e-runs
+            .devstack/smoke-runs

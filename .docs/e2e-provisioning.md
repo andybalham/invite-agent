@@ -88,11 +88,12 @@ validates configuration before startup, propagates all effective settings and
 requires its live wrapper coordinator for API/fixture preflight. Managed smoke
 refuses shared opt-in. It does not convert retained v1 runs into v2.
 
-Command selection, the foundation/discovery wrapper migration and CI integration
-remain T-138/T-139. Their Playwright stages already enforce the direct entry-point
-guard, so wrappers that start a shared stack on the selected ports can now fail
-safely until migrated. Suite selection, worker/retry defaults and performance
-budgets are unchanged.
+T-138 exposes the fast, discovery, smoke, and exhaustive commands. T-139 runs
+those selections in separate CI jobs against job-local DynamoDB Local and retains
+diagnostics without retaining the database directory. The foundation and
+discovery browser stages now enter the isolated coordinator directly; they do not
+start or stop a caller-owned development stack. Suite selection, worker/retry
+defaults and performance budgets remain as documented in the suite contract.
 
 Verification: `node --test test/foundation/e2e-provisioning.test.mjs test/foundation/e2e-cleanup.test.mjs`
 uses controlled clients for refusals, collisions, partial provisioning,

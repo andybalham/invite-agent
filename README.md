@@ -67,7 +67,7 @@ My polls requests up to 25 matching summaries initially; the API allows page siz
 
 Failures are distinct from empty successful lists, and responses from earlier queries or identities cannot replace current results. Continuations expire after 15 minutes; API restart without a stable cursor secret also invalidates them. These failures use the generic later-page error: Try again does not refresh an invalid cursor. Reload My polls or change the query to start page one. Dashboard reads never change poll versions or append audit events.
 
-See the [My polls requirements](.docs/user-requirements-my-polls.md), [MP-US-01–11 acceptance and evidence](.docs/acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries), and [storage/authentication architecture](.docs/architecture.md#56-my-polls-contract-and-storage-implementation-s-043--s-044) with [browser routes and freshness](.docs/architecture.md#57-my-polls-browser-routes-freshness-and-identity-boundaries). The [T-127 verification record](.docs/t127-verification.md) records the 5 October 2026 commands, results, cleanup evidence and production-readiness limits.
+See the [My polls requirements](.docs/user-requirements-my-polls.md), [MP-US-01–11 acceptance and evidence](.docs/acceptance-use-cases-my-polls.md#story-traceability-and-delivery-boundaries), and [storage/authentication architecture](.docs/architecture.md#56-my-polls-contract-and-storage-implementation-s-043--s-044) with [browser routes and freshness](.docs/architecture.md#57-my-polls-browser-routes-freshness-and-identity-boundaries). The [T-127 verification record](.docs/t127-verification.md) records the 5 October 2026 commands, results, cleanup evidence and production-readiness limits. The [T-140 verification record](.docs/t140-verification.md) records the final isolated-suite results, repeatability run, protected-table hashes, cleanup evidence and limitations.
 
 ## Architecture
 
@@ -128,7 +128,7 @@ npm ci
 npx playwright install chromium
 ```
 
-The CI workflow currently uses Node.js 24, runs `npm ci`, installs Chromium (and Linux browser dependencies), then runs `npm run test:foundation`. `npm ci` uses the committed lockfile and expects it to match `package.json`.
+The CI workflow uses Node.js 24, runs `npm ci`, installs Chromium (and Linux browser dependencies), starts a job-local DynamoDB Local service, and runs the isolated foundation/fast, discovery, smoke, and exhaustive suites. It retains diagnostics for seven days and does not retain the DynamoDB data directory. `npm ci` uses the committed lockfile and expects it to match `package.json`.
 
 ## Running the application locally
 
@@ -184,7 +184,7 @@ The test layers need different amounts of infrastructure.
 | Integration | `test/integration/*.test.mjs` | `node --test` | DynamoDB Local |
 | End-to-end | `test/e2e/*.spec.ts` | Playwright (Chromium) | Full dev stack |
 
-### Run everything (same as CI)
+### Foundation and fast browser gate
 
 ```sh
 npm run test:foundation
@@ -193,11 +193,11 @@ npm run test:foundation
 This command:
 
 1. runs all foundation tests;
-2. starts the dev stack;
-3. runs the full Playwright suite;
-4. stops the dev stack, even when a step fails.
+2. provisions an isolated E2E table pair and starts an owned API/web stack;
+3. runs the fast Playwright suite;
+4. tears down only the owned processes and tables, even when a step fails.
 
-The GitHub Actions workflow (`.github/workflows/foundation.yml`) runs this command on every pull request and every push to `main`.
+The GitHub Actions workflow (`.github/workflows/foundation.yml`) runs this gate, plus the focused discovery, smoke, and exhaustive suites, on every pull request and every push to `main`. See [isolated E2E CI and operations](.docs/e2e-ci-and-operations.md) for ownership, recovery, retention, and runtime expectations.
 
 The integration tests are **not** part of this command. Run them separately (see below).
 
@@ -239,7 +239,7 @@ docker compose -p invite-a-gent-local down             # or: npm run dev:stop
 
 The tests connect to `DYNAMODB_ENDPOINT` if it is set. Otherwise they use `http://127.0.0.1:${DYNAMODB_PORT:-18000}`.
 
-For the focused My polls discovery verification (T-119), start the local stack and run `npm run test:discovery`. This runs pure rules/contracts, frontend query components, API/repository cases and live desktop/mobile filter/search tests together, stopping on failure. See [combined discovery evidence](.docs/acceptance-use-cases-my-polls.md#s-047-combined-discovery-verification-t-119) for the matrix and pagination cases. Use the same endpoint/table/port environment as the stack; the command leaves service ownership with the caller.
+For the focused My polls discovery verification (T-119), start DynamoDB Local and run `npm run test:discovery`. This runs pure rules/contracts, frontend query components, API/repository cases and live desktop/mobile filter/search tests together, stopping on failure. The browser stage provisions its own isolated E2E tables and API/web processes; integration fixtures own their own tables. See [combined discovery evidence](.docs/acceptance-use-cases-my-polls.md#s-047-combined-discovery-verification-t-119) for the matrix and pagination cases.
 
 Run one file:
 
@@ -250,11 +250,11 @@ node --test test/integration/publication.test.mjs
 
 ### End-to-end (Playwright) tests
 
-The [T-128 E2E isolation contract](.docs/e2e-isolation-contract.md) forbids ordinary E2E writes to the browser-development tables `invite-agent-local-app` and `invite-agent-local-audit`. T-131 now implements fresh per-run tables, effective configuration propagation, explicit shared debugging opt-in and API/proxy preflight. See [provisioning behavior and current delivery limits](.docs/e2e-provisioning.md). Foundation/discovery command and CI migration remain T-138/T-139; their Playwright stages enforce the guard and may refuse the shared stack those wrappers currently start.
+The [T-128 E2E isolation contract](.docs/e2e-isolation-contract.md) forbids ordinary E2E writes to the browser-development tables `invite-agent-local-app` and `invite-agent-local-audit`. T-131 now implements fresh per-run tables, effective configuration propagation, explicit shared debugging opt-in and API/proxy preflight. See [provisioning behavior](.docs/e2e-provisioning.md) and the [isolated E2E CI and operations guide](.docs/e2e-ci-and-operations.md).
 
 The [T-129 run ownership, manifest, teardown, and recovery contract](.docs/e2e-run-lifecycle-contract.md) defines the E2E family and version 2 manifest used by T-131 provisioning. T-132 removes live-proven owned tables after writer shutdown, retains diagnostics and per-attempt cleanup history, and provides [selected-run recovery with preview and explicit confirmation](.docs/e2e-provisioning.md). Existing smoke version 1 resources and cleanup commands retain their scope.
 
-The [T-130 suite tiers and runtime contract](.docs/e2e-suite-contract.md) specifies fast regression, smoke, focused discovery and exhaustive coverage. T-136 excludes `@exhaustive` cases from the ordinary Playwright configuration, including the browser stage of `test:discovery`. Other browser selections, runtime budgets and CI migration remain T-137 through T-139.
+The [T-130 suite tiers and runtime contract](.docs/e2e-suite-contract.md) specifies fast regression, smoke, focused discovery and exhaustive coverage. T-136 excludes `@exhaustive` cases from the ordinary Playwright configuration, including the browser stage of `test:discovery`. T-138 exposes the suite commands and T-139 wires them into CI.
 
 For bounded dashboard regression, run `npm run test:e2e:dashboard`. This selects navigation/guards, lifecycle and search on desktop/mobile plus a real dense pagination case (25 + 1 matches, ownership/lifecycle sentinels, exhaustion, keyboard Load more, query reset and page-two return). Run `npm run test:e2e:exhaustive` for the full T-119 matrix and sparse pagination only. Both commands use Chromium, one worker, zero retries and the same isolated provisioning/evidence/cleanup. DynamoDB Local must be ready; the runner starts its own API/web services on free ports.
 
@@ -280,7 +280,7 @@ npx playwright test --ui                           # interactive UI mode
 npx playwright show-report                         # open the last HTML report
 ```
 
-By default, Playwright uses one worker for E2E runs because the local DynamoDB writer and table lifecycle are the measured contention points. Set `E2E_WORKERS=2` or higher only for a benchmark comparison; the value is capped at four and must be validated against the resulting run duration and cleanup behavior. CI retains one worker and two retries.
+By default, Playwright uses one worker for E2E runs because the local DynamoDB writer and table lifecycle are the measured contention points. Set `E2E_WORKERS=2` or higher only for a benchmark comparison; the value is capped at four and must be validated against the resulting run duration and cleanup behavior. CI retains one worker and zero retries.
 
 ```sh
 npx playwright test --workers=1
@@ -437,6 +437,6 @@ See [My polls navigation and states](#my-polls-finding-and-managing-your-polls) 
 - **Dashboard initialization fails:** Inspect `api.error.log` for the first migration/schema error rather than only the readiness timeout. `Dashboard requires ACTIVE creation-ordered GSI1 with ALL projection` means the selected app table lacks the required active index/schema; `tables:init` does not upgrade existing indexes. Verify endpoint/table settings and index readiness. `Existing poll requires creation-index repair before dashboard enablement` or invalid summary data requires inspection and explicit data repair, preserving original creation times. Do not invent zero counts or bypass validation. For `Count migration contention`, stop competing writers and rerun `npm run tables:init` with the same configuration. Missing counts are backfilled; corrupt data/keys are not repaired automatically. If deliberately discarding disposable local data, use the preview/confirmation workflow in [all-local cleanup](.docs/all-local-data-cleanup.md), then initialize again; custom tables are excluded by that cleanup command.
 - **Load more repeatedly fails after an API restart or a long pause:** Restart-invalidated or expired cursors do not recover through Try again. Reload the dashboard or change its query to restart page one. A stable private local cursor secret preserves valid cursors across restarts, but not past their expiry.
 - **My polls is empty or asks for sign-in:** Check the selected lifecycle filter, title search and simulated `testRunId` identity; Closed is excluded from Active, and a different local identity owns a different list. Clear search or select another filter. If a page says More polls may match, continue loading. Check API logs/configuration for authentication or server failures; errors are not empty lists. Reload for current summaries after collaboration or index propagation. Share diagnostics with query strings, cursors, capability URLs and secrets removed.
-- **Playwright cannot reach the app:** Start the stack first; `npm run test:e2e` does not start or stop services. Confirm the browser-test shell has the same `WEB_PORT` used by the stack. If Chromium is missing, run `npx playwright install chromium` (on Linux, `npx playwright install --with-deps chromium`).
+- **Playwright cannot reach the app:** Confirm DynamoDB Local is running and that `API_PORT`/`WEB_PORT` are free; the isolated coordinator starts its own API/web processes. If Chromium is missing, run `npx playwright install chromium` (on Linux, `npx playwright install --with-deps chromium`).
 - **A browser test fails:** Inspect the HTML report with `npx playwright show-report`, plus traces, screenshots, and videos in `test-results/`. For a less contended local run, use `npx playwright test --workers=1`.
 - **Local data looks unexpected:** DynamoDB Local stores data in `.dynamodb/`, which survives `npm run dev:stop`. Startup initializes tables and prepares legacy dashboard counts but does not reset contents. Use the explicit scoped/all-local cleanup commands above after reviewing their targets; preserve `.dynamodb/`, which may also contain unrelated tables.
