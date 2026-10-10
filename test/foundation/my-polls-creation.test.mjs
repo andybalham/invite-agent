@@ -3,6 +3,7 @@ import test from "node:test";
 import { PollService } from "../../backend/dist/application/index.js";
 import { DynamoPollRepository } from "../../backend/dist/data/dynamodb-poll-repository.js";
 import * as domain from "../../backend/dist/domain/index.js";
+import { testPublicTokenCipher } from "../support/public-token-encryption.mjs";
 
 // S-043 / MP-US-04,10: exercise actual lifecycle service writes, not a parallel state engine.
 test("details/location edits, publication, close and reopen retain creation time and query position", async () => {
@@ -16,7 +17,7 @@ test("details/location edits, publication, close and reopen retain creation time
   const save = async (poll, audit) => { stored = structuredClone(poll); writes.push({ poll: stored, audit }); };
   const service = new PollService({ getPoll: async () => structuredClone(stored), listParticipants: async () => [],
     updatePoll: save, updateLocation: save, publishPoll: save, closePoll: save, reopenPoll: save },
-  { baseUrl: "http://127.0.0.1:15173", tokenHashKey: "creation-invariant-test" });
+  { baseUrl: "http://127.0.0.1:15173", tokenHashKey: "creation-invariant-test", publicTokenCipher: testPublicTokenCipher() });
   await service.update("old", { title: "Updated dinner", timeZone: stored.timeZone, proposedDates: stored.proposedDates }, "owner");
   await service.updateLocation("old", { location: "The hall" }, "owner");
   await service.publish("old", "owner");
@@ -36,7 +37,9 @@ test("existing metadata write paths retain the owner creation index keys", async
   const commands = [];
   const repository = new DynamoPollRepository({ send: async (command) => { commands.push(command); return {}; } },
     { appTableName: "app", auditTableName: "audit" });
-  const poll = { id: "p", organiserId: "owner", createdAt: "2026-09-01T08:00:00.000Z", status: "open", version: 2, publicTokenHash: "hash" };
+  const publicTokenHash = "a".repeat(64);
+  const poll = { id: "p", organiserId: "owner", createdAt: "2026-09-01T08:00:00.000Z", status: "open", version: 2, publicTokenHash,
+    encryptedPublicToken: testPublicTokenCipher().encrypt("A".repeat(32), { pollId: "p", organiserId: "owner", publicTokenHash }) };
   const audit = { pollId: "p", id: "e", action: "POLL_DETAILS_UPDATED", actorId: "owner", actorCategory: "organiser",
     occurredAt: "2026-10-04T08:00:00.000Z", revision: 2, entityType: "poll", entityId: "p", before: {}, after: {} };
   for (const method of ["createPoll", "updatePoll", "updateLocation", "publishPoll", "closePoll", "reopenPoll"]) {

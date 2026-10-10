@@ -17,6 +17,7 @@ import type {
 } from "./types.js";
 import type { OwnedPollSummary, ResolvedOwnedPollListQuery } from "@invite-a-gent/contracts";
 import { matchesOwnedPollQuery, toOwnedPollSummary } from "../domain/my-polls.js";
+import { isEncryptedPublicToken } from "../security/public-token-storage.js";
 
 export type OwnedPollKey = Record<string, AttributeValue>;
 
@@ -468,7 +469,10 @@ export class DynamoPollRepository {
   }
 
   public async publishPoll(poll: PollRecord, audit: AuditEvent): Promise<void> {
-    if (!poll.publicTokenHash) throw new Error("Published poll requires a token hash");
+    if (poll.status !== "open" || !/^[a-f0-9]{64}$/.test(poll.publicTokenHash ?? "") ||
+        !isEncryptedPublicToken(poll.encryptedPublicToken)) {
+      throw new Error("Invalid publication token storage");
+    }
     const metadata = versionedPollPut(this.config.appTableName, poll);
     metadata.Put!.ConditionExpression += " AND #status = :draft";
     metadata.Put!.ExpressionAttributeNames!["#status"] = "status";

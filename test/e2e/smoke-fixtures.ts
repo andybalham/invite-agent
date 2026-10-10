@@ -203,12 +203,14 @@ export class SmokeHarness {
     const { createLocalComposition } = await import(moduleUrl);
     const { hashPublicToken } = await import(pathToFileURL(path.resolve("backend/dist/security/public-token.js")).href);
     const hashKey = process.env.PUBLIC_TOKEN_HASH_KEY!;
+    const { readPublicTokenEncryptionConfig } = await import(pathToFileURL(path.resolve("backend/dist/security/index.js")).href);
     const app = await createLocalComposition({
       appEnv: config.appEnv, authMode: config.authMode, awsRegion: config.region,
       dynamodbEndpoint: config.endpoint,
       appTableName: config.appTableName,
       auditTableName: config.auditTableName,
-      publicBaseUrl: this.baseURL, publicTokenHashKey: hashKey
+      publicBaseUrl: this.baseURL, publicTokenHashKey: hashKey,
+      publicTokenEncryption: readPublicTokenEncryptionConfig(process.env, hashKey)
     });
     try {
       const poll = await app.repository.getPoll(this.pollId);

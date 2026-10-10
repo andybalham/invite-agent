@@ -4,6 +4,7 @@ import { once } from "node:events";
 import { createHmac } from "node:crypto";
 import { createLocalNodeServer } from "../../backend/dist/adapters/local/node-server.js";
 import { PollService } from "../../backend/dist/application/poll-service.js";
+import { testPublicTokenCipher } from "../support/public-token-encryption.mjs";
 import { ownedPollListResponseSchema, resolveOwnedPollListQuery } from "../../packages/contracts/dist/index.js";
 import { selectOwnedPolls, toOwnedPollSummary } from "../../backend/dist/domain/my-polls.js";
 import { dashboardFixture, dashboardOwners, dashboardSnapshot } from "../support/my-polls-fixture.mjs";
@@ -173,6 +174,7 @@ test("Lambda verified claims and raw query forwarding match local contracts; pub
   const { createOrganiserLambdaHandler, createPublicLambdaHandler } = await import("../../backend/dist/functions/http-api.js");
   const { app } = await dashboardFixture(t);
   const polls = new PollService(app.repository, { baseUrl: app.config.publicBaseUrl, tokenHashKey: "lambda-test",
+    publicTokenCipher: testPublicTokenCipher(),
     dashboardCursorSecret: app.config.dashboardCursorSecret });
   const organiser = createOrganiserLambdaHandler({ polls, repository: app.repository });
   const publicHandler = createPublicLambdaHandler({ polls, repository: app.repository });

@@ -41,6 +41,13 @@ $env:E2E_ALLOW_SHARED_TABLES = '0'
 $env:E2E_SMOKE_COORDINATOR_PID = $PID.ToString()
 $env:E2E_SMOKE_COORDINATOR_START = (Get-Process -Id $PID).StartTime.ToFileTimeUtc().ToString()
 if ($null -eq $env:PUBLIC_TOKEN_HASH_KEY) { $env:PUBLIC_TOKEN_HASH_KEY = 'local-development-token-hash-key' }
+# This run owns disposable tables; supply one random ring to all children and helpers.
+if ($null -eq $env:PUBLIC_TOKEN_ENCRYPTION_ACTIVE_KEY_ID -and $null -eq $env:PUBLIC_TOKEN_ENCRYPTION_KEYS) {
+    $env:PUBLIC_TOKEN_ENCRYPTION_ACTIVE_KEY_ID = 'smoke'
+    $encryptionBytes = [System.Security.Cryptography.RandomNumberGenerator]::GetBytes(32)
+    $encodedEncryptionKey = [Convert]::ToBase64String($encryptionBytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+    $env:PUBLIC_TOKEN_ENCRYPTION_KEYS = @{ smoke = $encodedEncryptionKey } | ConvertTo-Json -Compress
+}
 New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
 $startedAt = [datetime]::UtcNow
 $exitCode = 1

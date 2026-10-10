@@ -1,11 +1,12 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import type { FrameworkRequest, FrameworkResponse } from "../../http/index.js";
+import { OWNED_POLL_SHARE_RESPONSE_HEADERS } from "@invite-a-gent/contracts";
+import { isOwnedPollShareRequest, type FrameworkRequest, type FrameworkResponse } from "../../http/index.js";
 
 interface SharedHandler {
   handle(request: FrameworkRequest): Promise<FrameworkResponse>;
 }
 
-async function readJson(request: IncomingMessage): Promise<unknown> {
+async function readJson(request: IncomingMessage, shareRequest: boolean): Promise<unknown> {
   const chunks: Buffer[] = [];
   for await (const chunk of request) {
     chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
@@ -13,7 +14,8 @@ async function readJson(request: IncomingMessage): Promise<unknown> {
   if (chunks.length === 0) {
     return undefined;
   }
-  return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  const body = Buffer.concat(chunks).toString("utf8");
+  return shareRequest ? body : JSON.parse(body);
 }
 
 function send(response: ServerResponse, result: FrameworkResponse): void {
@@ -25,6 +27,8 @@ function send(response: ServerResponse, result: FrameworkResponse): void {
 
 export function createLocalNodeServer(handler: SharedHandler): Server {
   return createServer(async (request, response) => {
+    const path = (request.url ?? "/").split("?")[0]!;
+    const shareRequest = isOwnedPollShareRequest(request.method ?? "GET", path);
     try {
       const headers = Object.fromEntries(
         Object.entries(request.headers).map(([name, value]) => [
@@ -40,13 +44,16 @@ export function createLocalNodeServer(handler: SharedHandler): Server {
           path: url.pathname,
           rawQuery: url.search.slice(1),
           headers,
-          body: await readJson(request)
+          body: await readJson(request, shareRequest)
         })
       );
     } catch {
       send(response, {
-        status: 400,
-        body: { error: { code: "VALIDATION_ERROR", message: "Request body must be valid JSON" } }
+        ...(shareRequest ? { headers: OWNED_POLL_SHARE_RESPONSE_HEADERS } : {}),
+        status: shareRequest ? 500 : 400,
+        body: { error: shareRequest
+          ? { code: "INTERNAL_ERROR", message: "The poll link could not be retrieved" }
+          : { code: "VALIDATION_ERROR", message: "Request body must be valid JSON" } }
       });
     }
   });

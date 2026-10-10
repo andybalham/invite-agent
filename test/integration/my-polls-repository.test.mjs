@@ -5,6 +5,7 @@ import { resolveOwnedPollListQuery } from "../../packages/contracts/dist/index.j
 import { selectOwnedPolls, toOwnedPollSummary } from "../../backend/dist/domain/my-polls.js";
 import { DynamoPollRepository } from "../../backend/dist/data/dynamodb-poll-repository.js";
 import { PollService } from "../../backend/dist/application/poll-service.js";
+import { testPublicTokenCipher } from "../support/public-token-encryption.mjs";
 import { integrationClient } from "../support/integration-fixture.mjs";
 import { dashboardFixture, dashboardOwners, dashboardSnapshot } from "../support/my-polls-fixture.mjs";
 
@@ -53,7 +54,7 @@ test("bounded creation-index queries traverse sparse pages without omissions, fo
 
 test("participant counts survive add/delete/undo and edits/close/reopen retain creation order", async (t) => {
   const { app } = await dashboardFixture(t);
-  const service = new PollService(app.repository, { baseUrl: app.config.publicBaseUrl, tokenHashKey: "lifecycle" });
+  const service = new PollService(app.repository, { baseUrl: app.config.publicBaseUrl, tokenHashKey: "lifecycle", publicTokenCipher: testPublicTokenCipher() });
   const owner = dashboardOwners[0];
   const created = await service.create({ title: "Lifecycle", timeZone: "Europe/London", proposedDates: [
     { kind: "date", localDate: "2026-10-10" }, { kind: "date", localDate: "2026-10-11" }

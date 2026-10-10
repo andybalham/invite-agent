@@ -9,6 +9,7 @@ import { createSharedHttpHandler } from "../../http/index.js";
 import { createLocalAuthentication } from "./authentication.js";
 import { prepareLocalDashboard } from "./dashboard-migration.js";
 import { randomBytes } from "node:crypto";
+import { AesGcmPublicTokenCipher, type PublicTokenEncryptionConfig } from "../../security/index.js";
 
 export interface LocalConfig {
   readonly appEnv: string;
@@ -19,6 +20,7 @@ export interface LocalConfig {
   readonly auditTableName: string;
   readonly publicBaseUrl: string;
   readonly publicTokenHashKey?: string;
+  readonly publicTokenEncryption?: PublicTokenEncryptionConfig;
   readonly dashboardCursorSecret?: string;
 }
 
@@ -35,11 +37,15 @@ export async function createLocalComposition(config: LocalConfig): Promise<Local
     throw new Error("Local composition requires AUTH_MODE=local");
   }
   const authenticate = createLocalAuthentication(config.appEnv);
+  if (!config.publicTokenEncryption) throw new Error("Invalid public token encryption configuration");
+  const publicTokenCipher = new AesGcmPublicTokenCipher(config.publicTokenEncryption);
   const client: DynamoDBClient = createDynamoClient(config);
   const repository = new DynamoPollRepository(client, config);
   const polls = new PollService(repository, {
     baseUrl: config.publicBaseUrl,
     tokenHashKey: config.publicTokenHashKey ?? "local-development-token-hash-key",
+    publicTokenCipher,
+    allowLoopbackHttp: true,
     dashboardCursorSecret: config.dashboardCursorSecret ?? randomBytes(32).toString("base64url")
   });
   return {

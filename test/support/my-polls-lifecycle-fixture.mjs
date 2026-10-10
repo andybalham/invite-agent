@@ -1,4 +1,5 @@
 import { PollService } from "../../backend/dist/application/index.js";
+import { testPublicTokenCipher } from "./public-token-encryption.mjs";
 import { selectOwnedPolls, toOwnedPollSummary } from "../../backend/dist/domain/index.js";
 import { createNavigationFixture, navigationOrigin, navigationOwners } from "./organiser-navigation-fixture.mjs";
 
@@ -39,6 +40,7 @@ export function createLifecycleFixture() {
   };
   const service = new PollService(repository, {
     baseUrl: navigationOrigin, tokenHashKey: "t120-lifecycle-fixture",
+    publicTokenCipher: testPublicTokenCipher(),
     dashboardCursorSecret: "t120-cursor-secret-with-at-least-32-bytes"
   });
 

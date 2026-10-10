@@ -1,6 +1,7 @@
 import { ApplicationError, type PollService } from "../application/index.js";
+import { OWNED_POLL_SHARE_RESPONSE_HEADERS } from "@invite-a-gent/contracts";
 import type { DynamoPollRepository } from "../data/index.js";
-import { createSharedHttpHandler, type FrameworkResponse } from "../http/index.js";
+import { createSharedHttpHandler, isOwnedPollShareRequest, type FrameworkResponse } from "../http/index.js";
 
 /** API Gateway HTTP API v2. JWT claims are trusted only from its configured authorizer. */
 export interface HttpApiEvent {
@@ -24,8 +25,10 @@ function response(result: FrameworkResponse) {
 
 function createHandler(dependencies: Dependencies, scope: "organiser" | "public") {
   return async (event: HttpApiEvent) => {
+    const shareRequest = isOwnedPollShareRequest(event.requestContext.http.method, event.rawPath);
     if (!event.rawPath.startsWith(`/api/${scope}/`)) {
-      return response({ status: 404, body: { error: { code: "NOT_FOUND", message: "Route not found" } } });
+      return response({ status: 404, ...(shareRequest ? { headers: OWNED_POLL_SHARE_RESPONSE_HEADERS } : {}),
+        body: { error: { code: "NOT_FOUND", message: "Route not found" } } });
     }
     const handler = createSharedHttpHandler({ ...dependencies, authenticate: () => {
       const sub = event.requestContext.authorizer?.jwt?.claims?.sub;
@@ -36,7 +39,7 @@ function createHandler(dependencies: Dependencies, scope: "organiser" | "public"
     } });
     let body: unknown;
     try {
-      body = event.body ? JSON.parse(event.isBase64Encoded ? Buffer.from(event.body, "base64").toString("utf8") : event.body) : undefined;
+      body = shareRequest ? event.body : event.body ? JSON.parse(event.isBase64Encoded ? Buffer.from(event.body, "base64").toString("utf8") : event.body) : undefined;
     } catch {
       return response({ status: 400, body: { error: { code: "VALIDATION_ERROR", message: "Request body must be valid JSON" } } });
     }

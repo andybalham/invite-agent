@@ -207,6 +207,37 @@ export interface OwnedPollListResponse {
   nextCursor?: string;
 }
 
+/** Owner-only GET /api/organiser/polls/{pollId}/share-link; no token or poll DTO. */
+export interface OwnedPollShareResponse {
+  publicUrl: string;
+}
+
+/** Applies to every outcome, including authentication and recovery failures. */
+export const OWNED_POLL_SHARE_RESPONSE_HEADERS = Object.freeze({
+  "cache-control": "private, no-store",
+  vary: "Authorization, X-Local-Organiser-Id"
+});
+
+/** Dedicated recovery status mapping; existing API error statuses remain unchanged. */
+export const OWNED_POLL_SHARE_ERROR_STATUS = Object.freeze({
+  VALIDATION_ERROR: 400,
+  UNAUTHENTICATED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  LINK_RECOVERY_REQUIRED: 409,
+  LINK_REVOKED: 410,
+  INVALID_LIFECYCLE: 422,
+  INTERNAL_ERROR: 500
+} as const);
+
+export interface OwnedPollShareErrorResponse {
+  error: {
+    code: keyof typeof OWNED_POLL_SHARE_ERROR_STATUS;
+    message: string;
+    correlationId?: string;
+  };
+}
+
 // The HTTP handler's error envelope differs from the existing status-bearing ApiError value.
 export interface OwnedPollListErrorResponse {
   error: {
@@ -625,4 +656,33 @@ export const ownedPollListResponseSchema = schema<OwnedPollListResponse>(
 );
 export const ownedPollListErrorResponseSchema = schema<OwnedPollListErrorResponse>(
   isOwnedPollListErrorResponse, "Invalid owned-poll list error response"
+);
+
+function isOwnedPollShareResponse(input: unknown): input is OwnedPollShareResponse {
+  if (!isRecord(input) || !hasOnlyKeys(input, ["publicUrl"]) || typeof input.publicUrl !== "string") return false;
+  try {
+    const url = new URL(input.publicUrl);
+    return (url.protocol === "https:" || (url.protocol === "http:" &&
+      ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname))) &&
+      !url.username && !url.password && !url.search && !url.hash &&
+      /^\/p\/[A-Za-z0-9_-]{32}$/.test(url.pathname) && url.href === input.publicUrl;
+  } catch {
+    return false;
+  }
+}
+
+function isOwnedPollShareErrorResponse(input: unknown): input is OwnedPollShareErrorResponse {
+  if (!isRecord(input) || !hasOnlyKeys(input, ["error"]) || !isRecord(input.error)) return false;
+  const error = input.error;
+  return hasOnlyKeys(error, ["code", "message", "correlationId"]) &&
+    typeof error.code === "string" && Object.hasOwn(OWNED_POLL_SHARE_ERROR_STATUS, error.code) &&
+    isNonBlankString(error.message) &&
+    (error.correlationId === undefined || isNonBlankString(error.correlationId));
+}
+
+export const ownedPollShareResponseSchema = schema<OwnedPollShareResponse>(
+  isOwnedPollShareResponse, "Invalid owned-poll share response"
+);
+export const ownedPollShareErrorResponseSchema = schema<OwnedPollShareErrorResponse>(
+  isOwnedPollShareErrorResponse, "Invalid owned-poll share error response"
 );

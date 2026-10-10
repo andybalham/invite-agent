@@ -1,4 +1,4 @@
-export { createSharedHttpHandler } from "./shared-handler.js";
+export { createSharedHttpHandler, isOwnedPollShareRequest } from "./shared-handler.js";
 export type {
   Authenticate,
   FrameworkRequest,

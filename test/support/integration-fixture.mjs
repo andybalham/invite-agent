@@ -3,6 +3,7 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { validateLocalEndpoint } from "../../scripts/cleanup-local-data.mjs";
 import { deleteOwnedTable } from "../../scripts/smoke-run-resources.mjs";
 import { initializeTables } from "../../backend/dist/data/initialize-tables.js";
+import { testPublicTokenEncryptionConfig } from "./public-token-encryption.mjs";
 
 export function integrationClient(endpoint) {
   return new DynamoDBClient({
@@ -52,6 +53,7 @@ export async function createIntegrationApp(t, compose, config, { beforeCleanup =
   const suffix = randomUUID();
   const ownedConfig = {
     ...config,
+    publicTokenEncryption: config.publicTokenEncryption ?? testPublicTokenEncryptionConfig(config.publicTokenHashKey),
     dynamodbEndpoint: validateLocalEndpoint(config.dynamodbEndpoint),
     appTableName: `invite-agent-test-app-${suffix}`,
     auditTableName: `invite-agent-test-audit-${suffix}`

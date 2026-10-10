@@ -1,4 +1,5 @@
-import { ApplicationError, type PollService } from "../application/index.js";
+import { OWNED_POLL_SHARE_RESPONSE_HEADERS } from "@invite-a-gent/contracts";
+import { ApplicationError, OwnedPollShareError, type PollService } from "../application/index.js";
 import type { DynamoPollRepository } from "../data/index.js";
 import { parseOwnedPollQuery } from "./owned-poll-query.js";
 
@@ -17,6 +18,10 @@ export interface FrameworkResponse {
 }
 
 export type Authenticate = (headers: FrameworkRequest["headers"]) => string;
+
+export function isOwnedPollShareRequest(method: string, path: string): boolean {
+  return method === "GET" && /^\/api\/organiser\/polls\/[^/]+\/share-link$/.test(path);
+}
 
 function errorResponse(error: unknown): FrameworkResponse {
   if (error instanceof ApplicationError) {
@@ -38,9 +43,20 @@ export function createSharedHttpHandler(dependencies: {
 }): { handle(request: FrameworkRequest): Promise<FrameworkResponse> } {
   return {
     async handle(request) {
+      const shareRequest = isOwnedPollShareRequest(request.method, request.path);
       const listHeaders = request.method === "GET" && request.path === "/api/organiser/polls"
         ? { "cache-control": "private, no-store", vary: "Authorization, X-Local-Organiser-Id" } : undefined;
       try {
+        if (shareRequest) {
+          let organiserId;
+          try {
+            organiserId = dependencies.authenticate(request.headers);
+          } catch {
+            throw new OwnedPollShareError("UNAUTHENTICATED");
+          }
+          return { status: 200, headers: OWNED_POLL_SHARE_RESPONSE_HEADERS,
+            body: await dependencies.polls.getOwnedShareLink(request.path.split("/")[4]!, organiserId, request) };
+        }
         if (listHeaders) {
           const organiserId = dependencies.authenticate(request.headers);
           if (request.body !== undefined) throw new ApplicationError("VALIDATION_ERROR", "Poll list requests do not accept a body");
@@ -186,6 +202,11 @@ export function createSharedHttpHandler(dependencies: {
         }
         throw new ApplicationError("NOT_FOUND", "Route not found");
       } catch (error) {
+        if (shareRequest) {
+          const safe = error instanceof OwnedPollShareError ? error : new OwnedPollShareError("INTERNAL_ERROR");
+          return { status: safe.status, headers: OWNED_POLL_SHARE_RESPONSE_HEADERS,
+            body: { error: { code: safe.code, message: safe.message } } };
+        }
         return { ...errorResponse(error), ...(listHeaders ? { headers: listHeaders } : {}) };
       }
     }

@@ -1,0 +1,60 @@
+graph LR
+  classDef done fill:#14532d,stroke:#86efac,color:#f0fdf4;
+  classDef blocked fill:#7f1d1d,stroke:#fca5a5,color:#fff7f7;
+  classDef inprogress fill:#78350f,stroke:#fbbf24,color:#fffbeb;
+  classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
+  classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
+  subgraph Stories
+    S054["S-054 Design and implement secure owner link recovery"]:::done
+    S055["S-055 Expose share-link retrieval from My polls"]:::todo
+    S056["S-056 Rotate links safely and handle legacy polls"]:::todo
+    S057["S-057 Verify share-link recovery acceptance and regression coverage"]:::blocked
+    S054 --> S055
+    S054 --> S056
+    S055 --> S057
+    S056 --> S057
+  end
+  subgraph Tasks
+    T141["T-141 Specify encrypted public-token storage, key configuration, and owner share contracts"]:::done
+    T142["T-142 Implement atomic recoverable-token persistence during publication"]:::done
+    T143["T-143 Implement the owner-scoped share URL endpoint and transport contracts"]:::done
+    T144["T-144 Specify share-link panel states and desktop/mobile acceptance cases"]:::todo
+    T145["T-145 Add My polls Share link actions and reusable share panel UI"]:::blocked
+    T146["T-146 Connect on-demand URL retrieval, copy, and open actions"]:::blocked
+    T147["T-147 Specify rotation, revocation, audit, and legacy-poll behavior"]:::todo
+    T148["T-148 Implement atomic link rotation, capability revocation, and audit event"]:::blocked
+    T149["T-149 Implement confirmed rotation and legacy recovery UI states"]:::blocked
+    T150["T-150 Add API and service regression coverage for owner isolation and token secrecy"]:::blocked
+    T151["T-151 Add component and browser acceptance coverage for share-link recovery"]:::blocked
+    T152["T-152 Update requirements traceability and operational guidance for share links"]:::blocked
+    T141 --> T142
+    T142 --> T143
+    T143 --> T146
+    T143 --> T150
+    T144 --> T145
+    T145 --> T146
+    T146 --> T149
+    T146 --> T151
+    T147 --> T148
+    T148 --> T149
+    T148 --> T150
+    T149 --> T151
+    T150 --> T151
+    T151 --> T152
+  end
+  click S054 "../entities/S-054-design-and-implement-secure-owner-link-recovery.md"
+  click S055 "../entities/S-055-expose-share-link-retrieval-from-my-polls.md"
+  click S056 "../entities/S-056-rotate-links-safely-and-handle-legacy-polls.md"
+  click S057 "../entities/S-057-verify-share-link-recovery-acceptance-and-regression-coverage.md"
+  click T141 "../entities/T-141-specify-encrypted-public-token-storage-key-configuration-and-owner-share-contracts.md"
+  click T142 "../entities/T-142-implement-atomic-recoverable-token-persistence-during-publication.md"
+  click T143 "../entities/T-143-implement-the-owner-scoped-share-url-endpoint-and-transport-contracts.md"
+  click T144 "../entities/T-144-specify-share-link-panel-states-and-desktop-mobile-acceptance-cases.md"
+  click T145 "../entities/T-145-add-my-polls-share-link-actions-and-reusable-share-panel-ui.md"
+  click T146 "../entities/T-146-connect-on-demand-url-retrieval-copy-and-open-actions.md"
+  click T147 "../entities/T-147-specify-rotation-revocation-audit-and-legacy-poll-behavior.md"
+  click T148 "../entities/T-148-implement-atomic-link-rotation-capability-revocation-and-audit-event.md"
+  click T149 "../entities/T-149-implement-confirmed-rotation-and-legacy-recovery-ui-states.md"
+  click T150 "../entities/T-150-add-api-and-service-regression-coverage-for-owner-isolation-and-token-secrecy.md"
+  click T151 "../entities/T-151-add-component-and-browser-acceptance-coverage-for-share-link-recovery.md"
+  click T152 "../entities/T-152-update-requirements-traceability-and-operational-guidance-for-share-links.md"

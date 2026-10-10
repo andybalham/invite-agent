@@ -94,9 +94,9 @@ _Generated. Do not edit by hand._
   - [x] [T-050 · Specify reopen and close-again lifecycle with failing automated tests](../entities/T-050-specify-reopen-and-close-again-lifecycle-with-failing-automated-tests.md) — done
   - [x] [T-051 · Implement and verify reopen and close-again lifecycle](../entities/T-051-implement-and-verify-reopen-and-close-again-lifecycle.md) — done
 
-## [E-008 · E8 — Production AWS platform](./E-008.md) — todo
-- [ ] **S-025 · Provision durable DynamoDB application and audit data** — todo
-  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — todo
+## [E-008 · E8 — Production AWS platform](./E-008.md) — blocked
+- [ ] **S-025 · Provision durable DynamoDB application and audit data** — blocked · waiting on E-008
+  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — blocked · waiting on E-008
   - [ ] [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [ ] **S-026 · Deploy least-privilege Lambda APIs with Cognito authorization** — blocked · waiting on S-025
   - [ ] [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053
@@ -220,3 +220,21 @@ _Generated. Do not edit by hand._
   - [x] [T-138 · Add commands for isolated fast, discovery, smoke, and exhaustive E2E suites](../entities/T-138-add-commands-for-isolated-fast-discovery-smoke-and-exhaustive-e2e-suites.md) — done
   - [x] [T-139 · Update CI and documentation for E2E isolation and cleanup](../entities/T-139-update-ci-and-documentation-for-e2e-isolation-and-cleanup.md) — done
   - [x] [T-140 · Run final E2E acceptance, repeatability, and no-cruft verification](../entities/T-140-run-final-e2e-acceptance-repeatability-and-no-cruft-verification.md) — done
+
+## [E-015 · E15 — Recover and manage public poll links from My polls](./E-015.md) — todo
+- [x] **S-054 · Design and implement secure owner link recovery** — done
+  - [x] [T-141 · Specify encrypted public-token storage, key configuration, and owner share contracts](../entities/T-141-specify-encrypted-public-token-storage-key-configuration-and-owner-share-contracts.md) — done
+  - [x] [T-142 · Implement atomic recoverable-token persistence during publication](../entities/T-142-implement-atomic-recoverable-token-persistence-during-publication.md) — done
+  - [x] [T-143 · Implement the owner-scoped share URL endpoint and transport contracts](../entities/T-143-implement-the-owner-scoped-share-url-endpoint-and-transport-contracts.md) — done
+- [ ] **S-055 · Expose share-link retrieval from My polls** — todo
+  - [ ] [T-144 · Specify share-link panel states and desktop/mobile acceptance cases](../entities/T-144-specify-share-link-panel-states-and-desktop-mobile-acceptance-cases.md) — todo
+  - [ ] [T-145 · Add My polls Share link actions and reusable share panel UI](../entities/T-145-add-my-polls-share-link-actions-and-reusable-share-panel-ui.md) — blocked · waiting on T-144
+  - [ ] [T-146 · Connect on-demand URL retrieval, copy, and open actions](../entities/T-146-connect-on-demand-url-retrieval-copy-and-open-actions.md) — blocked · waiting on T-145
+- [ ] **S-056 · Rotate links safely and handle legacy polls** — todo
+  - [ ] [T-147 · Specify rotation, revocation, audit, and legacy-poll behavior](../entities/T-147-specify-rotation-revocation-audit-and-legacy-poll-behavior.md) — todo
+  - [ ] [T-148 · Implement atomic link rotation, capability revocation, and audit event](../entities/T-148-implement-atomic-link-rotation-capability-revocation-and-audit-event.md) — blocked · waiting on T-147
+  - [ ] [T-149 · Implement confirmed rotation and legacy recovery UI states](../entities/T-149-implement-confirmed-rotation-and-legacy-recovery-ui-states.md) — blocked · waiting on T-146, T-148
+- [ ] **S-057 · Verify share-link recovery acceptance and regression coverage** — blocked · waiting on S-055, S-056
+  - [ ] [T-150 · Add API and service regression coverage for owner isolation and token secrecy](../entities/T-150-add-api-and-service-regression-coverage-for-owner-isolation-and-token-secrecy.md) — blocked · waiting on T-148
+  - [ ] [T-151 · Add component and browser acceptance coverage for share-link recovery](../entities/T-151-add-component-and-browser-acceptance-coverage-for-share-link-recovery.md) — blocked · waiting on T-146, T-149, T-150
+  - [ ] [T-152 · Update requirements traceability and operational guidance for share links](../entities/T-152-update-requirements-traceability-and-operational-guidance-for-share-links.md) — blocked · waiting on T-151

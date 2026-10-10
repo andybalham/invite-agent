@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { createWriteStream } from "node:fs";
 import { mkdir, realpath, writeFile } from "node:fs/promises";
 import net from "node:net";
@@ -21,6 +22,12 @@ export async function assertFreePort(port) {
 // The coordinator alone writes the manifest. Worker poll inventories are separate
 // artifacts (fixtures never read/modify/write this shared journal).
 export async function startE2ERun(config, { root = process.cwd(), environment = process.env } = {}) {
+  // Disposable runs provision once; shared data always requires the caller's persistent ring.
+  if (config.mode === "isolated" && environment.PUBLIC_TOKEN_ENCRYPTION_ACTIVE_KEY_ID === undefined &&
+      environment.PUBLIC_TOKEN_ENCRYPTION_KEYS === undefined) {
+    environment.PUBLIC_TOKEN_ENCRYPTION_ACTIVE_KEY_ID = "e2e";
+    environment.PUBLIC_TOKEN_ENCRYPTION_KEYS = JSON.stringify({ e2e: randomBytes(32).toString("base64url") });
+  }
   const effective = e2eEnvironment(config, environment);
   assertEffectiveEnvironment(config, effective);
   if (config.mode !== "isolated") {

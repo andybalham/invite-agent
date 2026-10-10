@@ -1,4 +1,5 @@
 import type { LocalConfig } from "./composition.js";
+import { readPublicTokenEncryptionConfig } from "../../security/index.js";
 
 function required(environment: NodeJS.ProcessEnv, name: string): string {
   const value = environment[name];
@@ -18,6 +19,8 @@ export function readLocalConfig(environment: NodeJS.ProcessEnv): LocalConfig {
     auditTableName: required(environment, "AUDIT_TABLE_NAME"),
     publicBaseUrl: required(environment, "PUBLIC_BASE_URL"),
     publicTokenHashKey: environment.PUBLIC_TOKEN_HASH_KEY ?? "local-development-token-hash-key",
+    publicTokenEncryption: readPublicTokenEncryptionConfig(environment,
+      environment.PUBLIC_TOKEN_HASH_KEY ?? "local-development-token-hash-key"),
     ...(environment.DASHBOARD_CURSOR_SECRET ? { dashboardCursorSecret: environment.DASHBOARD_CURSOR_SECRET } : {})
   };
 }

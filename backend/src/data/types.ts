@@ -5,6 +5,7 @@ import type {
   ProposedDate,
   PublicRankingEntry
 } from "@invite-a-gent/contracts";
+import type { EncryptedPublicToken } from "../security/public-token-storage.js";
 
 export interface PollRecord extends CreatePollRequest {
   readonly id: string;
@@ -16,6 +17,8 @@ export interface PollRecord extends CreatePollRequest {
   /** Absent only on legacy records awaiting the explicit dashboard migration. */
   readonly participantCount?: number;
   readonly publicTokenHash?: string;
+  /** Absent on drafts and legacy publications. Internal only; never return or audit. */
+  readonly encryptedPublicToken?: EncryptedPublicToken;
   readonly selectedDateId?: string;
   readonly provisional?: true;
   readonly frozenRanking?: readonly PublicRankingEntry[];
