@@ -91,6 +91,8 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .my-polls-status { margin: 0; }
 .my-polls-more { width: max-content; }
 .my-polls-return { width: max-content; padding-left: 0; text-decoration: none; }
+.summary-share-link { display: block; margin-top: var(--space-3); min-height: 44px; max-width: 100%; white-space: normal; }
+.my-polls-share-host .share-screen, .my-polls-card .share-screen { margin-top: var(--space-4); padding: var(--space-4); border: 1px solid var(--color-divider); background: var(--color-surface); }
 .editor__header { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-6); }
 .editor__header-actions { display: flex; gap: var(--space-2); }
 .tag { display: inline-flex; align-items: center; min-height: 26px; margin: 0 0 var(--space-3); padding: 4px 8px; font-size: 11px; font-weight: 800; letter-spacing: .03em; }
@@ -154,6 +156,11 @@ textarea.input { display: block; resize: vertical; }
 .poll-preview { display: grid; gap: 20px; }
 .poll-preview[hidden] { display: none; }
 .share-screen { display: grid; gap: 24px; }
+.share-screen, .share-link, .share-link > div, .share-link .input { min-width: 0; }
+.share-screen [hidden] { display: none; }
+.share-screen .btn { min-height: 44px; white-space: normal; }
+.share-error { margin: 0; }
+.my-polls .share-screen .link-security { flex-wrap: wrap; }
 .share-screen[hidden] { display: none; }
 .share-title { display: grid; gap: 8px; border-top: 2px solid var(--color-text); padding-top: 16px; }
 .share-title p { max-width: 640px; margin: 0; color: var(--color-neutral-700); }

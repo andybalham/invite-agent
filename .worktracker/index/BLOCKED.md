@@ -11,7 +11,7 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [S-057 · Verify share-link recovery acceptance and regression coverage](../entities/S-057-verify-share-link-recovery-acceptance-and-regression-coverage.md) — blocked · waiting on S-055, S-056
+- [S-057 · Verify share-link recovery acceptance and regression coverage](../entities/S-057-verify-share-link-recovery-acceptance-and-regression-coverage.md) — blocked · waiting on S-056
 - [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — blocked · waiting on E-008
 - [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053
@@ -26,10 +26,8 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-145 · Add My polls Share link actions and reusable share panel UI](../entities/T-145-add-my-polls-share-link-actions-and-reusable-share-panel-ui.md) — blocked · waiting on T-144
-- [T-146 · Connect on-demand URL retrieval, copy, and open actions](../entities/T-146-connect-on-demand-url-retrieval-copy-and-open-actions.md) — blocked · waiting on T-145
 - [T-148 · Implement atomic link rotation, capability revocation, and audit event](../entities/T-148-implement-atomic-link-rotation-capability-revocation-and-audit-event.md) — blocked · waiting on T-147
-- [T-149 · Implement confirmed rotation and legacy recovery UI states](../entities/T-149-implement-confirmed-rotation-and-legacy-recovery-ui-states.md) — blocked · waiting on T-146, T-148
+- [T-149 · Implement confirmed rotation and legacy recovery UI states](../entities/T-149-implement-confirmed-rotation-and-legacy-recovery-ui-states.md) — blocked · waiting on T-148
 - [T-150 · Add API and service regression coverage for owner isolation and token secrecy](../entities/T-150-add-api-and-service-regression-coverage-for-owner-isolation-and-token-secrecy.md) — blocked · waiting on T-148
-- [T-151 · Add component and browser acceptance coverage for share-link recovery](../entities/T-151-add-component-and-browser-acceptance-coverage-for-share-link-recovery.md) — blocked · waiting on T-146, T-149, T-150
+- [T-151 · Add component and browser acceptance coverage for share-link recovery](../entities/T-151-add-component-and-browser-acceptance-coverage-for-share-link-recovery.md) — blocked · waiting on T-149, T-150
 - [T-152 · Update requirements traceability and operational guidance for share links](../entities/T-152-update-requirements-traceability-and-operational-guidance-for-share-links.md) — blocked · waiting on T-151

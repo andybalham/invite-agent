@@ -245,6 +245,101 @@ And the existing participant permissions and lifecycle restrictions apply
 And the public link does not grant access to the organiser poll list
 ```
 
+## Use case MP-UC-04: Retrieve and use a poll share link
+
+**Primary actor:** Organiser
+**Goal:** Share an already published poll from My polls without exposing its capability URL in list data.
+**Success outcome:** The owner can retrieve, copy, or open the current link for an Open or Closed poll from either summary layout.
+
+### MP-US-12 — Share a published poll from either summary layout
+
+**As an organiser, I want a Share link action on each published poll so that I can retrieve and use its current public link from desktop or mobile.**
+
+The desktop table row and mobile card are equivalent interaction surfaces. Each must identify the poll and lifecycle state, expose the same Share link action for Open and Closed polls, and open a panel associated with that poll. Draft rows/cards have no Share link action or share panel. Closed polls remain shareable: their public poll is read-only under the existing lifecycle rules.
+
+The following cases apply at desktop table and mobile card viewports:
+
+```gherkin
+Scenario Outline: Share action visibility follows poll lifecycle
+  Given My polls contains a Draft, an Open, and a Closed poll
+  When I view the <layout> summaries
+  Then the Draft row or card has no Share link action
+  And the Open row or card has a Share link action
+  And the Closed row or card has a Share link action
+  And no public URL or token is present in the list response or rendered summary before I request it
+
+  Examples:
+    | layout       |
+    | desktop table |
+    | mobile card  |
+
+Scenario Outline: Retrieve a current link on demand
+  Given I own an Open or Closed poll with a recoverable public link
+  And I am viewing its <layout> summary
+  When I activate Share link
+  Then a panel for that poll opens without navigating away from My polls
+  And the current filter, search, list position, and other summaries are preserved
+  And a loading status is announced while the owner-scoped link request is pending
+  And repeated activation does not create duplicate requests or panels
+  When retrieval succeeds
+  Then the panel shows the exact public URL in a labelled read-only field
+  And Copy link and Open poll actions are available
+  And an announced success status confirms that the link is ready
+
+  Examples:
+    | layout        |
+    | desktop table |
+    | mobile card   |
+
+Scenario Outline: Copy and open the retrieved link
+  Given the share panel shows a successfully retrieved public URL
+  When I select Copy link
+  Then that exact URL is written to the clipboard
+  And an accessible status confirms the copy
+  When I select Open poll
+  Then the exact URL opens as the public poll in a separate browsing context
+  And the My polls page remains available in its original context
+
+  Examples:
+    | layout        |
+    | desktop table |
+    | mobile card   |
+
+Scenario Outline: Recover from URL retrieval or clipboard failure
+  Given I opened the share panel for an Open or Closed poll
+  When URL retrieval fails
+  Then the panel shows a non-sensitive error and an available retry action
+  And no stale or partial URL is shown
+  And the current filter, search, list position, and other summaries remain usable
+  When clipboard access fails after successful retrieval
+  Then the URL remains available in the read-only field for manual selection
+  And an accessible error status explains that copying failed
+  And Open poll remains available
+
+  Examples:
+    | layout        |
+    | desktop table |
+    | mobile card   |
+
+Scenario Outline: Explain a legacy poll without a recoverable link
+  Given I own an Open or Closed poll published before recoverable link storage
+  And its public URL cannot be retrieved
+  When I activate Share link from its <layout> summary
+  Then the panel identifies that the existing link cannot be recovered
+  And it does not display a fabricated URL or imply that copying succeeded
+  And it provides the defined recovery or regeneration path with its confirmation and warning
+  And cancelling recovery leaves the existing poll and link unchanged
+
+  Examples:
+    | layout        |
+    | desktop table |
+    | mobile card   |
+```
+
+Desktop and mobile acceptance must exercise the same lifecycle and failure matrix. On mobile, the panel and controls remain within the card/list flow, fit the viewport without horizontal page scrolling, and remain keyboard operable. On desktop, actions remain associated with their table row and do not become ambiguous across multiple polls. In both layouts, status and error feedback is programmatically announced, controls have accessible names, and opening/closing a panel does not activate the poll-title navigation.
+
+The legacy recovery path is specified here for consistency with S-056. Its warning, confirmation, and recovery behavior are implemented and verified by the link-rotation work; this use case does not authorize silently replacing a legacy link.
+
 ## Resolved decision acceptance cases (S-043)
 
 ### MP-US-03: Date representations and incomplete drafts

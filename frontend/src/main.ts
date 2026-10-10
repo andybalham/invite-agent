@@ -1,6 +1,7 @@
 import "./styles.css";
+import { createSharePanel } from "./share-panel.js";
 import type { OwnedPollListResponse } from "@invite-a-gent/contracts";
-import { normalizeDashboardTitle } from "@invite-a-gent/contracts";
+import { normalizeDashboardTitle, ownedPollShareResponseSchema, ownedPollShareErrorResponseSchema } from "@invite-a-gent/contracts";
 import {
   createPollDestination, myPollsContext, myPollsDestination, organiserPollDestination,
   ownedPollDestination, pollReturnContext
@@ -160,27 +161,6 @@ app.innerHTML = `
     <div class="preview-title"><p class="tag tag-accent">Draft · preview only</p><h1 id="preview-heading"></h1><p data-testid="preview-description"></p><p data-testid="preview-instructions"></p><p class="preview-meta"></p></div>
     <div class="preview-table-wrap"><table class="table preview-table"><thead><tr><th>Name</th></tr></thead><tbody><tr><td>No responses yet.</td></tr></tbody></table></div>
     <button class="btn btn-primary" type="button" disabled>+ Add row</button>
-  </section>
-  <section class="share-screen" hidden aria-labelledby="share-heading">
-    <div class="share-title">
-      <p class="tag tag-open">Published · Open</p>
-      <h1 id="share-heading" tabindex="-1">Share this link</h1>
-      <p>Anyone with the link can see and edit every response — no account needed.</p>
-    </div>
-    <div class="share-link">
-      <label for="public-link">Public poll link</label>
-      <div><input class="input input--code" id="public-link" readonly><button class="btn btn-primary copy-link" type="button">Copy link</button></div>
-    </div>
-    <div class="share-actions">
-      <a class="btn btn-primary go-to-poll" href="#">Go to the poll</a>
-      <a class="btn btn-secondary open-public-link" href="#" target="_blank" rel="noopener noreferrer">Open as a link holder</a>
-      <a class="btn btn-secondary open-history" href="#">History</a>
-    </div>
-    <section class="link-security section-rule">
-      <div><h2>Link security</h2><p>If the link was shared with the wrong people, replace it. The old link stops working immediately. Dates, responses and history are kept.</p></div>
-      <button class="btn btn-secondary" type="button" disabled>Regenerate link…</button>
-    </section>
-    <p class="share-status" role="status" aria-live="polite"></p>
   </section>
   <main class="history-screen" hidden aria-labelledby="history-heading">
     <a class="btn btn-ghost history-back" href="#">← Back to poll</a>
@@ -343,13 +323,13 @@ const saveButton = requireElement<HTMLButtonElement>(".save-button");
 const health = requireElement<HTMLElement>("[data-testid='api-health']");
 const heading = requireElement<HTMLElement>("#draft-heading");
 const headerSaveStatus = requireElement<HTMLElement>("[data-testid='header-save-status']");
-const shareScreen = requireElement<HTMLElement>(".share-screen");
-const publicLink = requireElement<HTMLInputElement>("#public-link");
-const copyLinkButton = requireElement<HTMLButtonElement>(".copy-link");
-const goToPoll = requireElement<HTMLAnchorElement>(".go-to-poll");
-const openPublicLink = requireElement<HTMLAnchorElement>(".open-public-link");
-const openHistory = requireElement<HTMLAnchorElement>(".open-history");
-const shareStatus = requireElement<HTMLElement>(".share-status");
+const publicationSharePanel = createSharePanel({ id: "publication-share" });
+const shareScreen = publicationSharePanel.element;
+app.append(shareScreen);
+const publicLink = publicationSharePanel.input;
+const goToPoll = publicationSharePanel.manage;
+const openHistory = publicationSharePanel.history;
+publicationSharePanel.open.textContent = "Open as a link holder";
 const historyScreen = requireElement<HTMLElement>(".history-screen");
 const historyHeading = requireElement<HTMLElement>("#history-heading");
 const historyBack = requireElement<HTMLAnchorElement>(".history-back");
@@ -447,6 +427,8 @@ let ownedListCount = 0;
 const ownedListIds = new Set<string>();
 let ownedListIdentity = "";
 let ownedListQuery = "";
+let summaryShareId = 0;
+const summaryShareResets = new Set<() => void>();
 let proposedDates: ProposedDate[] = [];
 let publicToken: string | undefined;
 let displayedPublicPoll: PublicPollDetails | undefined;
@@ -740,6 +722,98 @@ function renderPollSummary(poll: OwnedPollListResponse["items"][number], context
   }
   card.append(heading, details);
   cards.append(card);
+  if (poll.status !== "draft") {
+    const desktopShareHost = document.createElement("div");
+    desktopShareHost.className = "my-polls-share-host";
+    const desktop = table.closest<HTMLElement>(".my-polls-desktop");
+    desktop?.append(desktopShareHost);
+    addSummaryShareAction(row.firstElementChild as HTMLElement, desktopShareHost, poll);
+    addSummaryShareAction(card, card, poll);
+  }
+}
+
+function addSummaryShareAction(actions: HTMLElement, container: HTMLElement, poll: OwnedPollListResponse["items"][number]): void {
+  const { identity, query } = currentOwnedList();
+  let generation = 0;
+  let loading = false;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "btn btn-secondary summary-share-link";
+  button.textContent = "Share link";
+  button.setAttribute("aria-label", `Share link for ${poll.title}`);
+  button.setAttribute("aria-expanded", "false");
+  const reset = () => {
+    generation += 1;
+    loading = false;
+    panel.element.hidden = true;
+    panel.setState({ status: "idle" });
+    button.setAttribute("aria-expanded", "false");
+  };
+  const close = () => {
+    reset();
+    button.focus();
+  };
+  const panel = createSharePanel({
+    id: `summary-share-${++summaryShareId}`, title: poll.title, onClose: close,
+    onRequest: () => void retrieveLink()
+  });
+  summaryShareResets.add(reset);
+  async function retrieveLink(): Promise<void> {
+    if (loading || panel.element.hidden) return;
+    const latest = currentOwnedList();
+    if (latest.identity !== identity || latest.query !== query) { reset(); return; }
+    loading = true;
+    const requestGeneration = ++generation;
+    panel.setState({ status: "loading" });
+    const requestEvent = new CustomEvent("poll-share-request", {
+      bubbles: true, cancelable: true, detail: { pollId: poll.id, panel }
+    });
+    if (!panel.element.dispatchEvent(requestEvent)) {
+      loading = false;
+      return;
+    }
+    const current = () => {
+      const context = currentOwnedList();
+      return requestGeneration === generation && panel.element.isConnected && !panel.element.hidden &&
+        context.identity === identity && context.query === query;
+    };
+    try {
+      const response = await request(`/api/organiser/polls/${encodeURIComponent(poll.id)}/share-link`, {
+        cache: "no-store", headers: { "x-local-organiser-id": identity }
+      });
+      if (!current()) return;
+      const body: unknown = await response.json();
+      if (!current()) return;
+      if (response.ok) {
+        const result = ownedPollShareResponseSchema.safeParse(body);
+        panel.setState(result.success ? { status: "ready", publicUrl: result.data.publicUrl } : { status: "error" });
+      } else {
+        const result = ownedPollShareErrorResponseSchema.safeParse(body);
+        const code = result.success ? result.data.error.code : undefined;
+        if (response.status === 409 && code === "LINK_RECOVERY_REQUIRED") panel.setState({ status: "legacy" });
+        else panel.setState({ status: "error", message: response.status === 401 ? "Sign in to retrieve this poll's link."
+          : response.status === 403 ? "You don't have permission to share this poll."
+          : response.status === 404 ? "This poll is no longer available."
+          : response.status === 410 && code === "LINK_REVOKED" ? "This poll's public link is no longer active." : undefined });
+      }
+    } catch {
+      if (current()) panel.setState({ status: "error" });
+    } finally {
+      if (requestGeneration === generation) loading = false;
+    }
+  }
+  button.setAttribute("aria-controls", panel.element.id);
+  actions.append(button);
+  container.append(panel.element);
+  button.addEventListener("click", () => {
+    if (!panel.element.hidden) return;
+    panel.element.hidden = false;
+    button.setAttribute("aria-expanded", "true");
+    void retrieveLink();
+  });
+  panel.element.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") { event.preventDefault(); close(); }
+  });
 }
 
 function openPreview(): void {
@@ -826,11 +900,9 @@ function showShareScreen(link: string): void {
   editor.hidden = true;
   previewScreen.hidden = true;
   shareScreen.hidden = false;
-  requireElement<HTMLElement>(".share-title").hidden = true;
-  shareScreen.setAttribute("aria-label", "Share this poll");
-  shareScreen.removeAttribute("aria-labelledby");
   publicPollScreen.insertBefore(shareScreen, finalDatePoster);
-  publicLink.value = link;
+  publicationSharePanel.setState({ status: "ready", publicUrl: link });
+  if (!ownedPollShareResponseSchema.safeParse({ publicUrl: link }).success) return;
   const organiserPollUrl = new URL(link);
   organiserPollUrl.searchParams.set("testRunId", testRunId);
   organiserPollUrl.searchParams.set("organiser", "1");
@@ -838,9 +910,10 @@ function showShareScreen(link: string): void {
   organiserPollUrl.searchParams.set("returnFilter", returnContext.filter);
   organiserPollUrl.searchParams.set("returnSearch", returnContext.search);
   goToPoll.href = organiserPollUrl.toString();
-  openPublicLink.href = link;
+  goToPoll.hidden = false;
   if (pollId) {
     openHistory.href = organiserPollDestination(pollId, "history", testRunId, returnContext);
+    openHistory.hidden = false;
   }
   url.searchParams.set("view", "manage");
   window.history.replaceState({}, "", url);
@@ -1431,6 +1504,8 @@ function currentOwnedList(): { identity: string; runId: string; context: ReturnT
 function invalidateMyPolls(): void {
   // Saved summaries must be read again, never patched or reordered from a
   // detail response. Also retire any response from an accumulated list page.
+  for (const reset of summaryShareResets) reset();
+  summaryShareResets.clear();
   ownedListRequest += 1;
   ownedListLoading = false;
   ownedListCursor = undefined;
@@ -1575,6 +1650,9 @@ window.addEventListener("pageshow", (event) => {
   // Back/Forward may restore the entire dashboard from the back/forward cache.
   if (event.persisted && !myPollsScreen.hidden) void loadMyPolls();
 });
+window.addEventListener("pagehide", () => {
+  for (const reset of summaryShareResets) reset();
+});
 
 locationField.addEventListener("input", () => { updatePreview(); updatePublicationReadiness(); });
 requireElement<HTMLButtonElement>(".edit-location").addEventListener("click", () => {
@@ -1670,13 +1748,6 @@ publishButton.addEventListener("click", () => {
     invalidateMyPolls();
     showShareScreen(result.publicUrl);
   })();
-});
-
-copyLinkButton.addEventListener("click", () => {
-  void navigator.clipboard.writeText(publicLink.value).then(() => {
-    copyLinkButton.textContent = "Copied ✓";
-    shareStatus.textContent = "Public poll link copied.";
-  });
 });
 
 addParticipantButton.addEventListener("click", () => openParticipantDialog("add"));

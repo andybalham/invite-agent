@@ -1,5 +1,5 @@
 // T-108: controlled transport fixtures, independent of the list API and DynamoDB.
-export const navigationOrigin = "http://invite-a-gent.test";
+export const navigationOrigin = "https://invite-a-gent.test";
 export const navigationOwners = Object.freeze({
   olivia: "local-organiser-olivia",
   sam: "local-organiser-sam"
@@ -77,10 +77,15 @@ export function createNavigationFixture({ owner = navigationOwners.olivia } = {}
       records.set(poll.id, poll);
       return { status: 201, body: pollResponse(poll) };
     }
-    const match = /^\/api\/organiser\/polls\/([^/]+)(?:\/(history|publish|location))?$/.exec(pathname);
+    const match = /^\/api\/organiser\/polls\/([^/]+)(?:\/(history|publish|location|share-link))?$/.exec(pathname);
     const poll = records.get(match?.[1]);
     if (!poll) return error(404, "NOT_FOUND", "Poll not found");
     if (poll.organiserId !== identity) return error(403, "FORBIDDEN", "Only the organiser can access this poll");
+    if (match[2] === "share-link" && method === "GET") {
+      if (body || searchParams.size) return error(400, "VALIDATION_ERROR", "Share requests accept no body or query");
+      if (poll.status === "draft") return error(422, "INVALID_LIFECYCLE", "Publish the poll first");
+      return { status: 200, body: { publicUrl: publicUrl(poll.id) } };
+    }
     if (!match[2] && method === "GET") {
       return { status: 200, body: poll.status === "draft" ? pollResponse(poll) : publicResponse(poll) };
     }
