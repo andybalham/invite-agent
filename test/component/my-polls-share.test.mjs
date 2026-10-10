@@ -113,7 +113,7 @@ for (const [layout, width, surface] of [
     await expect(input).toHaveValue("");
     await expect(panel.getByRole("status")).toHaveText(/existing link cannot be recovered.*confirmation.*old link/);
     await expect(panel.getByRole("button", { name: "Copy link", exact: true })).toBeDisabled();
-    await expect(panel.getByRole("button", { name: "Regenerate link…", exact: true })).toBeDisabled();
+    await expect(panel.getByRole("button", { name: "Regenerate link", exact: true })).toBeEnabled();
     await panel.getByRole("button", { name: "Close share panel" }).click();
     await expect(trigger).toBeFocused();
     await trigger.click();
@@ -134,6 +134,79 @@ test("share panels keep long untrusted titles and URLs within 320px and intermed
     assert.equal(await harness.page.evaluate(() => window.summaryInjected), undefined);
     assert.equal(await harness.page.locator(`${surface} img`).count(), 0);
   }
+});
+
+test("regeneration requires confirmation and replaces the displayed URL", async (t) => {
+  const base = createSummaryFixture();
+  const oldUrl = base.publicUrl("open-1");
+  const newUrl = `${new URL(oldUrl).origin}/p/${"r".repeat(32)}`;
+  const fixture = {
+    ...base,
+    respond(request) {
+      if (new URL(request.url).pathname === "/api/organiser/polls/open-1/share-link/rotate") {
+        base.requests.push(structuredClone(request));
+        return { status: 200, body: { publicUrl: newUrl } };
+      }
+      return base.respond(request);
+    }
+  };
+  const harness = await components.mount(t, { fixture });
+  const { page } = harness;
+  await harness.goto("/?testRunId=olivia&filter=open");
+  await page.locator(".my-polls-desktop").getByRole("button", { name: `Share link for ${summaryTitles.open}` }).click();
+  const panel = page.getByRole("region", { name: `Share link for ${summaryTitles.open}` });
+  await expect(panel.getByLabel("Public poll link")).toHaveValue(oldUrl);
+  const regenerate = panel.getByRole("button", { name: "Regenerate link", exact: true });
+  await regenerate.click();
+  const dialog = page.getByRole("dialog", { name: "Regenerate public link" });
+  await expect(dialog).toContainText("The current link will stop working immediately.");
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await regenerate.click();
+  await page.keyboard.press("Escape");
+  assert.equal(harness.organiserRequests().filter(({ url }) => url.endsWith("/rotate")).length, 0);
+  await expect(panel.getByLabel("Public poll link")).toHaveValue(oldUrl);
+  await regenerate.click();
+  await dialog.getByRole("button", { name: "Regenerate link" }).click();
+  await expect(panel.getByLabel("Public poll link")).toHaveValue(newUrl);
+  await expect(panel.getByRole("status")).toHaveText(/old link no longer works/);
+  assert.equal(harness.organiserRequests().filter(({ url, method }) => url.endsWith("/rotate") && method === "POST").length, 1);
+});
+
+test("legacy link stays untouched until confirmed rotation; conflict requests a read", async (t) => {
+  const base = createSummaryFixture();
+  let rotations = 0;
+  const fixture = {
+    ...base,
+    respond(request) {
+      const pathname = new URL(request.url).pathname;
+      if (pathname === "/api/organiser/polls/open-1/share-link" && request.method === "GET") {
+        base.requests.push(structuredClone(request));
+        return { status: 409, body: { error: { code: "LINK_RECOVERY_REQUIRED", message: "The existing link cannot be recovered. Replacing it requires confirmation and will stop the old link working." } } };
+      }
+      if (pathname === "/api/organiser/polls/open-1/share-link/rotate") {
+        base.requests.push(structuredClone(request));
+        rotations++;
+        return { status: 409, body: { error: { code: "LINK_ROTATION_CONFLICT", message: "The link changed" } } };
+      }
+      return base.respond(request);
+    }
+  };
+  const harness = await components.mount(t, { fixture });
+  const { page } = harness;
+  await harness.goto("/?testRunId=olivia&filter=open");
+  await page.locator(".my-polls-desktop").getByRole("button", { name: `Share link for ${summaryTitles.open}` }).click();
+  const panel = page.getByRole("region", { name: `Share link for ${summaryTitles.open}` });
+  await expect(panel.getByRole("status")).toContainText("existing link cannot be recovered");
+  await panel.getByRole("button", { name: "Regenerate link", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
+  assert.equal(rotations, 0);
+  await panel.getByRole("button", { name: "Regenerate link", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Regenerate link" }).click();
+  await expect(panel.getByRole("alert")).toContainText("changed in another session");
+  assert.equal(rotations, 1);
+  await panel.getByRole("button", { name: "Try again" }).click();
+  await expect(panel.getByRole("status")).toContainText("existing link cannot be recovered");
+  assert.equal(rotations, 1);
 });
 
 test("retrieves the owner share URL only after opening a summary panel", async (t) => {

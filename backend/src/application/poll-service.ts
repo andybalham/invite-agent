@@ -122,6 +122,15 @@ function isTransactionContention(error: unknown): boolean {
   return error instanceof Error && error.name === "TransactionCanceledException";
 }
 
+function publicOrigin(baseUrl: string, allowLoopbackHttp?: boolean): string {
+  const origin = new URL(baseUrl);
+  if ((origin.protocol !== "https:" && !(allowLoopbackHttp && origin.protocol === "http:" &&
+      ["localhost", "127.0.0.1", "[::1]"].includes(origin.hostname))) ||
+      origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash ||
+      ![origin.origin, `${origin.origin}/`].includes(baseUrl)) throw new Error("Invalid public origin");
+  return origin.origin;
+}
+
 const PUBLIC_MUTATION_ATTEMPTS = 6;
 
 function auditSummary(event: AuditEvent): string {
@@ -132,6 +141,7 @@ function auditSummary(event: AuditEvent): string {
     case "POLL_DETAILS_UPDATED": return "Updated poll details, dates, or location";
     case "LOCATION_CHANGED": return !after?.location ? "Location cleared" : before?.location ? "Location edited" : "Location set";
     case "POLL_PUBLISHED": return "Published the poll";
+    case "public_link.rotated": return "Regenerated the public link";
     case "POLL_CLOSED": return "Selected the final date and closed the poll";
     case "POLL_REOPENED": return "Reopened the poll; the previous final date is provisional";
     case "PARTICIPANT_ADDED": return `Added participant ${String(after?.displayName ?? "")}`.trim();
@@ -241,28 +251,91 @@ export class PollService {
         typeof poll.publicTokenHash !== "string" || !/^[a-f0-9]{64}$/.test(poll.publicTokenHash)) {
       throw new OwnedPollShareError("INTERNAL_ERROR");
     }
-    if (!Object.hasOwn(poll, "encryptedPublicToken")) throw new OwnedPollShareError("LINK_RECOVERY_REQUIRED");
-    let token: string;
+    const legacy = !Object.hasOwn(poll, "encryptedPublicToken");
+    let token: string | undefined;
     let capability;
-    let origin: URL;
+    let origin: string;
     try {
-      if (!isEncryptedPublicToken(poll.encryptedPublicToken) || !this.publicConfig.publicTokenCipher) throw new Error();
-      token = this.publicConfig.publicTokenCipher.decrypt(poll.encryptedPublicToken, {
-        pollId: poll.id, organiserId: poll.organiserId, publicTokenHash: poll.publicTokenHash
-      });
-      if (!isPublicToken(token) || hashPublicToken(token, this.publicConfig.tokenHashKey) !== poll.publicTokenHash) throw new Error();
+      if (!legacy) {
+        if (!isEncryptedPublicToken(poll.encryptedPublicToken) || !this.publicConfig.publicTokenCipher) throw new Error();
+        token = this.publicConfig.publicTokenCipher.decrypt(poll.encryptedPublicToken, {
+          pollId: poll.id, organiserId: poll.organiserId, publicTokenHash: poll.publicTokenHash
+        });
+        if (!isPublicToken(token) || hashPublicToken(token, this.publicConfig.tokenHashKey) !== poll.publicTokenHash) throw new Error();
+      }
       capability = await this.repository.getPublicToken(poll.publicTokenHash);
       if (!capability || capability.pollId !== poll.id || !["active", "revoked"].includes(capability.state)) throw new Error();
-      origin = new URL(this.publicConfig.baseUrl);
-      if ((origin.protocol !== "https:" && !(this.publicConfig.allowLoopbackHttp && origin.protocol === "http:" &&
-          ["localhost", "127.0.0.1", "[::1]"].includes(origin.hostname))) ||
-          origin.username || origin.password || origin.pathname !== "/" || origin.search || origin.hash ||
-          ![origin.origin, `${origin.origin}/`].includes(this.publicConfig.baseUrl)) throw new Error();
+      origin = publicOrigin(this.publicConfig.baseUrl, this.publicConfig.allowLoopbackHttp);
     } catch {
       throw new OwnedPollShareError("INTERNAL_ERROR");
     }
     if (capability.state === "revoked") throw new OwnedPollShareError("LINK_REVOKED");
-    return { publicUrl: `${origin.origin}/p/${token}` };
+    if (legacy) throw new OwnedPollShareError("LINK_RECOVERY_REQUIRED");
+    return { publicUrl: `${origin}/p/${token}` };
+  }
+
+  public async rotateOwnedShareLink(
+    id: string, organiserId: string, request: { readonly body?: unknown; readonly rawQuery?: string } = {}
+  ): Promise<OwnedPollShareResponse> {
+    if (typeof organiserId !== "string" || !organiserId.trim()) throw new OwnedPollShareError("UNAUTHENTICATED");
+    let poll: PollRecord | undefined;
+    try {
+      poll = await this.repository.getPoll(id);
+    } catch {
+      throw new OwnedPollShareError("INTERNAL_ERROR");
+    }
+    if (!poll) throw new OwnedPollShareError("NOT_FOUND");
+    if (poll.organiserId !== organiserId) throw new OwnedPollShareError("FORBIDDEN");
+    if (request.body !== undefined || request.rawQuery) throw new OwnedPollShareError("VALIDATION_ERROR");
+    if (poll.status === "draft") throw new OwnedPollShareError("INVALID_LIFECYCLE");
+    if ((poll.status !== "open" && poll.status !== "closed") ||
+        typeof poll.publicTokenHash !== "string" || !/^[a-f0-9]{64}$/.test(poll.publicTokenHash)) {
+      throw new OwnedPollShareError("INTERNAL_ERROR");
+    }
+    let origin: string;
+    let beforeState: "legacy" | "recoverable";
+    let encryptedPublicToken: PollRecord["encryptedPublicToken"];
+    let token: string;
+    let publicTokenHash: string;
+    try {
+      const capability = await this.repository.getPublicToken(poll.publicTokenHash);
+      if (!capability || capability.pollId !== poll.id || !["active", "revoked"].includes(capability.state)) throw new Error();
+      if (capability.state === "revoked") throw new OwnedPollShareError("LINK_REVOKED");
+      if (!this.publicConfig.publicTokenCipher) throw new Error();
+      beforeState = Object.hasOwn(poll, "encryptedPublicToken") ? "recoverable" : "legacy";
+      if (beforeState === "recoverable") {
+        if (!isEncryptedPublicToken(poll.encryptedPublicToken)) throw new Error();
+        const currentToken = this.publicConfig.publicTokenCipher.decrypt(poll.encryptedPublicToken, {
+          pollId: poll.id, organiserId: poll.organiserId, publicTokenHash: poll.publicTokenHash
+        });
+        if (!isPublicToken(currentToken) || hashPublicToken(currentToken, this.publicConfig.tokenHashKey) !== poll.publicTokenHash) throw new Error();
+      }
+      origin = publicOrigin(this.publicConfig.baseUrl, this.publicConfig.allowLoopbackHttp);
+      token = createPublicToken();
+      publicTokenHash = hashPublicToken(token, this.publicConfig.tokenHashKey);
+      encryptedPublicToken = this.publicConfig.publicTokenCipher.encrypt(token, {
+        pollId: poll.id, organiserId: poll.organiserId, publicTokenHash
+      });
+      if (!isEncryptedPublicToken(encryptedPublicToken)) throw new Error();
+    } catch (error) {
+      if (error instanceof OwnedPollShareError) throw error;
+      throw new OwnedPollShareError("INTERNAL_ERROR");
+    }
+    const updated: PollRecord = { ...poll, version: poll.version + 1, publicTokenHash, encryptedPublicToken };
+    const occurredAt = new Date().toISOString();
+    try {
+      await this.repository.rotatePublicToken(poll, updated, {
+        pollId: id, id: randomUUID(), action: "public_link.rotated", actorId: organiserId,
+        actorCategory: "organiser", occurredAt, revision: updated.version,
+        entityType: "poll", entityId: id,
+        before: { lifecycle: poll.status, publicLinkState: beforeState },
+        after: { lifecycle: poll.status, publicLinkState: "recoverable", previousCapability: "revoked", currentCapability: "active" }
+      });
+    } catch (error) {
+      if (isTransactionContention(error)) throw new OwnedPollShareError("LINK_ROTATION_CONFLICT");
+      throw new OwnedPollShareError("INTERNAL_ERROR");
+    }
+    return { publicUrl: `${origin}/p/${token}` };
   }
 
   public async history(

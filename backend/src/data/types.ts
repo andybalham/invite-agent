@@ -32,6 +32,7 @@ export interface AuditEvent {
     | "POLL_DETAILS_UPDATED"
     | "LOCATION_CHANGED"
     | "POLL_PUBLISHED"
+    | "public_link.rotated"
     | "POLL_CLOSED"
     | "POLL_REOPENED"
     | "PARTICIPANT_ADDED"

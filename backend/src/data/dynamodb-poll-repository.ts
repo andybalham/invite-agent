@@ -499,6 +499,39 @@ export class DynamoPollRepository {
     );
   }
 
+  public async rotatePublicToken(before: PollRecord, after: PollRecord, audit: AuditEvent): Promise<void> {
+    if ((before.status !== "open" && before.status !== "closed") ||
+        after.status !== before.status || after.version !== before.version + 1 ||
+        !/^[a-f0-9]{64}$/.test(before.publicTokenHash ?? "") ||
+        !/^[a-f0-9]{64}$/.test(after.publicTokenHash ?? "") ||
+        before.publicTokenHash === after.publicTokenHash || !isEncryptedPublicToken(after.encryptedPublicToken)) {
+      throw new Error("Invalid rotation token storage");
+    }
+    const metadata = versionedPollPut(this.config.appTableName, after);
+    metadata.Put!.ConditionExpression += " AND #document = :observedDocument";
+    metadata.Put!.ExpressionAttributeNames!["#document"] = "document";
+    metadata.Put!.ExpressionAttributeValues![":observedDocument"] = { S: JSON.stringify(before) };
+    await this.client.send(new TransactWriteItemsCommand({ TransactItems: [
+      metadata,
+      { Put: {
+        TableName: this.config.appTableName,
+        Item: { PK: { S: `PUBLIC_TOKEN#${after.publicTokenHash}` }, SK: { S: "CAPABILITY" },
+          pollId: { S: after.id }, state: { S: "active" } },
+        ConditionExpression: "attribute_not_exists(PK)"
+      } },
+      { Update: {
+        TableName: this.config.appTableName,
+        Key: { PK: { S: `PUBLIC_TOKEN#${before.publicTokenHash}` }, SK: { S: "CAPABILITY" } },
+        UpdateExpression: "SET #state = :revoked",
+        ConditionExpression: "#state = :active AND pollId = :pollId",
+        ExpressionAttributeNames: { "#state": "state" },
+        ExpressionAttributeValues: { ":active": { S: "active" }, ":revoked": { S: "revoked" },
+          ":pollId": { S: before.id } }
+      } },
+      auditPut(this.config.auditTableName, audit)
+    ] }));
+  }
+
   public async closePoll(poll: PollRecord, audit: AuditEvent): Promise<void> {
     await this.client.send(new TransactWriteItemsCommand({
       TransactItems: [versionedPollPut(this.config.appTableName, poll), auditPut(this.config.auditTableName, audit)]

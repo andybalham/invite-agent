@@ -20,7 +20,8 @@ export interface FrameworkResponse {
 export type Authenticate = (headers: FrameworkRequest["headers"]) => string;
 
 export function isOwnedPollShareRequest(method: string, path: string): boolean {
-  return method === "GET" && /^\/api\/organiser\/polls\/[^/]+\/share-link$/.test(path);
+  return (method === "GET" && /^\/api\/organiser\/polls\/[^/]+\/share-link$/.test(path)) ||
+    (method === "POST" && /^\/api\/organiser\/polls\/[^/]+\/share-link\/rotate$/.test(path));
 }
 
 function errorResponse(error: unknown): FrameworkResponse {
@@ -55,7 +56,9 @@ export function createSharedHttpHandler(dependencies: {
             throw new OwnedPollShareError("UNAUTHENTICATED");
           }
           return { status: 200, headers: OWNED_POLL_SHARE_RESPONSE_HEADERS,
-            body: await dependencies.polls.getOwnedShareLink(request.path.split("/")[4]!, organiserId, request) };
+            body: request.method === "GET"
+              ? await dependencies.polls.getOwnedShareLink(request.path.split("/")[4]!, organiserId, request)
+              : await dependencies.polls.rotateOwnedShareLink(request.path.split("/")[4]!, organiserId, request) };
         }
         if (listHeaders) {
           const organiserId = dependencies.authenticate(request.headers);

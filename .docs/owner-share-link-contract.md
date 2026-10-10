@@ -76,7 +76,7 @@ Every success and failure for this route carries `OWNED_POLL_SHARE_RESPONSE_HEAD
 
 ## Compatibility and non-disclosure
 
-- Hash-only legacy links remain usable through existing public routes. GET returns the actionable state only to the owner and never guesses/reconstructs a token from a hash. T-147/T-148 specify and implement explicit confirmed replacement, atomic capability revocation and audit behavior.
+- Hash-only legacy links remain usable through existing public routes. GET returns the actionable state only to the owner and never guesses/reconstructs a token from a hash. The detailed confirmation, atomic transition, invalidation, audit, conflict/retry and legacy contract is [specified for T-147](owner-share-link-rotation-contract.md); T-148 implements it.
 - Draft, owner detail, public poll, My polls summaries/pages, audit before/after values, undo previews and events must exclude the token, hash, envelope and URL. Only authorised publication/retrieval/confirmed replacement responses may carry a URL. Never spread `PollRecord` into a DTO or audit snapshot. Existing explicit detail/summary projections already satisfy this boundary and have regression coverage with the new field.
 - Ordinary edits, close/reopen and undo preserve encrypted storage; recovery GET produces no audit mutation. Audits record lifecycle or replacement facts, never cryptographic material. T-142/T-150 cover transactional/audit persistence and secrecy.
 - Cross-owner requests must fail before decryption or the legacy branch. Public responses and list responses must not acquire a recovery flag that reveals storage state. A configured secret failure must not masquerade as a legacy record or a successful empty result.

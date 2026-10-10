@@ -745,6 +745,7 @@ function addSummaryShareAction(actions: HTMLElement, container: HTMLElement, pol
   const reset = () => {
     generation += 1;
     loading = false;
+    panel.dismissConfirmation();
     panel.element.hidden = true;
     panel.setState({ status: "idle" });
     button.setAttribute("aria-expanded", "false");
@@ -755,10 +756,16 @@ function addSummaryShareAction(actions: HTMLElement, container: HTMLElement, pol
   };
   const panel = createSharePanel({
     id: `summary-share-${++summaryShareId}`, title: poll.title, onClose: close,
-    onRequest: () => void retrieveLink()
+    onRequest: () => void retrieveLink(), onRotate: () => void rotateLink()
   });
   summaryShareResets.add(reset);
-  async function retrieveLink(): Promise<void> {
+  const sharePath = `/api/organiser/polls/${encodeURIComponent(poll.id)}/share-link`;
+  const current = (requestGeneration: number) => {
+    const context = currentOwnedList();
+    return requestGeneration === generation && panel.element.isConnected && !panel.element.hidden &&
+      context.identity === identity && context.query === query;
+  };
+  async function retrieveLink(message?: string): Promise<void> {
     if (loading || panel.element.hidden) return;
     const latest = currentOwnedList();
     if (latest.identity !== identity || latest.query !== query) { reset(); return; }
@@ -772,21 +779,16 @@ function addSummaryShareAction(actions: HTMLElement, container: HTMLElement, pol
       loading = false;
       return;
     }
-    const current = () => {
-      const context = currentOwnedList();
-      return requestGeneration === generation && panel.element.isConnected && !panel.element.hidden &&
-        context.identity === identity && context.query === query;
-    };
     try {
-      const response = await request(`/api/organiser/polls/${encodeURIComponent(poll.id)}/share-link`, {
+      const response = await request(sharePath, {
         cache: "no-store", headers: { "x-local-organiser-id": identity }
       });
-      if (!current()) return;
+      if (!current(requestGeneration)) return;
       const body: unknown = await response.json();
-      if (!current()) return;
+      if (!current(requestGeneration)) return;
       if (response.ok) {
         const result = ownedPollShareResponseSchema.safeParse(body);
-        panel.setState(result.success ? { status: "ready", publicUrl: result.data.publicUrl } : { status: "error" });
+        panel.setState(result.success ? { status: "ready", publicUrl: result.data.publicUrl, message } : { status: "error" });
       } else {
         const result = ownedPollShareErrorResponseSchema.safeParse(body);
         const code = result.success ? result.data.error.code : undefined;
@@ -797,9 +799,42 @@ function addSummaryShareAction(actions: HTMLElement, container: HTMLElement, pol
           : response.status === 410 && code === "LINK_REVOKED" ? "This poll's public link is no longer active." : undefined });
       }
     } catch {
-      if (current()) panel.setState({ status: "error" });
+      if (current(requestGeneration)) panel.setState({ status: "error" });
     } finally {
       if (requestGeneration === generation) loading = false;
+    }
+  }
+  async function rotateLink(): Promise<void> {
+    const latest = currentOwnedList();
+    if (latest.identity !== identity || latest.query !== query || panel.element.hidden) { reset(); return; }
+    const requestGeneration = ++generation;
+    try {
+      const response = await request(`${sharePath}/rotate`, {
+        method: "POST", cache: "no-store", headers: { "x-local-organiser-id": identity }
+      });
+      if (!current(requestGeneration)) return;
+      const body: unknown = await response.json();
+      if (!current(requestGeneration)) return;
+      if (response.ok) {
+        const result = ownedPollShareResponseSchema.safeParse(body);
+        panel.setState(result.success
+          ? { status: "ready", publicUrl: result.data.publicUrl, message: "New public link ready. The old link no longer works." }
+          : { status: "error", message: "The result could not be verified. Retrieve the current link before sharing." });
+      } else {
+        const result = ownedPollShareErrorResponseSchema.safeParse(body);
+        const code = result.success ? result.data.error.code : undefined;
+        panel.setState({ status: "error", message: response.status === 409 && code === "LINK_ROTATION_CONFLICT"
+          ? "The link changed in another session. Retrieve the current link before trying again."
+          : response.status === 401 ? "Sign in to regenerate this poll's link."
+          : response.status === 403 ? "You don't have permission to regenerate this poll's link."
+          : response.status === 404 ? "This poll is no longer available."
+          : response.status === 410 && code === "LINK_REVOKED" ? "This poll's public link is no longer active."
+          : "The link could not be regenerated. Retrieve the current link before trying again." });
+      }
+    } catch {
+      if (current(requestGeneration)) {
+        await retrieveLink("The rotation result was uncertain. This is the current public link.");
+      }
     }
   }
   button.setAttribute("aria-controls", panel.element.id);
@@ -812,7 +847,7 @@ function addSummaryShareAction(actions: HTMLElement, container: HTMLElement, pol
     void retrieveLink();
   });
   panel.element.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") { event.preventDefault(); close(); }
+    if (event.key === "Escape" && !panel.element.querySelector("dialog")?.open) { event.preventDefault(); close(); }
   });
 }
 

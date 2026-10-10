@@ -1,14 +1,16 @@
 export type SharePanelState =
   | { status: "idle" | "loading" }
-  | { status: "ready"; publicUrl: string }
+  | { status: "ready"; publicUrl: string; message?: string | undefined }
   | { status: "error"; message?: string | undefined }
-  | { status: "legacy" };
+  | { status: "legacy" }
+  | { status: "rotating" };
 
 export interface SharePanelOptions {
   id: string;
   title?: string;
   onRequest?: () => void;
   onClose?: () => void;
+  onRotate?: () => void;
 }
 
 /** Shared publication and summary UI. Link retrieval belongs to the caller. */
@@ -32,8 +34,16 @@ export function createSharePanel(options: SharePanelOptions) {
     </div>
     <section class="link-security section-rule">
       <div><h2>Link security</h2><p>If the link was shared with the wrong people, replace it. The old link stops working immediately. Dates, responses and history are kept.</p></div>
-      <button class="btn btn-secondary" type="button" disabled>Regenerate link…</button>
+      <button class="btn btn-secondary regenerate-link" type="button" disabled>Regenerate link</button>
     </section>
+    <dialog class="rotation-confirmation" aria-label="Regenerate public link">
+      <h2>Regenerate public link?</h2>
+      <p>Regenerate this poll's public link? The current link will stop working immediately. Anyone using it will need the new link. Continue only if you are ready to share the replacement.</p>
+      <div class="rotation-confirmation-actions">
+        <button class="btn btn-secondary rotation-cancel" type="button">Cancel</button>
+        <button class="btn btn-primary rotation-confirm" type="button">Regenerate link</button>
+      </div>
+    </dialog>
     <p class="share-status" role="status" aria-live="polite"></p>
     <p class="share-error error" role="alert" hidden></p>`;
   const input = element.querySelector<HTMLInputElement>("input")!;
@@ -47,6 +57,8 @@ export function createSharePanel(options: SharePanelOptions) {
   const close = element.querySelector<HTMLButtonElement>(".share-close")!;
   const status = element.querySelector<HTMLElement>(".share-status")!;
   const error = element.querySelector<HTMLElement>(".share-error")!;
+  const regenerate = element.querySelector<HTMLButtonElement>(".regenerate-link")!;
+  const confirmation = element.querySelector<HTMLDialogElement>(".rotation-confirmation")!;
   let revision = 0;
 
   function setState(state: SharePanelState): void {
@@ -54,7 +66,7 @@ export function createSharePanel(options: SharePanelOptions) {
       state = { status: "error" };
     }
     revision += 1;
-    element.setAttribute("aria-busy", String(state.status === "loading"));
+    element.setAttribute("aria-busy", String(state.status === "loading" || state.status === "rotating"));
     input.value = state.status === "ready" ? state.publicUrl : "";
     copy.disabled = state.status !== "ready";
     copy.textContent = "Copy link";
@@ -62,13 +74,24 @@ export function createSharePanel(options: SharePanelOptions) {
     open.removeAttribute("href");
     if (state.status === "ready") open.href = state.publicUrl;
     retry.hidden = state.status !== "error" || !options.onRequest;
+    regenerate.disabled = !options.onRotate || !["ready", "legacy"].includes(state.status);
     error.hidden = state.status !== "error";
     error.textContent = state.status === "error" ? state.message ?? "We couldn't retrieve this poll's link. Try again." : "";
     status.textContent = state.status === "loading" ? "Loading the public poll link…"
-      : state.status === "ready" ? "Public poll link ready."
+      : state.status === "ready" ? state.message ?? "Public poll link ready."
       : state.status === "legacy" ? "The existing link cannot be recovered. Replacing it requires confirmation and will stop the old link working."
+      : state.status === "rotating" ? "Regenerating the public link…"
       : state.status === "idle" ? "Retrieve the current public link to share this poll." : "";
   }
+
+  regenerate.addEventListener("click", () => { if (!regenerate.disabled) confirmation.showModal(); });
+  confirmation.querySelector(".rotation-cancel")!.addEventListener("click", () => confirmation.close());
+  confirmation.querySelector(".rotation-confirm")!.addEventListener("click", () => {
+    confirmation.close();
+    setState({ status: "rotating" });
+    options.onRotate?.();
+  });
+  confirmation.addEventListener("click", (event) => { if (event.target === confirmation) confirmation.close(); });
 
   copy.addEventListener("click", () => {
     if (copy.disabled || !input.value) return;
@@ -98,7 +121,7 @@ export function createSharePanel(options: SharePanelOptions) {
   close.hidden = !options.onClose;
   close.addEventListener("click", () => options.onClose?.());
   setState({ status: "idle" });
-  return { element, input, manage, history, open, setState };
+  return { element, input, manage, history, open, setState, dismissConfirmation: () => confirmation.close() };
 }
 import { ownedPollShareResponseSchema } from "@invite-a-gent/contracts";
 
