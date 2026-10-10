@@ -2,12 +2,128 @@ import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { expect as playwrightExpect } from "@playwright/test";
 import { startComponentBrowser } from "../support/frontend-component-harness.mjs";
-import { createSummaryFixture, summaryRecords, summaryTitles } from "../support/my-polls-component-fixture.mjs";
+import { createSummaryFixture, heldResponse, summaryRecords, summaryTitles } from "../support/my-polls-component-fixture.mjs";
 
 const expect = playwrightExpect.configure({ timeout: 1_500 });
 let components;
 before(async () => { components = await startComponentBrowser(); });
 after(async () => { await components?.close(); });
+
+// T-151: exercise the real consumer and HTTP boundary, without injecting panel state.
+for (const [layout, width] of [["desktop", 1024], ["mobile", 390]]) {
+  test(`${layout}: deferred recovery is deduplicated and discarded after closing`, async (t) => {
+    const base = createSummaryFixture();
+    const held = heldResponse({ status: 200, body: { publicUrl: base.publicUrl("open-1") } });
+    let reads = 0;
+    const fixture = { ...base, dispose: () => held.dispose(), respond(request) {
+      if (new URL(request.url).pathname === "/api/organiser/polls/open-1/share-link") {
+        base.requests.push(structuredClone(request));
+        reads++;
+        return reads === 1 ? held.promise : { status: 200, body: { publicUrl: base.publicUrl("open-1") } };
+      }
+      return base.respond(request);
+    } };
+    const harness = await components.mount(t, { fixture, viewport: { width, height: 844 } });
+    const { page } = harness;
+    await harness.goto("/?testRunId=olivia&filter=active&search=supper");
+    const beforeUrl = page.url();
+    const beforeRecords = structuredClone([...base.records]);
+    const trigger = page.locator(`.my-polls-${layout}`).getByRole("button", { name: `Share link for ${summaryTitles.open}`, exact: true });
+    assert.equal(reads, 0);
+    await trigger.click();
+    const panel = page.getByRole("region", { name: `Share link for ${summaryTitles.open}`, exact: true });
+    await expect(panel).toHaveAttribute("aria-busy", "true");
+    await expect(panel.getByLabel("Public poll link", { exact: true })).toHaveValue("");
+    await expect(panel.getByRole("button", { name: "Copy link", exact: true })).toBeDisabled();
+    await trigger.click();
+    assert.equal(reads, 1);
+    await panel.getByRole("button", { name: "Close share panel" }).click();
+    const received = page.waitForResponse((response) => new URL(response.url()).pathname.endsWith("/open-1/share-link"));
+    held.release();
+    await received;
+    await expect(panel).not.toBeVisible();
+    await expect(trigger).toBeFocused();
+    await trigger.click();
+    await expect(panel.getByLabel("Public poll link", { exact: true })).toHaveValue(base.publicUrl("open-1"));
+    assert.equal(reads, 2);
+    assert.equal(page.url(), beforeUrl);
+    assert.deepEqual([...base.records], beforeRecords);
+    assert.equal(harness.listRequests().length, 1);
+    for (const request of base.requests.filter(({ url }) => url.includes("/share-link"))) {
+      assert.equal(request.method, "GET");
+      assert.equal(request.identity, "local-organiser-olivia");
+      assert.equal(request.body, undefined);
+      assert.equal(new URL(request.url).search, "");
+    }
+  });
+
+  test(`${layout}: lost rotation response recovers the committed URL without another write`, async (t) => {
+    const harness = await components.mount(t, { fixture: createSummaryFixture(), viewport: { width, height: 844 } });
+    const { page, fixture } = harness;
+    const replacementToken = "r".repeat(32);
+    const replacement = `${new URL(fixture.publicUrl("open-1")).origin}/p/${replacementToken}`;
+    let rotations = 0;
+    await page.route("**/api/organiser/polls/open-1/share-link/rotate", async (route) => {
+      rotations++;
+      for (const [token, id] of fixture.tokens) if (id === "open-1") fixture.tokens.delete(token);
+      fixture.tokens.set(replacementToken, "open-1");
+      // Model a committed rotation whose response never reaches the client.
+      await route.abort("connectionfailed");
+    });
+    await harness.goto("/?testRunId=olivia&filter=open");
+    await page.locator(`.my-polls-${layout}`).getByRole("button", { name: `Share link for ${summaryTitles.open}`, exact: true }).click();
+    const panel = page.getByRole("region", { name: `Share link for ${summaryTitles.open}`, exact: true });
+    await expect(panel.getByLabel("Public poll link", { exact: true })).toHaveValue(fixture.publicUrl("open-1"));
+    await panel.getByRole("button", { name: "Regenerate link", exact: true }).click();
+    await page.getByRole("dialog", { name: "Regenerate public link", exact: true })
+      .getByRole("button", { name: "Regenerate link", exact: true }).click();
+    await expect(panel.getByRole("status")).toHaveText("The rotation result was uncertain. This is the current public link.");
+    await expect(panel.getByLabel("Public poll link", { exact: true })).toHaveValue(replacement);
+    assert.equal(rotations, 1);
+    assert.equal(harness.organiserRequests().filter(({ url, method }) => url.endsWith("/share-link") && method === "GET").length, 2);
+  });
+
+  for (const [status, code, message] of [
+    [401, "UNAUTHENTICATED", "Sign in to retrieve this poll's link."],
+    [403, "FORBIDDEN", "You don't have permission to share this poll."],
+    [404, "NOT_FOUND", "This poll is no longer available."],
+    [410, "LINK_REVOKED", "This poll's public link is no longer active."],
+    [500, "INTERNAL_ERROR", "We couldn't retrieve this poll's link. Try again."],
+    [200, "MALFORMED_SUCCESS", "We couldn't retrieve this poll's link. Try again."]
+  ]) {
+    test(`${layout}: ${code} recovery failure is safe and retry performs only a read`, async (t) => {
+      const base = createSummaryFixture();
+      let reads = 0;
+      const fixture = { ...base, respond(request) {
+        if (new URL(request.url).pathname === "/api/organiser/polls/open-1/share-link") {
+          base.requests.push(structuredClone(request));
+          reads++;
+          if (reads === 1) return { status, body: status === 200
+            ? { publicUrl: "javascript:window.summaryInjected=true" }
+            : { error: { code, message: "sensitive-server-detail" } } };
+          return { status: 200, body: { publicUrl: base.publicUrl("open-1") } };
+        }
+        return base.respond(request);
+      } };
+      const harness = await components.mount(t, { fixture, viewport: { width, height: 844 } });
+      const { page } = harness;
+      await harness.goto("/?testRunId=olivia&filter=open");
+      await page.locator(`.my-polls-${layout}`).getByRole("button", { name: `Share link for ${summaryTitles.open}`, exact: true }).click();
+      const panel = page.getByRole("region", { name: `Share link for ${summaryTitles.open}`, exact: true });
+      await expect(panel.getByRole("alert")).toHaveText(message);
+      await expect(panel.getByLabel("Public poll link", { exact: true })).toHaveValue("");
+      await expect(panel.getByRole("button", { name: "Copy link", exact: true })).toBeDisabled();
+      await expect(panel.getByRole("button", { name: "Regenerate link", exact: true })).toBeDisabled();
+      await expect(panel.getByRole("link", { name: "Open poll", exact: true })).toHaveCount(0);
+      await expect(panel).not.toContainText("sensitive-server-detail");
+      await panel.getByRole("button", { name: "Try again", exact: true }).click();
+      await expect(panel.getByLabel("Public poll link", { exact: true })).toHaveValue(base.publicUrl("open-1"));
+      await expect(panel.getByRole("alert")).toHaveCount(0);
+      assert.equal(reads, 2);
+      assert.equal(harness.organiserRequests().every(({ method }) => method === "GET"), true);
+    });
+  }
+}
 
 // Exercise the reusable UI's request/state boundary. T-146 supplies transport.
 async function installShareConsumer(page, state = { status: "loading" }) {
@@ -136,7 +252,8 @@ test("share panels keep long untrusted titles and URLs within 320px and intermed
   }
 });
 
-test("regeneration requires confirmation and replaces the displayed URL", async (t) => {
+for (const [layout, width] of [["desktop", 1024], ["mobile", 390]]) {
+test(`${layout}: regeneration requires confirmation and replaces the displayed URL`, async (t) => {
   const base = createSummaryFixture();
   const oldUrl = base.publicUrl("open-1");
   const newUrl = `${new URL(oldUrl).origin}/p/${"r".repeat(32)}`;
@@ -150,16 +267,17 @@ test("regeneration requires confirmation and replaces the displayed URL", async 
       return base.respond(request);
     }
   };
-  const harness = await components.mount(t, { fixture });
+  const harness = await components.mount(t, { fixture, viewport: { width, height: 844 } });
   const { page } = harness;
   await harness.goto("/?testRunId=olivia&filter=open");
-  await page.locator(".my-polls-desktop").getByRole("button", { name: `Share link for ${summaryTitles.open}` }).click();
+  await page.locator(`.my-polls-${layout}`).getByRole("button", { name: `Share link for ${summaryTitles.open}` }).click();
   const panel = page.getByRole("region", { name: `Share link for ${summaryTitles.open}` });
   await expect(panel.getByLabel("Public poll link")).toHaveValue(oldUrl);
   const regenerate = panel.getByRole("button", { name: "Regenerate link", exact: true });
   await regenerate.click();
   const dialog = page.getByRole("dialog", { name: "Regenerate public link" });
   await expect(dialog).toContainText("The current link will stop working immediately.");
+  await expect(dialog).toContainText("Anyone using it will need the new link.");
   await dialog.getByRole("button", { name: "Cancel" }).click();
   await regenerate.click();
   await page.keyboard.press("Escape");
@@ -172,7 +290,7 @@ test("regeneration requires confirmation and replaces the displayed URL", async 
   assert.equal(harness.organiserRequests().filter(({ url, method }) => url.endsWith("/rotate") && method === "POST").length, 1);
 });
 
-test("legacy link stays untouched until confirmed rotation; conflict requests a read", async (t) => {
+test(`${layout}: legacy link stays untouched until confirmed rotation; conflict requests a read`, async (t) => {
   const base = createSummaryFixture();
   let rotations = 0;
   const fixture = {
@@ -191,10 +309,10 @@ test("legacy link stays untouched until confirmed rotation; conflict requests a 
       return base.respond(request);
     }
   };
-  const harness = await components.mount(t, { fixture });
+  const harness = await components.mount(t, { fixture, viewport: { width, height: 844 } });
   const { page } = harness;
   await harness.goto("/?testRunId=olivia&filter=open");
-  await page.locator(".my-polls-desktop").getByRole("button", { name: `Share link for ${summaryTitles.open}` }).click();
+  await page.locator(`.my-polls-${layout}`).getByRole("button", { name: `Share link for ${summaryTitles.open}` }).click();
   const panel = page.getByRole("region", { name: `Share link for ${summaryTitles.open}` });
   await expect(panel.getByRole("status")).toContainText("existing link cannot be recovered");
   await panel.getByRole("button", { name: "Regenerate link", exact: true }).click();
@@ -208,6 +326,7 @@ test("legacy link stays untouched until confirmed rotation; conflict requests a 
   await expect(panel.getByRole("status")).toContainText("existing link cannot be recovered");
   assert.equal(rotations, 1);
 });
+}
 
 test("retrieves the owner share URL only after opening a summary panel", async (t) => {
   const harness = await components.mount(t, { fixture: createSummaryFixture(), viewport: { width: 1024, height: 844 } });

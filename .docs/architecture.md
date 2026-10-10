@@ -330,7 +330,7 @@ The public URL has the form:
 https://invite-agent.10printiamcool.com/p/<opaque-token>
 ```
 
-The token is generated from 192 bits of cryptographically secure randomness and encoded using Base64URL. Current publication stores a keyed hash and returns the public URL once. The [T-141 owner share-link contract](owner-share-link-contract.md) specifies an additional application-encrypted token envelope for future publications, an independent key ring, and owner-only URL retrieval. T-142/T-143 implement persistence and retrieval; T-141 alone does not enable recovery. Public validation remains hash-based, and hashes/envelopes never enter list or public responses.
+The token is generated from 192 bits of cryptographically secure randomness and encoded using Base64URL. Publication stores the keyed lookup hash and an application-encrypted token envelope in poll metadata, and returns the public URL. The owner-only `GET /api/organiser/polls/{pollId}/share-link` recovers the current URL for Open/Closed polls. Public validation remains hash-based; the encryption key ring is independent of the HMAC key. Hashes, envelopes and URLs stay out of list, public, detail and audit projections. See the [owner recovery contract](owner-share-link-contract.md) and [rotation/legacy contract](owner-share-link-rotation-contract.md) for storage, key operation and failure behavior.
 
 The API accepts the token in a dedicated header sent by the SPA, not in the API path or query string. This reduces its exposure in API access logs. The public page still necessarily receives the token in its browser URL; the application therefore sets a restrictive referrer policy and must not load third-party scripts or resources that could receive the URL.
 
@@ -455,7 +455,7 @@ While a poll is open, ranking is calculated from current participant responses. 
 - The S3 origin is private and accessible only through CloudFront.
 - Cognito JWT signature, issuer, audience/client, token use, and expiry are validated by the API authorizer.
 - Organiser ownership and lifecycle permissions are enforced in Lambda, never only in the SPA.
-- Public tokens are high-entropy and revocable. Public validation uses hashes; planned owner recovery stores an application-encrypted envelope under the [owner share-link contract](owner-share-link-contract.md), with independent keys and no plaintext persistence.
+- Public tokens are high-entropy and revocable. Public validation uses hashes; owner recovery uses the application-encrypted envelope described in the [owner share-link contract](owner-share-link-contract.md), with independent keys and no plaintext persistence. The configured encryption key ring must persist across application restarts while its envelopes remain live. Cross-owner requests fail before token recovery, and invalid encryption material fails closed rather than entering legacy recovery. Rotation is explicit, atomic, audited without secret material, and revokes the old capability.
 - Lambda IAM roles grant access only to required table operations, indexes, and log groups.
 - DynamoDB tables, S3 buckets, and log groups use encryption at rest.
 - CloudWatch logs exclude authorization headers, raw public tokens, and full request bodies.

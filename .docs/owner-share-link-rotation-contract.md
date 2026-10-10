@@ -1,6 +1,6 @@
-# Owner share-link rotation and legacy-poll contract (T-147)
+# Owner share-link rotation and legacy-poll contract (T-147, T-152)
 
-This contract specifies confirmed replacement for S-056. The current capability remains usable until an organiser explicitly confirms rotation. T-148 implements the service/repository transition, T-149 implements the My polls interaction, and T-150 verifies the security and regression boundaries.
+This contract specifies confirmed replacement for S-056. The current capability remains usable until an organiser explicitly confirms rotation. Local service/repository behavior and My polls interaction are implemented; T-150 and T-151 provide service, component and browser regression coverage. See the [acceptance record](acceptance-use-cases-my-polls.md#s-057-share-link-recovery-and-rotation-t-150t-151) for scope and test commands. Production deployment and live AWS verification are not established by these tests.
 
 ## Owner flow and confirmation
 

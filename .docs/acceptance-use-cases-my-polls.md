@@ -467,6 +467,22 @@ With DynamoDB Local running, `npm run test:discovery` builds and runs the focuse
 
 These tests cover the approved live-list pagination and refresh decisions. They add no stale-link recovery requirement and do not claim production Cognito/AWS verification.
 
+### S-057 Share-link recovery and rotation (T-150/T-151)
+
+The owner workflow is available from My polls for Open and Closed polls: choose **Share link**, retrieve the current URL on demand, then copy it or open it in a separate tab. The page and summaries do not carry the URL before the owner asks for it. Drafts have no share action. Retrieval is a read: repeated calls return the current active URL without encrypting, writing, rotating, or adding audit history. An ambiguous rotation response is recovered with this read before the organiser chooses whether to confirm another rotation.
+
+Regeneration requires explicit confirmation because it immediately invalidates the previous URL. On commit, the new token hash and encrypted envelope, active capability, previous capability revocation, and one non-sensitive audit event form an atomic transition. Existing poll lifecycle and collaboration data remain in place. Requests from a non-owner fail before recovery state is inspected. Share-link responses are private/no-store; token, URL, hash and encryption envelope stay out of list/detail/public/audit projections and error messages.
+
+Older hash-only Open/Closed polls retain their existing public link until the owner confirms regeneration. Their URL cannot be reconstructed from the hash. Invalid or missing encryption keys, malformed envelopes, authentication failures, inconsistent capabilities and infrastructure errors are failures, not legacy records; they must not trigger replacement. Keep the configured encryption ring stable across restarts. For key rotation, add a fresh independent key, retain old keys needed by live envelopes/backups, switch the active key ID, and remove an old key only after its data is no longer needed. HMAC key changes are a separate capability migration. Production secret delivery and deployed cache/IAM configuration are not proven by local tests.
+
+| Requirement/evidence | Coverage |
+|---|---|
+| Owner isolation, auth ordering, safe error mapping, fail-closed encryption handling, repeatable no-write recovery, URL/header secrecy | `test/foundation/owner-share-regression.test.mjs`; `test/integration/public-link-rotation.test.mjs` |
+| Persisted rotation, old-link revocation for reads/writes, replacement validity, audit redaction, legacy recovery, concurrent conflict | `test/integration/public-link-rotation.test.mjs` |
+| Desktop/mobile parity, Draft exclusion, deferred retrieval, copy/open, retry/error paths, explicit confirmation and lifecycle behavior | `test/component/my-polls-share.test.mjs`; `test/e2e/share-link-recovery.spec.ts` |
+
+For focused checks, run `npm run build`, `node --test test/foundation/owner-share-regression.test.mjs test/component/my-polls-share.test.mjs`, and (with DynamoDB Local available) `node --test test/integration/public-link-rotation.test.mjs`. Run the browser acceptance with `node node_modules/@playwright/test/cli.js test test/e2e/share-link-recovery.spec.ts --project=chromium --workers=1 --retries=0` against the configured local stack. Component tests use intercepted responses; the browser tests exercise the local app/API, not production Cognito or AWS deployment. Passing local tests establish only their stated cases.
+
 ### S-048 lifecycle return refresh (T-120/T-121)
 
 Successful create/save/publish/close/reopen responses invalidate dashboard pages and pending list responses. Existing My polls links navigate to a fresh document and request page one with `cache: "no-store"`. A dashboard restored by browser Back/Forward also refetches page one on persisted `pageshow`; the accompanying `popstate` does not duplicate that read. Same-document identity/query changes still replace pending results. Read-only management returns use the same fresh read so participant counts reflect current state. Dashboard focus, visibility and timer events do not subscribe to updates.
