@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readFile, realpath, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { setTimeout as delay } from "node:timers/promises";
 import { DynamoDBClient, DescribeTableCommand, GetItemCommand, PutItemCommand, type TableDescription, type AttributeValue } from "@aws-sdk/client-dynamodb";
 import { initializeTables } from "../../data/initialize-tables.js";
 import { e2eTableNames, localEndpoint, resolveE2EConfiguration, type E2EConfiguration } from "./e2e-config.js";
@@ -124,7 +125,16 @@ export async function saveE2EManifest(file: string, manifest: E2EManifest): Prom
   if (manifest.configuration.manifestPath !== file) throw new Error("E2E manifest reference mismatch");
   const temporary = `${file}.${randomUUID()}.tmp`;
   await writeFile(temporary, `${JSON.stringify(manifest, null, 2)}\n`, { encoding: "utf8", flag: "wx" });
-  await rename(temporary, file);
+  // Windows can briefly deny replacement while another reader has the journal
+  // open. Retry the same atomic rename; never unlink or overwrite the live
+  // manifest, and keep persistent failures blocking provisioning/deletion.
+  for (let attempt = 0; ; attempt += 1) {
+    try { await rename(temporary, file); return; }
+    catch (error) {
+      if (attempt >= 4 || !["EPERM", "EACCES", "EBUSY"].includes((error as NodeJS.ErrnoException).code ?? "")) throw error;
+      await delay(25 * 2 ** attempt);
+    }
+  }
 }
 
 export async function createE2EManifest(config: E2EConfiguration, coordinator: ProcessIdentity, suite: string[]): Promise<E2EManifest> {

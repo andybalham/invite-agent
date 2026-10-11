@@ -67,7 +67,7 @@ async function mutation(store: Store, poll: SavedPoll, actions: string[], catego
 }
 
 function listLinks(page: Page, layout: Layout) {
-  return page.locator(layout === "desktop" ? ".my-polls-desktop tbody a" : ".my-polls-mobile h2 a");
+  return page.locator(layout === "desktop" ? ".my-polls-desktop tbody th a:not(.my-polls-open)" : ".my-polls-mobile h2 a:not(.my-polls-open)");
 }
 
 async function list(page: Page, layout: Layout, runId: string, filter: OwnedPollFilter,
@@ -150,6 +150,8 @@ async function management(page: Page, poll: SavedPoll, status: "open" | "closed"
   await expect(returnLink(page)).toBeVisible();
   await expect(page.getByRole("heading", { name: "My polls", exact: true })).not.toBeVisible();
   await expect(page.getByRole("textbox", { name: "Title", exact: true })).not.toBeVisible();
+  await expect(page.getByRole("button", { name: /Add a row|Actions for/ })).toHaveCount(0);
+  await expect(page.locator(".availability-toggle")).toHaveCount(0);
   await expect(page).toHaveURL((url) => url.searchParams.get("pollId") === poll.id && url.searchParams.get("view") === "manage");
 }
 
@@ -212,8 +214,9 @@ for (const [layout, viewport] of [
       const participantContext = await browser.newContext({ viewport });
       expect(participantContext).not.toBe(context);
       const participant = await participantContext.newPage();
+      const organiserParticipant = await context.newPage();
       const polls: SavedPoll[] = [];
-      const reads = (action: () => Promise<unknown>) => readOnly(store, polls, [page, participant], action);
+      const reads = (action: () => Promise<unknown>) => readOnly(store, polls, [page, participant, organiserParticipant], action);
       try {
         await list(page, layout, runId, "active", [], () => page.goto(`/?testRunId=${runId}`));
         const older = await create(page, store, "Lifecycle dinner", runId);
@@ -257,16 +260,21 @@ for (const [layout, viewport] of [
           await expect(page.getByRole("region", { name: "Share poll", exact: true })).toBeVisible();
         });
         await reads(() => publicLink(participant, publicUrl, older, "open"));
+        await reads(() => publicLink(organiserParticipant, publicUrl, older, "open"));
         await mutation(store, older, ["PARTICIPANT_ADDED"], "anonymous-link-holder", () => addParticipant(participant, "Alice"));
-        // The organiser's live public table and the independent link holder collaborate on the same poll.
+        // Management displays responses read-only; collaboration uses the public
+        // participant route in the organiser's context and an independent link holder.
         await expect(page.getByRole("rowheader", { name: "Alice", exact: true })).toBeVisible();
-        await mutation(store, older, ["PARTICIPANT_ADDED"], "anonymous-link-holder", () => addParticipant(page, "Bob"));
+        await expect(organiserParticipant.getByRole("rowheader", { name: "Alice", exact: true })).toBeVisible();
+        await mutation(store, older, ["PARTICIPANT_ADDED"], "anonymous-link-holder", () => addParticipant(organiserParticipant, "Bob"));
         await expect(participant.getByRole("rowheader", { name: "Bob", exact: true })).toBeVisible();
         await mutation(store, older, ["AVAILABILITY_CHANGED"], "anonymous-link-holder", async () => {
           await participant.getByRole("button", { name: "Bob, Sat 10 Oct: No", exact: true }).click();
           await expect(participant.getByRole("button", { name: "Bob, Sat 10 Oct: Yes", exact: true })).toBeVisible();
         });
-        await expect(page.getByRole("button", { name: "Bob, Sat 10 Oct: Yes", exact: true })).toBeVisible();
+        await expect(organiserParticipant.getByRole("button", { name: "Bob, Sat 10 Oct: Yes", exact: true })).toBeVisible();
+        await expect(page.getByRole("row").filter({ has: page.getByRole("rowheader", { name: "Bob", exact: true }) })
+          .getByRole("cell").nth(0)).toHaveText("Yes");
         await reads(async () => {
           await list(page, layout, runId, "active", [expected(newer, "draft"), expected(older, "open", 2)], () => returnLink(page).click());
           await list(page, layout, runId, "open", [expected(older, "open", 2)], filterClick(page, "Open"));
@@ -363,7 +371,10 @@ for (const [layout, viewport] of [
           await list(page, layout, runId, "closed", [], filterClick(page, "Closed"));
         });
         expect(await snapshot(store, newer.id)).toEqual(newerBefore);
-      } finally { await participantContext.close(); }
+      } finally {
+        await organiserParticipant.close();
+        await participantContext.close();
+      }
     });
   });
 }

@@ -3,13 +3,13 @@ id: T-167
 type: task
 title: Add integrated My polls improvement acceptance coverage
 parent: S-061
-status: todo
+status: done
 dependsOn: [T-155, T-158, T-166]
 estimate: 2
 tags: [acceptance-tests, integration, regression]
 archived: false
 created: 2026-10-11T07:56:50.717Z
-updated: 2026-10-11T07:56:50.717Z
+updated: 2026-10-11T17:43:30.843Z
 ---
 Assemble the focused automated suite for the complete design.
 

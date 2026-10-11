@@ -104,7 +104,7 @@ async function queryResponse(page: Page, runId: string, filter: OwnedPollFilter,
 
 async function entries(page: Page, layout: Layout, expected: SeededPoll[]) {
   const container = page.locator(`.my-polls-${layout}`);
-  const links = container.locator(layout === "desktop" ? "tbody a" : "h2 a");
+  const links = container.locator(layout === "desktop" ? "tbody th a:not(.my-polls-open)" : "h2 a:not(.my-polls-open)");
   await expect(links).toHaveText(expected.map((poll) => poll.title));
   expect(await links.evaluateAll((links) => links.map((link) =>
     new URL((link as HTMLAnchorElement).href).searchParams.get("pollId")))).toEqual(expected.map((poll) => poll.id));
@@ -151,6 +151,7 @@ test.describe("My polls dense pagination", () => {
         expect(body.items.map(({ id }) => id)).toEqual(ordered.slice(0, 25).map(({ id }) => id));
         expect(body.nextCursor).toBeTruthy();
         await entries(page, layout, ordered.slice(0, 25));
+        await expect(page.locator(".my-polls-loaded")).toHaveText("25 polls loaded");
         body = await queryResponse(page, runId, "open", "Dense match", async () => {
           await moreButton(page).focus();
           await moreButton(page).press("Enter");
@@ -158,8 +159,9 @@ test.describe("My polls dense pagination", () => {
         expect(body.items.map(({ id }) => id)).toEqual([ordered[25]!.id]);
         expect(body.nextCursor).toBeUndefined();
         await entries(page, layout, ordered);
+        await expect(page.locator(".my-polls-loaded")).toHaveText("26 polls loaded");
         await expect(moreButton(page)).not.toBeVisible();
-        await page.locator(`.my-polls-${layout} a[href*="pollId=${ordered[25]!.id}"]`).click();
+        await page.locator(`.my-polls-${layout} a.my-polls-open[href*="pollId=${ordered[25]!.id}"]`).click();
         await expect(page.getByRole("heading", { name: ordered[25]!.title, exact: true })).toBeVisible();
         body = await returnToList(page, runId, "open", "Dense match");
         expect(body.items.map(({ id }) => id)).toEqual(ordered.slice(0, 25).map(({ id }) => id));
@@ -170,9 +172,11 @@ test.describe("My polls dense pagination", () => {
           await filterButton(page, "closed").press("Enter");
         });
         await entries(page, layout, [closed]);
+        await expect(page.locator(".my-polls-loaded")).toHaveText("1 poll loaded");
         await expect(moreButton(page)).not.toBeVisible();
         await queryResponse(page, runId, "closed", "missing title", () => searchField(page).fill("missing title"));
         await entries(page, layout, []);
+        await expect(page.locator(".my-polls-loaded")).toHaveText("0 polls loaded");
         await expect(page.locator(".my-polls-status")).toHaveText("No polls match your search.");
         await queryResponse(page, runId, "closed", "", () =>
           page.getByRole("button", { name: "Clear search", exact: true }).press("Enter"));
@@ -374,7 +378,7 @@ test.describe("My polls exhaustive discovery", { tag: "@exhaustive" }, () => {
         }
         // The oldest matching title can be opened from page two. Return refreshes page one
         // while retaining the query, so accumulated entries/cursors cannot survive navigation.
-        await page.locator(`.my-polls-${layout} a[href*="pollId=${matches[0]!.id}"]`).click();
+        await page.locator(`.my-polls-${layout} a.my-polls-open[href*="pollId=${matches[0]!.id}"]`).click();
         await expect(page.getByRole("heading", { name: matches[0]!.title, exact: true })).toBeVisible();
         body = await returnToList(page, runId, "open", "Archive match");
         expect(body.items).toEqual([]);
@@ -436,7 +440,7 @@ for (const [layout, viewport] of discoveryLayouts) {
         const expected = matching(filter).filter(({ title }) => title === sharedTitle);
         await entries(page, layout, expected);
         // Open every lifecycle destination, then restore the originating filter/search without writes.
-        await page.locator(`.my-polls-${layout} a[href*="pollId=${expected[0]!.id}"]`).click();
+        await page.locator(`.my-polls-${layout} a.my-polls-open[href*="pollId=${expected[0]!.id}"]`).click();
         await expect(page).toHaveURL((url) => url.searchParams.get("pollId") === expected[0]!.id &&
           url.searchParams.get("view") === (filter === "draft" ? "editor" : "manage"));
         if (filter === "draft") await expect(page.getByRole("textbox", { name: "Title", exact: true })).toHaveValue(sharedTitle);
@@ -475,7 +479,7 @@ for (const [layout, viewport] of discoveryLayouts) {
       await queryResponse(page, runId, "active", "", () => filterButton(page, "active").click());
       await entries(page, layout, matching("active"));
       const oldest = own[0]!;
-      await page.locator(`.my-polls-${layout} a[href*="pollId=${oldest.id}"]`).click();
+      await page.locator(`.my-polls-${layout} a.my-polls-open[href*="pollId=${oldest.id}"]`).click();
       const title = page.getByRole("textbox", { name: "Title", exact: true });
       await expect(title).toHaveValue(oldest.title);
       // Navigating to the editor itself must still be read-only.

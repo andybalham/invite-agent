@@ -23,6 +23,7 @@
     "test:component": "npm run build && node --test test/component/*.test.mjs",
     "test:integration": "npm run build && node --test test/integration/*.test.mjs",
     "test:discovery": "node scripts/verify-my-polls-discovery.mjs",
+    "test:my-polls:improvements": "node scripts/verify-my-polls-improvements.mjs",
     "test:e2e": "playwright test --project=chromium --workers=1 --retries=0",
     "test:e2e:fast": "playwright test --project=chromium --workers=1 --retries=0",
     "test:e2e:dashboard": "playwright test test/e2e/organiser-navigation.spec.ts test/e2e/navigation-guards.spec.ts test/e2e/my-polls-search.spec.ts test/e2e/my-polls-lifecycle.spec.ts --project=chromium --workers=1 --retries=0",

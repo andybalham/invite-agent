@@ -54,8 +54,15 @@ async function fixture(t) {
       const document = JSON.parse(item.document.S);
       const summary = expected.get(document.id);
       assert.ok(summary, "every persisted poll is accounted for");
-      for (const [key, value] of Object.entries(summary)) {
+      // finalDate is a display projection of the persisted selection, not a stored field.
+      const { finalDate, ...storedSummary } = summary;
+      for (const [key, value] of Object.entries(storedSummary)) {
         assert.deepEqual(document[key], key === "proposedDates" && value.length ? savedDates : value, `stored ${key}`);
+      }
+      if (finalDate) {
+        const selectedIndex = dateInputs.indexOf(finalDate);
+        assert.ok(selectedIndex >= 0, "expected final date is an explicit fixture choice");
+        assert.equal(document.selectedDateId, `${summary.id}-date-${selectedIndex + 1}`, "stored final selection");
       }
       const events = audits.get(document.id);
       assert.equal(document.version, events.length);
@@ -140,6 +147,7 @@ async function fixture(t) {
     assert.ok(event.occurredAt > poll.createdAt, "mutation time differs from immutable creation time");
     audits.set(poll.id, events);
     Object.assign(poll, changes);
+    if (changes.status === "open") delete poll.finalDate;
     await summaries();
     return { ...response.body, event };
   }
@@ -168,7 +176,7 @@ test("T-122 saved lifecycle summaries retain dates/counts and creation order wit
   const closedPeer = await create("Newer closed dinner", dateInputs);
   await mutate(closedPeer, "POLL_PUBLISHED", "POST", `${management(closedPeer)}/publish`, undefined, { status: "open" });
   await mutate(closedPeer, "POLL_CLOSED", "POST", `${management(closedPeer)}/close`,
-    { selectedDateId: `${closedPeer.id}-date-1`, confirmed: true }, { status: "closed" });
+    { selectedDateId: `${closedPeer.id}-date-1`, confirmed: true }, { status: "closed", finalDate: dateInputs[0] });
   await create("Foreign dinner", dateInputs, foreignOwner);
 
   await mutate(older, "POLL_DETAILS_UPDATED", "PUT", management(older), details("Edited older dinner"),
@@ -183,7 +191,7 @@ test("T-122 saved lifecycle summaries retain dates/counts and creation order wit
   await mutate(older, "PARTICIPANT_RENAMED", "PUT", `${rows}/${alice.id}`, { displayName: "Alicia" }, {}, {});
   const voted = await mutate(older, "AVAILABILITY_CHANGED", "PUT", `${rows}/${alice.id}`, { dateId: first, availability: "yes" }, {}, {});
   const closed = await mutate(older, "POLL_CLOSED", "POST", `${management(older)}/close`,
-    { selectedDateId: second, confirmed: true }, { status: "closed" });
+    { selectedDateId: second, confirmed: true }, { status: "closed", finalDate: dateInputs[1] });
   assert.deepEqual(closed.event.before, { status: "open" });
   assert.deepEqual(closed.event.after, { status: "closed", selectedDateId: second, ranking: voted.ranking });
   assert.equal(closed.poll.selectedDateId, second, "selection and closing share the same single revision");
@@ -198,7 +206,8 @@ test("T-122 saved lifecycle summaries retain dates/counts and creation order wit
   const bob = reopened.poll.participants.find(({ displayName }) => displayName === "Bob");
   await mutate(older, "PARTICIPANT_DELETED", "DELETE", `${rows}/${bob.id}`, { confirmation: "Bob" }, { participantCount: 1 }, {});
   await mutate(older, "AVAILABILITY_CHANGED", "PUT", `${rows}/${alice.id}`, { dateId: second, availability: "yes" }, {}, {});
-  await mutate(older, "POLL_CLOSED", "POST", `${management(older)}/close`, { selectedDateId: first, confirmed: true }, { status: "closed" });
+  await mutate(older, "POLL_CLOSED", "POST", `${management(older)}/close`, { selectedDateId: first, confirmed: true },
+    { status: "closed", finalDate: dateInputs[0] });
   assert.equal((await app.repository.getPoll(older.id)).provisional, undefined);
   assert.equal((await app.repository.getPoll(draftPeer.id)).version, 1, "other polls gain no dashboard revisions");
 });
@@ -227,7 +236,7 @@ test("T-122 rejected lifecycle and closed-state writes leave summaries, projecti
   const alice = added.participants[0];
   await deniedLifecycle("close", closeBody, publicPath);
   await reject([{ path: `${path}/close`, body: { ...closeBody, confirmed: false }, status: 400, code: "VALIDATION_ERROR" }]);
-  await mutate(poll, "POLL_CLOSED", "POST", `${path}/close`, closeBody, { status: "closed" });
+  await mutate(poll, "POLL_CLOSED", "POST", `${path}/close`, closeBody, { status: "closed", finalDate: dateInputs[0] });
   await deniedLifecycle("reopen", { confirmed: true }, publicPath);
   await reject([
     { path: `${path}/close`, body: closeBody, status: 409, code: "CONFLICT" },

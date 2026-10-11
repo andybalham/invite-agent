@@ -36,8 +36,8 @@ async function mountReadOnly(t, options = {}) {
 
 async function titles(page, expected) {
   // Both presentations consume the same server result set, including order.
-  await expect(page.locator(".my-polls-desktop tbody a")).toHaveText(expected);
-  await expect(page.locator(".my-polls-mobile h2 a")).toHaveText(expected);
+  await expect(page.locator(".my-polls-desktop tbody th > a:first-child")).toHaveText(expected);
+  await expect(page.locator(".my-polls-mobile h2 > a:first-child")).toHaveText(expected);
 }
 
 test("Active defaults to Draft/Open; each lifecycle selection sends only list query parameters", async (t) => {

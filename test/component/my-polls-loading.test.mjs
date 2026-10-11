@@ -37,7 +37,7 @@ test("pages append in server creation order, including an empty continuing page"
   await expect(more).toBeVisible();
   await more.click();
   await expect(harness.page.getByRole("link", { name: "Oldest" })).toBeVisible();
-  assert.deepEqual(await harness.page.locator(".my-polls-desktop tbody a").allTextContents(), ["Newest", "Older", "Oldest"]);
+  assert.deepEqual(await harness.page.locator(".my-polls-desktop tbody th > a:first-child").allTextContents(), ["Newest", "Older", "Oldest"]);
   assert.deepEqual(harness.listRequests().map(({ url }) => {
     const params = new URL(url).searchParams;
     return [params.get("pageSize"), params.get("cursor")];
@@ -87,7 +87,7 @@ test("restoring a cached dashboard discards accumulated pages and ignores a pend
   stale.release();
   await more.click();
   await expect(harness.page.getByRole("link", { name: "Current page two" })).toBeVisible();
-  assert.deepEqual(await harness.page.locator(".my-polls-desktop tbody a").allTextContents(),
+  assert.deepEqual(await harness.page.locator(".my-polls-desktop tbody th > a:first-child").allTextContents(),
     ["After management", "Current page two"]);
   assert.deepEqual(harness.listRequests().map(({ url }) => new URL(url).searchParams.get("cursor")),
     [null, "first-cursor", "second-cursor", null, "fresh-cursor"]);

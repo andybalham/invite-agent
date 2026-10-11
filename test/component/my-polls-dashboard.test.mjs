@@ -21,8 +21,8 @@ for (const [label, viewport, presentation] of [
     await expect(page.getByRole("heading", { name: "My polls", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Create poll", exact: true })).toBeVisible();
     await expect(page.locator(presentation)).toBeVisible();
-    await expect(page.locator(presentation).getByRole("link", { name: summaryTitles.draft })).toBeVisible();
-    await expect(page.locator(presentation).getByRole("link", { name: summaryTitles.open })).toBeVisible();
+    await expect(page.locator(presentation).getByRole("link", { name: summaryTitles.draft, exact: true })).toBeVisible();
+    await expect(page.locator(presentation).getByRole("link", { name: summaryTitles.open, exact: true })).toBeVisible();
     await expect(page.locator(presentation).getByText("Draft", { exact: true })).toBeVisible();
     await expect(page.locator(presentation).getByText("Open", { exact: true })).toBeVisible();
     await expect(page.locator(presentation).getByText("4 Oct 2026", { exact: true }).first()).toBeVisible();
@@ -30,12 +30,20 @@ for (const [label, viewport, presentation] of [
     await expect(page.locator(presentation).getByText("2 participants", { exact: true })).toBeVisible();
     await expect(page.locator(presentation).getByText("4 proposed dates", { exact: true })).toBeVisible();
     await expect(page.locator(".my-polls-loaded")).toHaveText("2 polls loaded");
-    await expect(page.locator(presentation).getByRole("link", { name: "Open poll" })).toHaveCount(1);
-    await expect(page.locator(presentation).getByText("Thu, 31 Dec 2026", { exact: true })).toBeVisible();
+    await expect(page.locator(presentation).getByRole("link", { name: "Open poll", exact: true })).toHaveCount(2);
+    for (const title of [summaryTitles.draft, summaryTitles.open]) {
+      const summary = page.locator(`${presentation} ${label === "desktop" ? "tbody tr" : "article"}`)
+        .filter({ has: page.getByRole("link", { name: title, exact: true }) });
+      const action = summary.getByRole("link", { name: "Open poll", exact: true });
+      await expect(action).toBeVisible();
+      await expect(action).toHaveAttribute("href", await summary.getByRole("link", { name: title, exact: true }).getAttribute("href"));
+    }
+    await expect(page.locator(`${presentation} .my-polls-date-summary > .my-polls-dates`)
+      .getByText("Thu, 31 Dec 2026", { exact: true })).toBeVisible();
     await expect(page.locator(presentation).getByText("Sat, 2 Jan 2027", { exact: true })).not.toBeVisible();
     await expect(page.getByRole("link", { name: /Sam private planning/ })).not.toBeVisible();
 
-    const draft = page.locator(presentation).getByRole("link", { name: summaryTitles.draft });
+    const draft = page.locator(presentation).getByRole("link", { name: summaryTitles.draft, exact: true });
     await draft.focus();
     await expect(draft).toBeFocused();
     await draft.press("Enter");

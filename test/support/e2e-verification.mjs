@@ -41,7 +41,8 @@ export async function assertFailureEvidence(directory, { media = true } = {}) {
 }
 
 export async function runCleanupProbe(endpoint, { mode = "pass", repeat = 1, retries = 0, browserMissing = false } = {}) {
-  const apiPort = await freePort();
+  let apiPort = await freePort();
+  while (apiPort === Number(new URL(endpoint).port)) apiPort = await freePort();
   let webPort = await freePort();
   while (webPort === apiPort || webPort === Number(new URL(endpoint).port)) webPort = await freePort();
   const environment = { ...process.env, APP_ENV: "local", AUTH_MODE: "local", E2E_ALLOW_SHARED_TABLES: "0",
@@ -50,7 +51,7 @@ export async function runCleanupProbe(endpoint, { mode = "pass", repeat = 1, ret
     PUBLIC_TOKEN_HASH_KEY: "cleanup-verification-private-key", HARNESS_CLEANUP_PROBE: mode };
   for (const key of ["E2E_MODE", "E2E_RUN_ID", "E2E_RUN_MANIFEST_PATH", "E2E_COORDINATOR_PID", "E2E_API_INSTANCE_ID", "SMOKE_RUN_MANIFEST_PATH", "PUBLIC_BASE_URL"]) delete environment[key];
   if (browserMissing) environment.PLAYWRIGHT_BROWSERS_PATH = path.resolve(".devstack", "missing-browser-for-cleanup-verification");
-  const child = spawn(process.execPath, ["node_modules/@playwright/test/cli.js", "test", "test/e2e/cleanup-isolation.spec.ts",
+  const child = spawn(process.execPath, ["node_modules/@playwright/test/cli.js", "test", "--config=playwright.harness.config.ts", "test/e2e/cleanup-isolation.spec.ts",
     "--workers=2", `--repeat-each=${repeat}`, `--retries=${retries}`], { env: environment, windowsHide: true, timeout: 90_000, stdio: ["ignore", "pipe", "pipe"] });
   let output = "";
   child.stdout.on("data", (chunk) => { output += chunk; });

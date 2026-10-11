@@ -94,9 +94,9 @@ _Generated. Do not edit by hand._
   - [x] [T-050 · Specify reopen and close-again lifecycle with failing automated tests](../entities/T-050-specify-reopen-and-close-again-lifecycle-with-failing-automated-tests.md) — done
   - [x] [T-051 · Implement and verify reopen and close-again lifecycle](../entities/T-051-implement-and-verify-reopen-and-close-again-lifecycle.md) — done
 
-## [E-008 · E8 — Production AWS platform](./E-008.md) — blocked
-- [ ] **S-025 · Provision durable DynamoDB application and audit data** — blocked · waiting on E-008
-  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — blocked · waiting on E-008
+## [E-008 · E8 — Production AWS platform](./E-008.md) — todo
+- [ ] **S-025 · Provision durable DynamoDB application and audit data** — todo
+  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — todo
   - [ ] [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [ ] **S-026 · Deploy least-privilege Lambda APIs with Cognito authorization** — blocked · waiting on S-025
   - [ ] [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053
@@ -239,7 +239,7 @@ _Generated. Do not edit by hand._
   - [x] [T-151 · Add component and browser acceptance coverage for share-link recovery](../entities/T-151-add-component-and-browser-acceptance-coverage-for-share-link-recovery.md) — done
   - [x] [T-152 · Update requirements traceability and operational guidance for share links](../entities/T-152-update-requirements-traceability-and-operational-guidance-for-share-links.md) — done
 
-## [E-016 · Improve My polls usability and centralize public-link management](./E-016.md) — todo
+## [E-016 · Improve My polls usability and centralize public-link management](./E-016.md) — done
 - [x] **S-058 · Render compact proposed-date summaries with accessible disclosure** — done
   - [x] [T-153 · Specify compact date summaries and disclosure contracts with automated tests](../entities/T-153-specify-compact-date-summaries-and-disclosure-contracts-with-automated-tests.md) — done
   - [x] [T-154 · Implement compact date summaries and accessible disclosure UI](../entities/T-154-implement-compact-date-summaries-and-accessible-disclosure-ui.md) — done
@@ -252,11 +252,11 @@ _Generated. Do not edit by hand._
   - [x] [T-164 · Specify canonical poll-page sharing and owner-isolation acceptance tests](../entities/T-164-specify-canonical-poll-page-sharing-and-owner-isolation-acceptance-tests.md) — done
   - [x] [T-165 · Implement poll-page share controls and remove dashboard-owned share state](../entities/T-165-implement-poll-page-share-controls-and-remove-dashboard-owned-share-state.md) — done
   - [x] [T-166 · Verify publication sharing closed-poll sharing and link rotation in browser tests](../entities/T-166-verify-publication-sharing-closed-poll-sharing-and-link-rotation-in-browser-tests.md) — done
-- [ ] **S-061 · Verify the complete My polls improvement journey** — todo
-  - [ ] [T-167 · Add integrated My polls improvement acceptance coverage](../entities/T-167-add-integrated-my-polls-improvement-acceptance-coverage.md) — todo
-  - [ ] [T-168 · Document verification commands and execute the focused regression suite](../entities/T-168-document-verification-commands-and-execute-the-focused-regression-suite.md) — blocked · waiting on T-167
-- [ ] **S-062 · Restore green My polls regression and test-harness suites** — todo
-  - [ ] [T-169 · Update My polls component regression selectors for explicit actions](../entities/T-169-update-my-polls-component-regression-selectors-for-explicit-actions.md) — todo
-  - [ ] [T-170 · Correct closed-poll lifecycle summary regression expectations](../entities/T-170-correct-closed-poll-lifecycle-summary-regression-expectations.md) — todo
-  - [ ] [T-171 · Repair E2E cleanup and runner harness evidence assertions](../entities/T-171-repair-e2e-cleanup-and-runner-harness-evidence-assertions.md) — todo
-  - [ ] [T-172 · Run and document the complete non-exhaustive regression suite](../entities/T-172-run-and-document-the-complete-non-exhaustive-regression-suite.md) — blocked · waiting on T-169, T-170, T-171
+- [x] **S-061 · Verify the complete My polls improvement journey** — done
+  - [x] [T-167 · Add integrated My polls improvement acceptance coverage](../entities/T-167-add-integrated-my-polls-improvement-acceptance-coverage.md) — done
+  - [x] [T-168 · Document verification commands and execute the focused regression suite](../entities/T-168-document-verification-commands-and-execute-the-focused-regression-suite.md) — done
+- [x] **S-062 · Restore green My polls regression and test-harness suites** — done
+  - [x] [T-169 · Update My polls component regression selectors for explicit actions](../entities/T-169-update-my-polls-component-regression-selectors-for-explicit-actions.md) — done
+  - [x] [T-170 · Correct closed-poll lifecycle summary regression expectations](../entities/T-170-correct-closed-poll-lifecycle-summary-regression-expectations.md) — done
+  - [x] [T-171 · Repair E2E cleanup and runner harness evidence assertions](../entities/T-171-repair-e2e-cleanup-and-runner-harness-evidence-assertions.md) — done
+  - [x] [T-172 · Run and document the complete non-exhaustive regression suite](../entities/T-172-run-and-document-the-complete-non-exhaustive-regression-suite.md) — done

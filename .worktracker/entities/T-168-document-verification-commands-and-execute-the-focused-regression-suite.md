@@ -3,13 +3,13 @@ id: T-168
 type: task
 title: Document verification commands and execute the focused regression suite
 parent: S-061
-status: todo
+status: done
 dependsOn: [T-167]
 estimate: 1
 tags: [documentation, regression, verification]
 archived: false
 created: 2026-10-11T07:56:50.798Z
-updated: 2026-10-11T07:56:50.798Z
+updated: 2026-10-11T17:46:16.317Z
 ---
 Record the automated verification for the design implementation.
 

@@ -2,19 +2,11 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
-import net from "node:net";
 import path from "node:path";
 import test from "node:test";
 import { stripVTControlCharacters } from "node:util";
-import { assertFailureEvidence, evidenceSnapshot, runCleanupProbe } from "../support/e2e-verification.mjs";
-
-async function freePort() {
-  const server = net.createServer();
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const port = server.address().port;
-  await new Promise((resolve) => server.close(resolve));
-  return port;
-}
+import { observeProcess } from "../../backend/dist/adapters/local/e2e-runtime.js";
+import { assertFailureEvidence, evidenceSnapshot, freePort, runCleanupProbe } from "../support/e2e-verification.mjs";
 
 // Run the real API, Vite, config, coordinator and browser workers against a
 // controlled AWS JSON transport. No developer database or Docker is required.
@@ -83,9 +75,10 @@ test("Playwright pass, failure, partial cleanup and interruption preserve diagno
   let partialDirectory;
   for (let invocation = 0; invocation < 5; invocation += 1) {
     refuseAuditDelete = invocation === 3;
-    const apiPort = await freePort();
+    let apiPort = await freePort();
+    while (apiPort === dynamodbPort) apiPort = await freePort();
     let webPort = await freePort();
-    while (webPort === apiPort) webPort = await freePort();
+    while (webPort === apiPort || webPort === dynamodbPort) webPort = await freePort();
     const environment = { ...process.env, APP_ENV: "local", AUTH_MODE: "local", E2E_ALLOW_SHARED_TABLES: "0",
       DYNAMODB_ENDPOINT: `http://localhost:${dynamodbPort}`, DYNAMODB_PORT: String(dynamodbPort), API_PORT: String(apiPort), WEB_PORT: String(webPort),
       APP_TABLE_NAME: "invite-agent-local-app", AUDIT_TABLE_NAME: "caller-audit", AWS_REGION: "us-east-1", PUBLIC_TOKEN_HASH_KEY: "runner-private-key" };
@@ -93,7 +86,7 @@ test("Playwright pass, failure, partial cleanup and interruption preserve diagno
     environment.HARNESS_DIAGNOSTIC_PROBE = invocation === 2 ? "1" : "0";
     environment.HARNESS_INTERRUPT_PROBE = invocation === 4 ? "1" : "0";
     const args = ["--require", "./test/support/e2e-interrupt-hook.cjs", "node_modules/@playwright/test/cli.js", "test",
-      invocation === 2 || invocation === 4 ? "test/e2e/diagnostics.spec.ts" : "test/e2e/shell.spec.ts", "--workers=2", "--retries=0",
+      "--config=playwright.harness.config.ts", invocation === 2 || invocation === 4 ? "test/e2e/diagnostics.spec.ts" : "test/e2e/shell.spec.ts", "--workers=2", "--retries=0",
       ...(invocation < 2 ? ["--repeat-each=2"] : [])];
     const child = spawn(process.execPath, args, { env: environment, windowsHide: true, stdio: ["ignore", "pipe", "pipe", "ipc"] });
     let output = "";
@@ -103,7 +96,9 @@ test("Playwright pass, failure, partial cleanup and interruption preserve diagno
       if (!interrupted && invocation === 4 && output.includes("Interruption probe ready")) { interrupted = true; child.send("interrupt-e2e"); }
     });
     child.stderr.on("data", (chunk) => { output += chunk; });
-    const exit = await new Promise((resolve, reject) => { child.once("error", reject); child.once("exit", resolve); });
+    // close follows exit and the draining of both output streams; evidence paths
+    // and the final runner diagnostics must be complete before inspecting them.
+    const exit = await new Promise((resolve, reject) => { child.once("error", reject); child.once("close", resolve); });
     assert.equal(exit, invocation < 2 ? 0 : invocation === 4 ? 130 : 1, output);
     if (invocation < 2) assert.match(output, /2 passed/);
     const directory = /E2E evidence: ([^\r\n]+)/.exec(output)?.[1];
@@ -133,7 +128,7 @@ test("Playwright pass, failure, partial cleanup and interruption preserve diagno
     }
     if (invocation === 2) await assertFailureEvidence(directory);
     assert.ok(!JSON.stringify(manifest).includes(environment.PUBLIC_TOKEN_HASH_KEY));
-    for (const identity of manifest.services.processes) assert.throws(() => process.kill(identity.pid, 0), /ESRCH|EPERM/);
+    for (const identity of manifest.services.processes) assert.equal(await observeProcess(identity.pid), null, `Run-owned writer ${identity.pid} is still live`);
   }
   refuseAuditDelete = false;
   const originalSummary = await readFile(path.join(partialDirectory, "summary.json"), "utf8");

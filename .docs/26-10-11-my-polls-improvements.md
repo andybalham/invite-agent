@@ -1,7 +1,7 @@
 # My Polls usability improvements
 
 **Date:** 11 October 2026  
-**Status:** Proposed design  
+**Status:** Implemented; automated verification recorded below  
 **Scope:** Organiser dashboard (`My polls`) and organiser poll-management view
 
 ## Summary
@@ -232,4 +232,36 @@ Each dashboard result should provide a simple `Open poll` action only. The dashb
 - The link-holder view never exposes organiser-only controls.
 - Search and filter behaviour, pagination, stale-response protection and return-context preservation continue to work.
 - The layout remains usable on narrow mobile screens and does not introduce horizontal page overflow.
+
+## Verification commands
+
+Run the focused improvement acceptance suite with DynamoDB Local available and
+Chromium installed:
+
+```powershell
+npm run test:my-polls:improvements
+```
+
+The command builds the TypeScript workspace, runs the related foundation,
+component and isolated integration tests, then runs the improvement journey and
+the compact-date, poll-page-share, organiser-navigation, navigation-guard,
+dashboard-search and dashboard-lifecycle browser suites. It requires an
+isolated E2E run: `E2E_ALLOW_SHARED_TABLES` and `SMOKE_RUN_MANIFEST_PATH` must not
+be set. Integration fixtures and the E2E coordinator create and remove their
+own test resources, including when a stage fails.
+
+Run the normal frontend/workspace quality check as well:
+
+```powershell
+npm run check
+```
+
+This runs format, lint, typecheck, the full foundation suite and security
+checks. The separate focused acceptance command covers integrations and live
+browser behavior, which `npm run check` does not include.
+
+## Verification record
+
+Verification date: 11 October 2026. Results for the current shared working tree
+will be recorded here after execution. No commit is created for this work.
 
