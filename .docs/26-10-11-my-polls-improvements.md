@@ -100,9 +100,8 @@ The mobile action menu may contain:
 
 - Open poll.
 - View dates.
-- Copy public link, if retained as a temporary shortcut during migration.
 
-The preferred end state is to remove public-link management from this menu and keep the dashboard focused on finding and opening polls.
+Keep public-link management out of this menu so the dashboard stays focused on finding and opening polls.
 
 ### 5. Add loaded-result feedback
 
@@ -176,11 +175,9 @@ After successful publication, the organiser should land on the poll-management p
 - The link-holder view must never expose organiser share, history, edit, close or reopen controls.
 - Organiser authorisation must be checked before rendering or enabling organiser-only actions.
 
-### Dashboard transition
+### Dashboard action model
 
-During migration, a dashboard result may retain a simple `Open poll` action only. Avoid keeping a second full share workflow in both places, because that creates two locations with potentially different link state and rotation affordances.
-
-If a temporary shortcut is required, `Copy public link` should navigate to or open the poll page and focus the share section rather than independently owning the link-management state.
+Each dashboard result should provide a simple `Open poll` action only. The dashboard should not own a second share workflow, because having link controls in both places creates two locations with potentially different link state and rotation affordances.
 
 ## Responsive behaviour
 
@@ -217,7 +214,7 @@ If a temporary shortcut is required, `Copy public link` should navigate to or op
 2. Add accessible inline disclosure for short date lists and a dialog for large lists.
 3. Update desktop table and mobile card layouts to use the compact summary.
 4. Add loaded-result feedback and debounce search requests.
-5. Consolidate the poll-page share section and ensure it supports copy, open-as-participant and rotation.
+5. Implement the poll-page share section with copy, open-as-participant and rotation.
 6. Remove dashboard-specific share-panel creation, reset handling and styling.
 7. Update component and end-to-end coverage for long date lists, disclosure state, mobile cards, publication landing, closed-poll sharing and link rotation.
 
