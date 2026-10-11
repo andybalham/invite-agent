@@ -28,6 +28,11 @@ for (const [label, viewport, presentation] of [
     await expect(page.locator(presentation).getByText("4 Oct 2026", { exact: true }).first()).toBeVisible();
     await expect(page.locator(presentation).getByText("0 participants", { exact: true })).toBeVisible();
     await expect(page.locator(presentation).getByText("2 participants", { exact: true })).toBeVisible();
+    await expect(page.locator(presentation).getByText("4 proposed dates", { exact: true })).toBeVisible();
+    await expect(page.locator(".my-polls-loaded")).toHaveText("2 polls loaded");
+    await expect(page.locator(presentation).getByRole("link", { name: "Open poll" })).toHaveCount(1);
+    await expect(page.locator(presentation).getByText("Thu, 31 Dec 2026", { exact: true })).toBeVisible();
+    await expect(page.locator(presentation).getByText("Sat, 2 Jan 2027", { exact: true })).not.toBeVisible();
     await expect(page.getByRole("link", { name: /Sam private planning/ })).not.toBeVisible();
 
     const draft = page.locator(presentation).getByRole("link", { name: summaryTitles.draft });
@@ -39,6 +44,16 @@ for (const [label, viewport, presentation] of [
     await expect(page.getByRole("link", { name: /My polls/ }).first()).toBeVisible();
   });
 }
+
+test("dashboard result boundaries and narrow layout remain explicit without page overflow", async (t) => {
+  const harness = await components.mount(t, { fixture: createSummaryFixture(), viewport: { width: 320, height: 844 } });
+  await harness.goto("/?testRunId=olivia");
+  const results = harness.page.locator("#my-polls-results");
+  await expect(results).toHaveAttribute("aria-label", "Owned polls");
+  await expect(results.locator(".my-polls-card")).toHaveCount(2);
+  await expect(harness.page.locator(".my-polls-loaded")).toHaveText("2 polls loaded");
+  assert.equal(await harness.page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+});
 
 test("renders the controlled Closed summary without asserting a future filter journey", async (t) => {
   const harness = await components.mount(t, { fixture: createSummaryFixture(), viewport: { width: 390, height: 844 } });

@@ -3,13 +3,13 @@ id: T-158
 type: task
 title: Verify dashboard layout and interaction regressions across desktop and mobile
 parent: S-059
-status: todo
+status: done
 dependsOn: [T-157]
 estimate: 2
 tags: [browser-tests, regression, responsive]
 archived: false
 created: 2026-10-11T07:55:36.159Z
-updated: 2026-10-11T07:55:36.159Z
+updated: 2026-10-11T08:56:35.081Z
 ---
 Run and extend the real browser dashboard coverage.
 

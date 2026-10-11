@@ -3,13 +3,13 @@ id: T-156
 type: task
 title: Specify dashboard hierarchy pagination and debounced-search acceptance tests
 parent: S-059
-status: todo
+status: done
 dependsOn: [T-154]
 estimate: 2
 tags: [pagination, responsive, search, tests]
 archived: false
 created: 2026-10-11T07:55:36.016Z
-updated: 2026-10-11T07:55:36.016Z
+updated: 2026-10-11T08:54:07.015Z
 ---
 Add failing-first component/browser coverage for the revised dashboard hierarchy and result feedback.
 

@@ -313,6 +313,23 @@ test("filter, search and clear changes discard every accumulated page and restar
     parameters("closed", "Search", "search-more"), parameters("closed"), parameters()]);
 });
 
+test("rapid title edits debounce to one preserved-filter request", async (t) => {
+  const fixture = createSummaryFixture({ replies: [
+    reply([item("initial", "Initial result")]),
+    reply([item("match", "Autumn result")])
+  ] });
+  const harness = await mountReadOnly(t, { fixture });
+  const { page } = harness;
+  await harness.goto("/?testRunId=olivia&filter=open");
+  const search = searchField(page);
+  await search.fill("A");
+  await search.fill("Au");
+  await search.fill("Aut");
+  await expect.poll(() => harness.listRequests().length, { timeout: 1_500 }).toBe(2);
+  await titles(page, ["Autumn result"]);
+  assert.deepEqual(query(harness.listRequests().at(-1)), parameters("open", "Aut"));
+});
+
 for (const [label, stale] of [["success", reply([item("stale", "Stale decoded body")], "stale-cursor")], ["error", failedPage]]) {
   test(`rapid A/B/A queries ignore an earlier ${label} even when its response body finishes last`, async (t) => {
     const fixture = createSummaryFixture({ replies: [stale, reply([item("middle", "Middle query")], "middle-cursor"),

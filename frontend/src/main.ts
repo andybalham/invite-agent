@@ -112,6 +112,7 @@ app.innerHTML = `
       <p id="my-polls-active-help" class="my-polls-filters__help">Active includes draft and open polls.</p>
     </div>
     <p class="my-polls-status" role="status" aria-live="polite"></p>
+    <p class="my-polls-loaded" aria-live="polite"></p>
     <p class="my-polls-error error" role="alert" hidden></p>
     <button class="btn btn-secondary my-polls-retry" type="button" hidden>Try again</button>
     <div class="my-polls-list" id="my-polls-results" role="region" aria-label="Owned polls" aria-busy="false"></div>
@@ -411,6 +412,7 @@ const creationView = url.searchParams.get("view") === "create";
 const myPollsScreen = requireElement<HTMLElement>(".my-polls");
 const myPollsList = requireElement<HTMLElement>(".my-polls-list");
 const myPollsStatus = requireElement<HTMLElement>(".my-polls-status");
+const myPollsLoaded = requireElement<HTMLElement>(".my-polls-loaded");
 const myPollsError = requireElement<HTMLElement>(".my-polls-error");
 const myPollsRetry = requireElement<HTMLButtonElement>(".my-polls-retry");
 const myPollsMore = requireElement<HTMLButtonElement>(".my-polls-more");
@@ -428,6 +430,7 @@ let ownedListCount = 0;
 const ownedListIds = new Set<string>();
 let ownedListIdentity = "";
 let ownedListQuery = "";
+let myPollsSearchDebounce: number | undefined;
 let summaryShareId = 0;
 const summaryShareResets = new Set<() => void>();
 let proposedDates: ProposedDate[] = [];
@@ -683,12 +686,19 @@ function renderPollSummary(poll: OwnedPollListResponse["items"][number], context
     link.href = summary.destination;
     return link;
   };
+  const openLink = () => {
+    const link = document.createElement("a");
+    link.className = "my-polls-open";
+    link.textContent = "Open poll";
+    link.href = summary.destination;
+    return link;
+  };
   const dateSummary = (dialogHost: HTMLElement) => createCompactDateSummary(summary.title, summary.dates, dialogHost,
     poll.status === "closed" && poll.finalDate ? summaryDateLabel(poll.finalDate, poll.timeZone) : undefined);
 
   const row = document.createElement("tr");
   row.append(...[
-    (() => { const cell = document.createElement("th"); cell.scope = "row"; cell.append(titleLink()); return cell; })(),
+    (() => { const cell = document.createElement("th"); cell.scope = "row"; cell.append(titleLink(), openLink()); return cell; })(),
     (() => { const cell = document.createElement("td"); cell.append(summaryStatusBadge(poll.status)); return cell; })(),
     (() => { const cell = document.createElement("td"); cell.textContent = summary.created; return cell; })(),
     (() => { const cell = document.createElement("td"); cell.append(dateSummary(table.closest<HTMLElement>(".my-polls-desktop")!)); return cell; })(),
@@ -699,7 +709,7 @@ function renderPollSummary(poll: OwnedPollListResponse["items"][number], context
   const card = document.createElement("article");
   card.className = "my-polls-card";
   const heading = document.createElement("h2");
-  heading.append(titleLink());
+  heading.append(titleLink(), openLink());
   const details = document.createElement("dl");
   const fields: Array<[string, () => Node]> = [
     ["Status", () => summaryStatusBadge(poll.status)],
@@ -1539,6 +1549,7 @@ function invalidateMyPolls(): void {
   ownedListCount = 0;
   ownedListIds.clear();
   myPollsList.replaceChildren();
+  myPollsLoaded.textContent = "";
 }
 
 async function loadMyPolls(append = false): Promise<void> {
@@ -1621,6 +1632,7 @@ async function loadMyPolls(append = false): Promise<void> {
       ownedListIds.add(poll.id);
     }
     ownedListCount = ownedListIds.size;
+    myPollsLoaded.textContent = `${ownedListCount} ${ownedListCount === 1 ? "poll" : "polls"} loaded`;
     ownedListCursor = page.nextCursor;
     myPollsMore.hidden = !ownedListCursor;
     myPollsStatus.textContent = page.items.length === 0 && page.nextCursor ? "More polls may match."
@@ -1660,9 +1672,22 @@ requireElement<HTMLElement>(".my-polls-filters").addEventListener("click", (even
 myPollsMore.addEventListener("click", () => void loadMyPolls(true));
 myPollsRetry.addEventListener("click", () => void loadMyPolls(Boolean(ownedListCursor)));
 myPollsSearch.addEventListener("input", () => {
+  if (myPollsSearchDebounce !== undefined) window.clearTimeout(myPollsSearchDebounce);
+  myPollsSearchDebounce = window.setTimeout(() => {
+    myPollsSearchDebounce = undefined;
+    changeMyPollsQuery({ search: myPollsSearch.value });
+  }, 250);
+});
+myPollsSearch.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  event.preventDefault();
+  if (myPollsSearchDebounce !== undefined) window.clearTimeout(myPollsSearchDebounce);
+  myPollsSearchDebounce = undefined;
   changeMyPollsQuery({ search: myPollsSearch.value });
 });
 myPollsClear.addEventListener("click", () => {
+  if (myPollsSearchDebounce !== undefined) window.clearTimeout(myPollsSearchDebounce);
+  myPollsSearchDebounce = undefined;
   changeMyPollsQuery({ search: "" });
   myPollsSearch.focus();
 });
