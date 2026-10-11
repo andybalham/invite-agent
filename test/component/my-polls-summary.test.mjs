@@ -53,7 +53,10 @@ test("saved date order, calendar days, time, zone and repeated-hour offsets surv
       viewport: { width: 390, height: 844 }, timezoneId });
     await harness.goto("/?testRunId=olivia");
     const open = harness.page.locator(".my-polls-mobile article").filter({ hasText: summaryTitles.open });
-    const choices = await open.locator(".my-polls-dates li").allTextContents();
+    await expect(open.getByRole("listitem")).toHaveCount(3);
+    await open.getByRole("button", { name: "Show dates", exact: true }).click();
+    const choices = await open.getByRole("region", { name: `Proposed dates for ${summaryTitles.open}`, exact: true })
+      .getByRole("listitem").allTextContents();
     assert.deepEqual(choices, [
       "Thu, 31 Dec 2026",
       "Sun, 25 Oct 2026, 01:30 · Europe/London · UTC+01:00",
@@ -83,7 +86,13 @@ test("320px and intermediate layouts contain long untrusted titles and all propo
     await harness.goto("/?testRunId=olivia&filter=open");
     const visible = width <= 640 ? ".my-polls-mobile" : ".my-polls-desktop";
     await expect(harness.page.locator(visible).getByRole("link", { name: summaryTitles.long })).toBeVisible();
-    assert.equal(await harness.page.locator(`${visible} .my-polls-dates li`).count(), 8);
+    await expect(harness.page.locator(visible).getByRole("listitem")).toHaveCount(6);
+    assert.equal(await harness.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true,
+      `collapsed page must not overflow at ${width}px`);
+    for (const button of await harness.page.locator(visible).getByRole("button", { name: /^(Show|Hide) dates$/ }).all()) {
+      await button.click();
+    }
+    assert.equal(await harness.page.locator(`${visible} .my-polls-date-details .my-polls-dates li`).count(), 8);
     assert.equal(await harness.page.locator(`${visible} img`).count(), 0);
     assert.equal(await harness.page.evaluate(() => window.summaryInjected), undefined);
     assert.equal(await harness.page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true,

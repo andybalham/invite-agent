@@ -3,13 +3,13 @@ id: T-153
 type: task
 title: Specify compact date summaries and disclosure contracts with automated tests
 parent: S-058
-status: todo
+status: done
 dependsOn: []
 estimate: 2
 tags: [accessibility, dates, tests]
 archived: false
 created: 2026-10-11T07:55:35.762Z
-updated: 2026-10-11T07:55:35.762Z
+updated: 2026-10-11T08:13:43.933Z
 ---
 Add failing-first unit/component coverage for the date-summary presentation.
 

@@ -3,13 +3,13 @@ id: T-154
 type: task
 title: Implement compact date summaries and accessible disclosure UI
 parent: S-058
-status: todo
+status: done
 dependsOn: [T-153]
 estimate: 2
 tags: [accessibility, dates, frontend]
 archived: false
 created: 2026-10-11T07:55:35.870Z
-updated: 2026-10-11T07:55:35.870Z
+updated: 2026-10-11T08:22:11.372Z
 ---
 Implement the summary projection and DOM/CSS behaviour required by T-153.
 

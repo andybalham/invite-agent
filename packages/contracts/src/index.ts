@@ -199,6 +199,8 @@ export interface OwnedPollSummary {
   createdAt: string;
   timeZone: string;
   proposedDates: ProposedDateInput[];
+  /** Safe saved choice, supplied only for a closed poll with a final selection. */
+  finalDate?: ProposedDateInput;
   participantCount: number;
 }
 
@@ -621,11 +623,17 @@ function isCanonicalCreationInstant(input: unknown): input is string {
 }
 
 function isOwnedPollSummary(input: unknown): input is OwnedPollSummary {
-  return isRecord(input) &&
-    hasOnlyKeys(input, ["id", "title", "status", "createdAt", "timeZone", "proposedDates", "participantCount"]) &&
+  if (!isRecord(input)) return false;
+  const finalDate = input.finalDate;
+  return hasOnlyKeys(input, ["id", "title", "status", "createdAt", "timeZone", "proposedDates", "finalDate", "participantCount"]) &&
     isNonBlankString(input.id) && isNonBlankString(input.title) && isLifecycleState(input.status) &&
     isCanonicalCreationInstant(input.createdAt) && isValidIanaTimeZone(input.timeZone) &&
     Array.isArray(input.proposedDates) && input.proposedDates.every(isProposedDateInput) &&
+    (finalDate === undefined || (input.status === "closed" && isProposedDateInput(finalDate) &&
+      input.proposedDates.some((choice) => finalDate.kind === "date"
+        ? choice.kind === "date" && choice.localDate === finalDate.localDate
+        : choice.kind === "date-time" && choice.localDateTime === finalDate.localDateTime &&
+          choice.utcOffset === finalDate.utcOffset))) &&
     Number.isSafeInteger(input.participantCount) && Number(input.participantCount) >= 0;
 }
 

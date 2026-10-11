@@ -51,6 +51,12 @@ export function toOwnedPollSummary(poll: PollRecord, participantCount: number): 
       : { kind: "date-time", localDateTime: choice.localDateTime, utcOffset: choice.utcOffset }),
     participantCount
   };
+  if (poll.status === "closed") {
+    const selectedIndex = poll.proposedDates.findIndex((_choice, index) =>
+      poll.selectedDateId === `${poll.id}-date-${index + 1}`);
+    const selected = summary.proposedDates[selectedIndex];
+    if (selected) summary.finalDate = { ...selected };
+  }
   const parsed = ownedPollSummarySchema.safeParse(summary);
   if (!parsed.success) throw new Error(parsed.issues.join("; "));
   return parsed.data;

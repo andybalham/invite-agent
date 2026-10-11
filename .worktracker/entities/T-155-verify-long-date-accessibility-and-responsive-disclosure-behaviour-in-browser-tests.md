@@ -3,13 +3,13 @@ id: T-155
 type: task
 title: Verify long-date accessibility and responsive disclosure behaviour in browser tests
 parent: S-058
-status: todo
+status: done
 dependsOn: [T-154]
 estimate: 1
 tags: [accessibility, browser-tests, mobile]
 archived: false
 created: 2026-10-11T07:55:35.944Z
-updated: 2026-10-11T07:55:35.944Z
+updated: 2026-10-11T08:33:32.245Z
 ---
 Add browser-level proof for large date sets.
 

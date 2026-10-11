@@ -1,5 +1,6 @@
 import "./styles.css";
 import { createSharePanel } from "./share-panel.js";
+import { createCompactDateSummary } from "./compact-date-summary.js";
 import type { OwnedPollListResponse } from "@invite-a-gent/contracts";
 import { normalizeDashboardTitle, ownedPollShareResponseSchema, ownedPollShareErrorResponseSchema } from "@invite-a-gent/contracts";
 import {
@@ -682,24 +683,15 @@ function renderPollSummary(poll: OwnedPollListResponse["items"][number], context
     link.href = summary.destination;
     return link;
   };
-  const dateList = () => {
-    if (summary.dates.length === 0) return document.createTextNode("No dates proposed");
-    const list = document.createElement("ul");
-    list.className = "my-polls-dates";
-    for (const date of summary.dates) {
-      const item = document.createElement("li");
-      item.textContent = date;
-      list.append(item);
-    }
-    return list;
-  };
+  const dateSummary = (dialogHost: HTMLElement) => createCompactDateSummary(summary.title, summary.dates, dialogHost,
+    poll.status === "closed" && poll.finalDate ? summaryDateLabel(poll.finalDate, poll.timeZone) : undefined);
 
   const row = document.createElement("tr");
   row.append(...[
     (() => { const cell = document.createElement("th"); cell.scope = "row"; cell.append(titleLink()); return cell; })(),
     (() => { const cell = document.createElement("td"); cell.append(summaryStatusBadge(poll.status)); return cell; })(),
     (() => { const cell = document.createElement("td"); cell.textContent = summary.created; return cell; })(),
-    (() => { const cell = document.createElement("td"); cell.append(dateList()); return cell; })(),
+    (() => { const cell = document.createElement("td"); cell.append(dateSummary(table.closest<HTMLElement>(".my-polls-desktop")!)); return cell; })(),
     (() => { const cell = document.createElement("td"); cell.textContent = summary.participants; return cell; })()
   ]);
   table.append(row);
@@ -712,7 +704,7 @@ function renderPollSummary(poll: OwnedPollListResponse["items"][number], context
   const fields: Array<[string, () => Node]> = [
     ["Status", () => summaryStatusBadge(poll.status)],
     ["Created", () => document.createTextNode(summary.created)],
-    ["Proposed dates", dateList],
+    ["Proposed dates", () => dateSummary(cards)],
     ["Participants", () => document.createTextNode(summary.participants)]
   ];
   for (const [label, content] of fields) {

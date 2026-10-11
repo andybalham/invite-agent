@@ -50,7 +50,8 @@ test("T-120 create/edit/publish/close/reopen summaries retain original creation 
       assert.equal(Boolean(summary), eligible, `${status} membership in ${filter}`);
       if (eligible) {
         assert.deepEqual(summary, { id: oldId, title, status, createdAt: oldCreation,
-          timeZone: "Europe/London", proposedDates: dates, participantCount: count });
+          timeZone: "Europe/London", proposedDates: dates, participantCount: count,
+          ...(status === "closed" ? { finalDate: dates[0] } : {}) });
         assert.equal(page.items.at(-1).id, oldId, "older activity never promotes creation order");
       }
     }
