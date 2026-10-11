@@ -94,9 +94,9 @@ _Generated. Do not edit by hand._
   - [x] [T-050 · Specify reopen and close-again lifecycle with failing automated tests](../entities/T-050-specify-reopen-and-close-again-lifecycle-with-failing-automated-tests.md) — done
   - [x] [T-051 · Implement and verify reopen and close-again lifecycle](../entities/T-051-implement-and-verify-reopen-and-close-again-lifecycle.md) — done
 
-## [E-008 · E8 — Production AWS platform](./E-008.md) — todo
-- [ ] **S-025 · Provision durable DynamoDB application and audit data** — todo
-  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — todo
+## [E-008 · E8 — Production AWS platform](./E-008.md) — blocked
+- [ ] **S-025 · Provision durable DynamoDB application and audit data** — blocked · waiting on E-008
+  - [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — blocked · waiting on E-008
   - [ ] [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [ ] **S-026 · Deploy least-privilege Lambda APIs with Cognito authorization** — blocked · waiting on S-025
   - [ ] [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053
@@ -238,3 +238,20 @@ _Generated. Do not edit by hand._
   - [x] [T-150 · Add API and service regression coverage for owner isolation and token secrecy](../entities/T-150-add-api-and-service-regression-coverage-for-owner-isolation-and-token-secrecy.md) — done
   - [x] [T-151 · Add component and browser acceptance coverage for share-link recovery](../entities/T-151-add-component-and-browser-acceptance-coverage-for-share-link-recovery.md) — done
   - [x] [T-152 · Update requirements traceability and operational guidance for share links](../entities/T-152-update-requirements-traceability-and-operational-guidance-for-share-links.md) — done
+
+## [E-016 · Improve My polls usability and centralize public-link management](./E-016.md) — todo
+- [ ] **S-058 · Render compact proposed-date summaries with accessible disclosure** — todo
+  - [ ] [T-153 · Specify compact date summaries and disclosure contracts with automated tests](../entities/T-153-specify-compact-date-summaries-and-disclosure-contracts-with-automated-tests.md) — todo
+  - [ ] [T-154 · Implement compact date summaries and accessible disclosure UI](../entities/T-154-implement-compact-date-summaries-and-accessible-disclosure-ui.md) — blocked · waiting on T-153
+  - [ ] [T-155 · Verify long-date accessibility and responsive disclosure behaviour in browser tests](../entities/T-155-verify-long-date-accessibility-and-responsive-disclosure-behaviour-in-browser-tests.md) — blocked · waiting on T-154
+- [ ] **S-059 · Refine My polls hierarchy, responsive layout and result feedback** — blocked · waiting on S-058
+  - [ ] [T-156 · Specify dashboard hierarchy pagination and debounced-search acceptance tests](../entities/T-156-specify-dashboard-hierarchy-pagination-and-debounced-search-acceptance-tests.md) — blocked · waiting on T-154
+  - [ ] [T-157 · Implement dashboard hierarchy result feedback and debounced search](../entities/T-157-implement-dashboard-hierarchy-result-feedback-and-debounced-search.md) — blocked · waiting on T-156
+  - [ ] [T-158 · Verify dashboard layout and interaction regressions across desktop and mobile](../entities/T-158-verify-dashboard-layout-and-interaction-regressions-across-desktop-and-mobile.md) — blocked · waiting on T-157
+- [ ] **S-060 · Make the poll-management page the canonical public-link surface** — blocked · waiting on S-058
+  - [ ] [T-164 · Specify canonical poll-page sharing and owner-isolation acceptance tests](../entities/T-164-specify-canonical-poll-page-sharing-and-owner-isolation-acceptance-tests.md) — blocked · waiting on S-060
+  - [ ] [T-165 · Implement poll-page share controls and remove dashboard-owned share state](../entities/T-165-implement-poll-page-share-controls-and-remove-dashboard-owned-share-state.md) — blocked · waiting on T-164
+  - [ ] [T-166 · Verify publication sharing closed-poll sharing and link rotation in browser tests](../entities/T-166-verify-publication-sharing-closed-poll-sharing-and-link-rotation-in-browser-tests.md) — blocked · waiting on T-165
+- [ ] **S-061 · Verify the complete My polls improvement journey** — blocked · waiting on S-059, S-060
+  - [ ] [T-167 · Add integrated My polls improvement acceptance coverage](../entities/T-167-add-integrated-my-polls-improvement-acceptance-coverage.md) — blocked · waiting on T-155, T-158, T-166
+  - [ ] [T-168 · Document verification commands and execute the focused regression suite](../entities/T-168-document-verification-commands-and-execute-the-focused-regression-suite.md) — blocked · waiting on T-167

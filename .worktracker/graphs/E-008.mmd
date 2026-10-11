@@ -5,7 +5,7 @@ graph LR
   classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
   classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
   subgraph Stories
-    S025["S-025 Provision durable DynamoDB application and audit data"]:::todo
+    S025["S-025 Provision durable DynamoDB application and audit data"]:::blocked
     S026["S-026 Deploy least-privilege Lambda APIs with Cognito authorization"]:::blocked
     S027["S-027 Serve the SPA through private S3, CloudFront, DNS, and TLS"]:::blocked
     S028["S-028 Add production observability, limits, and security safeguards"]:::blocked
@@ -14,7 +14,7 @@ graph LR
     S026 --> S028
   end
   subgraph Tasks
-    T052["T-052 Specify production DynamoDB stacks with failing automated tests"]:::todo
+    T052["T-052 Specify production DynamoDB stacks with failing automated tests"]:::blocked
     T053["T-053 Implement and verify production DynamoDB stacks"]:::blocked
     T054["T-054 Specify Lambda, API Gateway, and Cognito stacks with failing automated tests"]:::blocked
     T055["T-055 Implement and verify Lambda, API Gateway, and Cognito stacks"]:::blocked

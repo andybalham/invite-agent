@@ -2,4 +2,4 @@
 
 _Generated. Do not edit by hand._
 
-- [ ] [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — todo
+- [ ] [T-153 · Specify compact date summaries and disclosure contracts with automated tests](../entities/T-153-specify-compact-date-summaries-and-disclosure-contracts-with-automated-tests.md) — todo

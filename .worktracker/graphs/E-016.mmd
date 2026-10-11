@@ -1,0 +1,55 @@
+graph LR
+  classDef done fill:#14532d,stroke:#86efac,color:#f0fdf4;
+  classDef blocked fill:#7f1d1d,stroke:#fca5a5,color:#fff7f7;
+  classDef inprogress fill:#78350f,stroke:#fbbf24,color:#fffbeb;
+  classDef todo fill:#1e3a8a,stroke:#93c5fd,color:#eff6ff;
+  classDef empty fill:#374151,stroke:#d1d5db,color:#f9fafb,stroke-dasharray: 3 3;
+  subgraph Stories
+    S058["S-058 Render compact proposed-date summaries with accessible disclosure"]:::todo
+    S059["S-059 Refine My polls hierarchy, responsive layout and result feedback"]:::blocked
+    S060["S-060 Make the poll-management page the canonical public-link surface"]:::blocked
+    S061["S-061 Verify the complete My polls improvement journey"]:::blocked
+    S058 --> S059
+    S058 --> S060
+    S059 --> S061
+    S060 --> S061
+  end
+  subgraph Tasks
+    T153["T-153 Specify compact date summaries and disclosure contracts with automated tests"]:::todo
+    T154["T-154 Implement compact date summaries and accessible disclosure UI"]:::blocked
+    T155["T-155 Verify long-date accessibility and responsive disclosure behaviour in browser tests"]:::blocked
+    T156["T-156 Specify dashboard hierarchy pagination and debounced-search acceptance tests"]:::blocked
+    T157["T-157 Implement dashboard hierarchy result feedback and debounced search"]:::blocked
+    T158["T-158 Verify dashboard layout and interaction regressions across desktop and mobile"]:::blocked
+    T164["T-164 Specify canonical poll-page sharing and owner-isolation acceptance tests"]:::blocked
+    T165["T-165 Implement poll-page share controls and remove dashboard-owned share state"]:::blocked
+    T166["T-166 Verify publication sharing closed-poll sharing and link rotation in browser tests"]:::blocked
+    T167["T-167 Add integrated My polls improvement acceptance coverage"]:::blocked
+    T168["T-168 Document verification commands and execute the focused regression suite"]:::blocked
+    T153 --> T154
+    T154 --> T155
+    T154 --> T156
+    T155 --> T167
+    T156 --> T157
+    T157 --> T158
+    T158 --> T167
+    T164 --> T165
+    T165 --> T166
+    T166 --> T167
+    T167 --> T168
+  end
+  click S058 "../entities/S-058-render-compact-proposed-date-summaries-with-accessible-disclosure.md"
+  click S059 "../entities/S-059-refine-my-polls-hierarchy-responsive-layout-and-result-feedback.md"
+  click S060 "../entities/S-060-make-the-poll-management-page-the-canonical-public-link-surface.md"
+  click S061 "../entities/S-061-verify-the-complete-my-polls-improvement-journey.md"
+  click T153 "../entities/T-153-specify-compact-date-summaries-and-disclosure-contracts-with-automated-tests.md"
+  click T154 "../entities/T-154-implement-compact-date-summaries-and-accessible-disclosure-ui.md"
+  click T155 "../entities/T-155-verify-long-date-accessibility-and-responsive-disclosure-behaviour-in-browser-tests.md"
+  click T156 "../entities/T-156-specify-dashboard-hierarchy-pagination-and-debounced-search-acceptance-tests.md"
+  click T157 "../entities/T-157-implement-dashboard-hierarchy-result-feedback-and-debounced-search.md"
+  click T158 "../entities/T-158-verify-dashboard-layout-and-interaction-regressions-across-desktop-and-mobile.md"
+  click T164 "../entities/T-164-specify-canonical-poll-page-sharing-and-owner-isolation-acceptance-tests.md"
+  click T165 "../entities/T-165-implement-poll-page-share-controls-and-remove-dashboard-owned-share-state.md"
+  click T166 "../entities/T-166-verify-publication-sharing-closed-poll-sharing-and-link-rotation-in-browser-tests.md"
+  click T167 "../entities/T-167-add-integrated-my-polls-improvement-acceptance-coverage.md"
+  click T168 "../entities/T-168-document-verification-commands-and-execute-the-focused-regression-suite.md"
