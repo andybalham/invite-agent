@@ -11,8 +11,8 @@ before(async () => { components = await startComponentBrowser(); });
 after(async () => { await components?.close(); });
 
 async function titles(page, expected) {
-  await expect(page.locator(".my-polls-desktop tbody a")).toHaveText(expected);
-  await expect(page.locator(".my-polls-mobile h2 a")).toHaveText(expected);
+  await expect(page.locator(".my-polls-desktop tbody th > a:first-child")).toHaveText(expected);
+  await expect(page.locator(".my-polls-mobile h2 > a:first-child")).toHaveText(expected);
 }
 
 function snapshot(fixture) {
@@ -233,7 +233,7 @@ test("T-120 returning after editing a page-two draft discards old pages/cursor a
   await expect(page.locator(".my-polls-desktop tbody tr")).toHaveCount(25);
   await expect(page.getByRole("link", { name: "Edited page two dinner", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Load more polls", exact: true }).click();
-  await expect(page.locator(".my-polls-desktop tbody a").last()).toHaveText("Edited page two dinner");
+  await expect(page.locator(".my-polls-desktop tbody th > a:first-child").last()).toHaveText("Edited page two dinner");
   await summary(page, "Edited page two dinner", "Draft", "1 Sept 2026", 0);
   assert.equal(fixture.writes.length, 1);
 });

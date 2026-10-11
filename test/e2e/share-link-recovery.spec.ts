@@ -45,15 +45,15 @@ for (const [layout, viewport] of [
       });
       const returnLink = () => page.getByRole("link", { name: /^(?:←\s*)?My polls$/ });
       const surface = () => page.locator(`.my-polls-${layout}`);
-      const trigger = () => surface().getByRole("button", { name: `Share link for ${title}`, exact: true });
-      const panel = () => page.getByRole("region", { name: `Share link for ${title}`, exact: true });
+      const trigger = () => surface().getByRole("link", { name: title, exact: true });
+      const panel = () => page.getByRole("region", { name: "Share poll", exact: true });
       await returnLink().click();
       await expect(surface().getByRole("link", { name: title, exact: true })).toBeVisible();
-      await expect(trigger()).toHaveCount(0);
+      await expect(panel()).toHaveCount(0);
       expect(shareRequests).toEqual([]);
       await surface().getByRole("link", { name: title, exact: true }).click();
       await page.getByRole("button", { name: "Publish", exact: true }).click();
-      const publication = page.getByRole("region", { name: "Share this poll", exact: true });
+      const publication = panel();
       await expect(publication).toBeVisible();
       const originalUrl = await publication.getByLabel("Public poll link", { exact: true }).inputValue();
       expect(originalUrl).toMatch(/\/p\/[A-Za-z0-9_-]{32}$/);
@@ -62,11 +62,11 @@ for (const [layout, viewport] of [
       expect(added.status()).toBe(201);
       const before = await snapshot(request, id, headers);
 
-      // A new document discards the publication URL; summaries retrieve it only on demand.
+      // A new document discards the publication URL; the owner poll page retrieves it.
       await page.goto(`${landing}&filter=open&search=Share`);
       await expect(trigger()).toBeVisible();
       expect(shareRequests).toEqual([]);
-      const listUrl = page.url();
+      await expect(panel()).toHaveCount(0);
       const recovered = page.waitForResponse((response) => new URL(response.url()).pathname === sharePath);
       await trigger().click();
       const response = await recovered;
@@ -76,11 +76,12 @@ for (const [layout, viewport] of [
       expect(response.request().postData()).toBeNull();
       expect(new URL(response.url()).search).toBe("");
       await expect(panel().getByLabel("Public poll link", { exact: true })).toHaveValue(originalUrl);
-      expect(page.url()).toBe(listUrl);
+      expect(new URL(page.url()).searchParams.get("pollId")).toBe(id);
+      expect(new URL(page.url()).searchParams.get("returnSearch")).toBe("Share");
       await panel().getByRole("button", { name: "Copy link", exact: true }).click();
       await expect(panel().getByRole("status")).toHaveText("Public poll link copied.");
       expect(await page.evaluate(() => (window as Window & { copiedText?: string }).copiedText)).toBe(originalUrl);
-      const open = panel().getByRole("link", { name: "Open poll", exact: true });
+      const open = panel().getByRole("link", { name: "Open as a participant", exact: true });
       await expect(open).toHaveAttribute("rel", "noopener noreferrer");
       const popupPromise = page.waitForEvent("popup");
       await open.click();
@@ -126,8 +127,6 @@ for (const [layout, viewport] of [
         await expect(publicPage.getByRole("button", { name: "+ Add a row", exact: true })).toBeVisible();
 
         // Rotation leaves existing lifecycle controls and the collaboration data intact.
-        await panel().getByRole("button", { name: "Close share panel" }).click();
-        await surface().getByRole("link", { name: title, exact: true }).click();
         await page.locator("button[data-close-choice-id]").first().click();
         await page.getByRole("dialog", { name: "Final date", exact: true })
           .getByRole("button", { name: "Confirm & close poll", exact: true }).click();
@@ -139,8 +138,6 @@ for (const [layout, viewport] of [
         await publicPage.reload();
         await expect(publicPage.getByText("This poll is closed. Responses are read-only.", { exact: true })).toBeVisible();
         await expect(publicPage.getByRole("rowheader", { name: "Alice", exact: true })).toBeVisible();
-        await panel().getByRole("button", { name: "Close share panel" }).click();
-        await surface().getByRole("link", { name: title, exact: true }).click();
         await page.getByRole("button", { name: "Reopen poll…", exact: true }).click();
         await page.getByRole("dialog", { name: "Reopen this poll?", exact: true })
           .getByRole("button", { name: "Reopen poll", exact: true }).click();

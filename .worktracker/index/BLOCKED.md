@@ -11,7 +11,6 @@ _Generated. Do not edit by hand._
 - [S-029 · Automate test-gated packaging and deployment](../entities/S-029-automate-test-gated-packaging-and-deployment.md) — blocked · waiting on S-027, S-028
 - [S-030 · Prove the deployed critical journey with production smoke tests](../entities/S-030-prove-the-deployed-critical-journey-with-production-smoke-tests.md) — blocked · waiting on S-029
 - [S-031 · Complete operational handoff and MVP traceability](../entities/S-031-complete-operational-handoff-and-mvp-traceability.md) — blocked · waiting on S-030
-- [S-061 · Verify the complete My polls improvement journey](../entities/S-061-verify-the-complete-my-polls-improvement-journey.md) — blocked · waiting on S-060
 - [T-052 · Specify production DynamoDB stacks with failing automated tests](../entities/T-052-specify-production-dynamodb-stacks-with-failing-automated-tests.md) — blocked · waiting on E-008
 - [T-053 · Implement and verify production DynamoDB stacks](../entities/T-053-implement-and-verify-production-dynamodb-stacks.md) — blocked · waiting on T-052
 - [T-054 · Specify Lambda, API Gateway, and Cognito stacks with failing automated tests](../entities/T-054-specify-lambda-api-gateway-and-cognito-stacks-with-failing-automated-tests.md) — blocked · waiting on T-053
@@ -26,7 +25,5 @@ _Generated. Do not edit by hand._
 - [T-063 · Implement and execute the production smoke journey](../entities/T-063-implement-and-execute-the-production-smoke-journey.md) — blocked · waiting on T-062
 - [T-064 · Specify operational handoff and traceability checks](../entities/T-064-specify-operational-handoff-and-traceability-checks.md) — blocked · waiting on T-063
 - [T-065 · Complete and verify operational handoff and MVP traceability](../entities/T-065-complete-and-verify-operational-handoff-and-mvp-traceability.md) — blocked · waiting on T-064
-- [T-165 · Implement poll-page share controls and remove dashboard-owned share state](../entities/T-165-implement-poll-page-share-controls-and-remove-dashboard-owned-share-state.md) — blocked · waiting on T-164
-- [T-166 · Verify publication sharing closed-poll sharing and link rotation in browser tests](../entities/T-166-verify-publication-sharing-closed-poll-sharing-and-link-rotation-in-browser-tests.md) — blocked · waiting on T-165
-- [T-167 · Add integrated My polls improvement acceptance coverage](../entities/T-167-add-integrated-my-polls-improvement-acceptance-coverage.md) — blocked · waiting on T-166
 - [T-168 · Document verification commands and execute the focused regression suite](../entities/T-168-document-verification-commands-and-execute-the-focused-regression-suite.md) — blocked · waiting on T-167
+- [T-172 · Run and document the complete non-exhaustive regression suite](../entities/T-172-run-and-document-the-complete-non-exhaustive-regression-suite.md) — blocked · waiting on T-169, T-170, T-171

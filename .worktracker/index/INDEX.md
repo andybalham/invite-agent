@@ -248,10 +248,15 @@ _Generated. Do not edit by hand._
   - [x] [T-156 · Specify dashboard hierarchy pagination and debounced-search acceptance tests](../entities/T-156-specify-dashboard-hierarchy-pagination-and-debounced-search-acceptance-tests.md) — done
   - [x] [T-157 · Implement dashboard hierarchy result feedback and debounced search](../entities/T-157-implement-dashboard-hierarchy-result-feedback-and-debounced-search.md) — done
   - [x] [T-158 · Verify dashboard layout and interaction regressions across desktop and mobile](../entities/T-158-verify-dashboard-layout-and-interaction-regressions-across-desktop-and-mobile.md) — done
-- [ ] **S-060 · Make the poll-management page the canonical public-link surface** — todo
-  - [ ] [T-164 · Specify canonical poll-page sharing and owner-isolation acceptance tests](../entities/T-164-specify-canonical-poll-page-sharing-and-owner-isolation-acceptance-tests.md) — todo
-  - [ ] [T-165 · Implement poll-page share controls and remove dashboard-owned share state](../entities/T-165-implement-poll-page-share-controls-and-remove-dashboard-owned-share-state.md) — blocked · waiting on T-164
-  - [ ] [T-166 · Verify publication sharing closed-poll sharing and link rotation in browser tests](../entities/T-166-verify-publication-sharing-closed-poll-sharing-and-link-rotation-in-browser-tests.md) — blocked · waiting on T-165
-- [ ] **S-061 · Verify the complete My polls improvement journey** — blocked · waiting on S-060
-  - [ ] [T-167 · Add integrated My polls improvement acceptance coverage](../entities/T-167-add-integrated-my-polls-improvement-acceptance-coverage.md) — blocked · waiting on T-166
+- [x] **S-060 · Make the poll-management page the canonical public-link surface** — done
+  - [x] [T-164 · Specify canonical poll-page sharing and owner-isolation acceptance tests](../entities/T-164-specify-canonical-poll-page-sharing-and-owner-isolation-acceptance-tests.md) — done
+  - [x] [T-165 · Implement poll-page share controls and remove dashboard-owned share state](../entities/T-165-implement-poll-page-share-controls-and-remove-dashboard-owned-share-state.md) — done
+  - [x] [T-166 · Verify publication sharing closed-poll sharing and link rotation in browser tests](../entities/T-166-verify-publication-sharing-closed-poll-sharing-and-link-rotation-in-browser-tests.md) — done
+- [ ] **S-061 · Verify the complete My polls improvement journey** — todo
+  - [ ] [T-167 · Add integrated My polls improvement acceptance coverage](../entities/T-167-add-integrated-my-polls-improvement-acceptance-coverage.md) — todo
   - [ ] [T-168 · Document verification commands and execute the focused regression suite](../entities/T-168-document-verification-commands-and-execute-the-focused-regression-suite.md) — blocked · waiting on T-167
+- [ ] **S-062 · Restore green My polls regression and test-harness suites** — todo
+  - [ ] [T-169 · Update My polls component regression selectors for explicit actions](../entities/T-169-update-my-polls-component-regression-selectors-for-explicit-actions.md) — todo
+  - [ ] [T-170 · Correct closed-poll lifecycle summary regression expectations](../entities/T-170-correct-closed-poll-lifecycle-summary-regression-expectations.md) — todo
+  - [ ] [T-171 · Repair E2E cleanup and runner harness evidence assertions](../entities/T-171-repair-e2e-cleanup-and-runner-harness-evidence-assertions.md) — todo
+  - [ ] [T-172 · Run and document the complete non-exhaustive regression suite](../entities/T-172-run-and-document-the-complete-non-exhaustive-regression-suite.md) — blocked · waiting on T-169, T-170, T-171

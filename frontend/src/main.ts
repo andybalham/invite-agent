@@ -325,13 +325,10 @@ const saveButton = requireElement<HTMLButtonElement>(".save-button");
 const health = requireElement<HTMLElement>("[data-testid='api-health']");
 const heading = requireElement<HTMLElement>("#draft-heading");
 const headerSaveStatus = requireElement<HTMLElement>("[data-testid='header-save-status']");
-const publicationSharePanel = createSharePanel({ id: "publication-share" });
-const shareScreen = publicationSharePanel.element;
-app.append(shareScreen);
-const publicLink = publicationSharePanel.input;
-const goToPoll = publicationSharePanel.manage;
-const openHistory = publicationSharePanel.history;
-publicationSharePanel.open.textContent = "Open as a link holder";
+const pollSharePanel = createSharePanel({
+  id: "poll-share", onRequest: () => void retrievePollShare(), onRotate: () => void rotatePollShare()
+});
+const shareScreen = pollSharePanel.element;
 const historyScreen = requireElement<HTMLElement>(".history-screen");
 const historyHeading = requireElement<HTMLElement>("#history-heading");
 const historyBack = requireElement<HTMLAnchorElement>(".history-back");
@@ -431,8 +428,9 @@ const ownedListIds = new Set<string>();
 let ownedListIdentity = "";
 let ownedListQuery = "";
 let myPollsSearchDebounce: number | undefined;
-let summaryShareId = 0;
-const summaryShareResets = new Set<() => void>();
+let retrievePollShare: () => Promise<void> = async () => {};
+let rotatePollShare: () => Promise<void> = async () => {};
+let resetPollShare: () => void = () => {};
 let proposedDates: ProposedDate[] = [];
 let publicToken: string | undefined;
 let displayedPublicPoll: PublicPollDetails | undefined;
@@ -724,63 +722,44 @@ function renderPollSummary(poll: OwnedPollListResponse["items"][number], context
   }
   card.append(heading, details);
   cards.append(card);
-  if (poll.status !== "draft") {
-    const desktopShareHost = document.createElement("div");
-    desktopShareHost.className = "my-polls-share-host";
-    const desktop = table.closest<HTMLElement>(".my-polls-desktop");
-    desktop?.append(desktopShareHost);
-    addSummaryShareAction(row.firstElementChild as HTMLElement, desktopShareHost, poll);
-    addSummaryShareAction(card, card, poll);
-  }
 }
 
-function addSummaryShareAction(actions: HTMLElement, container: HTMLElement, poll: OwnedPollListResponse["items"][number]): void {
-  const { identity, query } = currentOwnedList();
+function pollShareContextMatches(id: string, identity: string): boolean {
+  const current = new URL(window.location.href);
+  const runId = current.searchParams.get("testRunId") ?? "browser";
+  return current.pathname === "/" && current.searchParams.get("pollId") === id &&
+    !["editor", "history", "create"].includes(current.searchParams.get("view") ?? "") &&
+    `local-organiser-${runId.toLowerCase().replace(/[^a-z0-9-]/g, "-")}` === identity;
+}
+
+function showPollShare(poll: PublicPollDetails, initialLink?: string): void {
+  resetPollShare();
+  if (!ownerControlsAllowed || poll.status === "draft" || !pollShareContextMatches(poll.id, organiserId)) return;
+  const identity = organiserId;
+  const panel = pollSharePanel;
   let generation = 0;
   let loading = false;
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "btn btn-secondary summary-share-link";
-  button.textContent = "Share link";
-  button.setAttribute("aria-label", `Share link for ${poll.title}`);
-  button.setAttribute("aria-expanded", "false");
   const reset = () => {
     generation += 1;
     loading = false;
     panel.dismissConfirmation();
     panel.element.hidden = true;
     panel.setState({ status: "idle" });
-    button.setAttribute("aria-expanded", "false");
+    panel.element.remove();
   };
-  const close = () => {
-    reset();
-    button.focus();
-  };
-  const panel = createSharePanel({
-    id: `summary-share-${++summaryShareId}`, title: poll.title, onClose: close,
-    onRequest: () => void retrieveLink(), onRotate: () => void rotateLink()
-  });
-  summaryShareResets.add(reset);
+  resetPollShare = reset;
   const sharePath = `/api/organiser/polls/${encodeURIComponent(poll.id)}/share-link`;
   const current = (requestGeneration: number) => {
-    const context = currentOwnedList();
     return requestGeneration === generation && panel.element.isConnected && !panel.element.hidden &&
-      context.identity === identity && context.query === query;
+      ownerControlsAllowed && displayedPublicPoll?.id === poll.id && displayedPublicPoll.status !== "draft" &&
+      pollShareContextMatches(poll.id, identity);
   };
   async function retrieveLink(message?: string): Promise<void> {
     if (loading || panel.element.hidden) return;
-    const latest = currentOwnedList();
-    if (latest.identity !== identity || latest.query !== query) { reset(); return; }
+    if (!current(generation)) { reset(); return; }
     loading = true;
     const requestGeneration = ++generation;
     panel.setState({ status: "loading" });
-    const requestEvent = new CustomEvent("poll-share-request", {
-      bubbles: true, cancelable: true, detail: { pollId: poll.id, panel }
-    });
-    if (!panel.element.dispatchEvent(requestEvent)) {
-      loading = false;
-      return;
-    }
     try {
       const response = await request(sharePath, {
         cache: "no-store", headers: { "x-local-organiser-id": identity }
@@ -807,8 +786,7 @@ function addSummaryShareAction(actions: HTMLElement, container: HTMLElement, pol
     }
   }
   async function rotateLink(): Promise<void> {
-    const latest = currentOwnedList();
-    if (latest.identity !== identity || latest.query !== query || panel.element.hidden) { reset(); return; }
+    if (loading || !current(generation)) { reset(); return; }
     const requestGeneration = ++generation;
     try {
       const response = await request(`${sharePath}/rotate`, {
@@ -839,18 +817,12 @@ function addSummaryShareAction(actions: HTMLElement, container: HTMLElement, pol
       }
     }
   }
-  button.setAttribute("aria-controls", panel.element.id);
-  actions.append(button);
-  container.append(panel.element);
-  button.addEventListener("click", () => {
-    if (!panel.element.hidden) return;
-    panel.element.hidden = false;
-    button.setAttribute("aria-expanded", "true");
-    void retrieveLink();
-  });
-  panel.element.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !panel.element.querySelector("dialog")?.open) { event.preventDefault(); close(); }
-  });
+  retrievePollShare = retrieveLink;
+  rotatePollShare = rotateLink;
+  publicPollScreen.insertBefore(panel.element, finalDatePoster);
+  panel.element.hidden = false;
+  if (initialLink) panel.setState({ status: "ready", publicUrl: initialLink });
+  else void retrieveLink();
 }
 
 function openPreview(): void {
@@ -933,30 +905,6 @@ async function persistDraft(): Promise<PollDetails | undefined> {
   return poll;
 }
 
-function showShareScreen(link: string): void {
-  editor.hidden = true;
-  previewScreen.hidden = true;
-  shareScreen.hidden = false;
-  publicPollScreen.insertBefore(shareScreen, finalDatePoster);
-  publicationSharePanel.setState({ status: "ready", publicUrl: link });
-  if (!ownedPollShareResponseSchema.safeParse({ publicUrl: link }).success) return;
-  const organiserPollUrl = new URL(link);
-  organiserPollUrl.searchParams.set("testRunId", testRunId);
-  organiserPollUrl.searchParams.set("organiser", "1");
-  const returnContext = pollReturnContext(url.searchParams);
-  organiserPollUrl.searchParams.set("returnFilter", returnContext.filter);
-  organiserPollUrl.searchParams.set("returnSearch", returnContext.search);
-  goToPoll.href = organiserPollUrl.toString();
-  goToPoll.hidden = false;
-  if (pollId) {
-    openHistory.href = organiserPollDestination(pollId, "history", testRunId, returnContext);
-    openHistory.hidden = false;
-  }
-  url.searchParams.set("view", "manage");
-  window.history.replaceState({}, "", url);
-  void loadPublicPoll(new URL(link).pathname.split("/").at(-1) as string, true);
-}
-
 function hidePrivateScreens(): void {
   editor.hidden = true;
   previewScreen.hidden = true;
@@ -976,7 +924,7 @@ function renderPublicPoll(poll: PublicPollDetails): void {
   const previous = displayedPublicPoll;
   displayedPublicPoll = poll;
   hidePrivateScreens();
-  shareScreen.hidden = !ownerControlsAllowed || !publicLink.value;
+  shareScreen.hidden = !ownerControlsAllowed || !shareScreen.isConnected;
   invalidLinkScreen.hidden = true;
   publicPollScreen.hidden = false;
   document.querySelector<HTMLElement>(".account")!.textContent = ownerControlsAllowed ? organiserId : "No account needed";
@@ -1204,7 +1152,7 @@ function openCloseDialog(choiceId: string): void {
   closeConfirm.focus();
 }
 
-async function loadPublicPoll(token: string, publishedByOwner = false): Promise<void> {
+async function loadPublicPoll(token: string): Promise<void> {
   publicToken = token;
   const response = await fetch(`/api/public/polls/${encodeURIComponent(token)}`, {
     headers: { accept: "application/json" }
@@ -1214,12 +1162,12 @@ async function loadPublicPoll(token: string, publishedByOwner = false): Promise<
     return;
   }
   const poll = (await response.json()) as PublicPollDetails;
-  if (organiserView || publishedByOwner) {
+  ownerControlsAllowed = false;
+  if (organiserView) {
     const ownerResponse = await request(`/api/organiser/polls/${encodeURIComponent(poll.id)}`);
     ownerControlsAllowed = ownerResponse.ok;
   }
   renderPublicPoll(poll);
-  if (publishedByOwner && ownerControlsAllowed) shareScreen.hidden = false;
 }
 
 function updateLocationDialogPreview(): void {
@@ -1515,7 +1463,7 @@ async function readError(response: Response): Promise<string> {
   return body.error?.message ?? "The draft could not be saved. Try again.";
 }
 
-async function loadDraft(id: string): Promise<void> {
+async function loadDraft(id: string, initialLink?: string): Promise<void> {
   const response = await request(`/api/organiser/polls/${encodeURIComponent(id)}`);
   if (!response.ok) { editor.hidden = false; errorMessage.hidden = false; errorMessage.textContent = await readError(response); return; }
   const poll = (await response.json()) as PollDetails | PublicPollDetails;
@@ -1523,6 +1471,7 @@ async function loadDraft(id: string): Promise<void> {
   else {
     ownerControlsAllowed = true;
     renderPublicPoll(poll as PublicPollDetails);
+    showPollShare(poll as PublicPollDetails, initialLink);
   }
 }
 
@@ -1541,8 +1490,6 @@ function currentOwnedList(): { identity: string; runId: string; context: ReturnT
 function invalidateMyPolls(): void {
   // Saved summaries must be read again, never patched or reordered from a
   // detail response. Also retire any response from an accumulated list page.
-  for (const reset of summaryShareResets) reset();
-  summaryShareResets.clear();
   ownedListRequest += 1;
   ownedListLoading = false;
   ownedListCursor = undefined;
@@ -1692,6 +1639,7 @@ myPollsClear.addEventListener("click", () => {
   myPollsSearch.focus();
 });
 window.addEventListener("popstate", () => {
+  if (displayedPublicPoll && !pollShareContextMatches(displayedPublicPoll.id, organiserId)) resetPollShare();
   const { identity, query } = currentOwnedList();
   // pageshow handles restored documents; popstate only needs another read
   // when same-document navigation changes the list's identity or query.
@@ -1701,10 +1649,9 @@ window.addEventListener("pageshow", (event) => {
   // Ordinary links reload the document and already read page one. Browser
   // Back/Forward may restore the entire dashboard from the back/forward cache.
   if (event.persisted && !myPollsScreen.hidden) void loadMyPolls();
+  if (event.persisted && ownerControlsAllowed && pollId) void loadDraft(pollId);
 });
-window.addEventListener("pagehide", () => {
-  for (const reset of summaryShareResets) reset();
-});
+window.addEventListener("pagehide", () => resetPollShare());
 
 locationField.addEventListener("input", () => { updatePreview(); updatePublicationReadiness(); });
 requireElement<HTMLButtonElement>(".edit-location").addEventListener("click", () => {
@@ -1798,7 +1745,10 @@ publishButton.addEventListener("click", () => {
     }
     const result = (await response.json()) as { publicUrl: string };
     invalidateMyPolls();
-    showShareScreen(result.publicUrl);
+    url.searchParams.set("view", "manage");
+    window.history.replaceState({}, "", url);
+    await loadDraft(pollId, result.publicUrl);
+    if (ownerControlsAllowed) publicPollHeading.focus();
   })();
 });
 

@@ -7,30 +7,26 @@ export type SharePanelState =
 
 export interface SharePanelOptions {
   id: string;
-  title?: string;
   onRequest?: () => void;
-  onClose?: () => void;
   onRotate?: () => void;
 }
 
-/** Shared publication and summary UI. Link retrieval belongs to the caller. */
+/** Owner poll-page UI. Secure link retrieval belongs to the caller. */
 export function createSharePanel(options: SharePanelOptions) {
   const element = document.createElement("section");
   element.className = "share-screen";
   element.id = options.id;
   element.hidden = true;
-  element.setAttribute("aria-label", options.title ? `Share link for ${options.title}` : "Share this poll");
+  element.setAttribute("aria-label", "Share poll");
   element.innerHTML = `
+    <div class="share-title"><h2>Share poll</h2><p>Send this link to the people you want to take part.</p></div>
     <div class="share-link">
       <label>Public poll link</label>
       <div><input class="input input--code" readonly><button class="btn btn-primary copy-link" type="button" disabled>Copy link</button></div>
     </div>
     <div class="share-actions">
-      <a class="btn btn-primary go-to-poll" hidden>Go to the poll</a>
-      <a class="btn btn-secondary open-public-link" target="_blank" rel="noopener noreferrer" hidden>Open poll</a>
-      <a class="btn btn-secondary open-history" hidden>History</a>
+      <a class="btn btn-secondary open-public-link" target="_blank" rel="noopener noreferrer" hidden>Open as a participant</a>
       <button class="btn btn-secondary share-retry" type="button" hidden>Try again</button>
-      <button class="btn btn-ghost share-close" type="button" hidden>Close share panel</button>
     </div>
     <section class="link-security section-rule">
       <div><h2>Link security</h2><p>If the link was shared with the wrong people, replace it. The old link stops working immediately. Dates, responses and history are kept.</p></div>
@@ -51,10 +47,7 @@ export function createSharePanel(options: SharePanelOptions) {
   element.querySelector("label")!.htmlFor = input.id;
   const copy = element.querySelector<HTMLButtonElement>(".copy-link")!;
   const open = element.querySelector<HTMLAnchorElement>(".open-public-link")!;
-  const manage = element.querySelector<HTMLAnchorElement>(".go-to-poll")!;
-  const history = element.querySelector<HTMLAnchorElement>(".open-history")!;
   const retry = element.querySelector<HTMLButtonElement>(".share-retry")!;
-  const close = element.querySelector<HTMLButtonElement>(".share-close")!;
   const status = element.querySelector<HTMLElement>(".share-status")!;
   const error = element.querySelector<HTMLElement>(".share-error")!;
   const regenerate = element.querySelector<HTMLButtonElement>(".regenerate-link")!;
@@ -118,10 +111,8 @@ export function createSharePanel(options: SharePanelOptions) {
     })();
   });
   retry.addEventListener("click", () => options.onRequest?.());
-  close.hidden = !options.onClose;
-  close.addEventListener("click", () => options.onClose?.());
   setState({ status: "idle" });
-  return { element, input, manage, history, open, setState, dismissConfirmation: () => confirmation.close() };
+  return { element, input, open, setState, dismissConfirmation: () => confirmation.close() };
 }
 import { ownedPollShareResponseSchema } from "@invite-a-gent/contracts";
 

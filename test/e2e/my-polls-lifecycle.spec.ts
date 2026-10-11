@@ -254,7 +254,7 @@ for (const [layout, viewport] of [
           await management(page, older, "open");
           publicUrl = await page.getByLabel("Public poll link", { exact: true }).inputValue();
           expect(new URL(publicUrl).pathname).toMatch(/^\/p\/[A-Za-z0-9_-]{32}$/);
-          await expect(page.getByRole("region", { name: "Share this poll", exact: true })).toBeVisible();
+          await expect(page.getByRole("region", { name: "Share poll", exact: true })).toBeVisible();
         });
         await reads(() => publicLink(participant, publicUrl, older, "open"));
         await mutation(store, older, ["PARTICIPANT_ADDED"], "anonymous-link-holder", () => addParticipant(participant, "Alice"));

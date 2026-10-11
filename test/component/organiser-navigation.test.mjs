@@ -201,7 +201,8 @@ test("publication stays on the same poll management view with its issued share l
   await expect(page.getByLabel("Public poll link", { exact: true })).toHaveValue(fixture.publicUrl("draft-1"));
   await page.dispatchEvent("body", "focus");
   await expect.poll(() => fixture.requests.filter(({ url }) =>
-    new URL(url).pathname.startsWith("/api/public/")).length).toBeGreaterThan(1);
+    new URL(url).pathname === "/api/organiser/polls/draft-1").length).toBeGreaterThan(2);
+  assert.equal(fixture.requests.some(({ url }) => new URL(url).pathname.startsWith("/api/public/")), false);
   await expect(page.getByLabel("Public poll link", { exact: true })).toHaveValue(fixture.publicUrl("draft-1"));
   await returnToMyPolls(harness);
   await selectFilter(page, "Open");

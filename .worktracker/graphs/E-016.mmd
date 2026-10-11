@@ -7,8 +7,9 @@ graph LR
   subgraph Stories
     S058["S-058 Render compact proposed-date summaries with accessible disclosure"]:::done
     S059["S-059 Refine My polls hierarchy, responsive layout and result feedback"]:::done
-    S060["S-060 Make the poll-management page the canonical public-link surface"]:::todo
-    S061["S-061 Verify the complete My polls improvement journey"]:::blocked
+    S060["S-060 Make the poll-management page the canonical public-link surface"]:::done
+    S061["S-061 Verify the complete My polls improvement journey"]:::todo
+    S062["S-062 Restore green My polls regression and test-harness suites"]:::todo
     S058 --> S059
     S058 --> S060
     S059 --> S061
@@ -21,11 +22,15 @@ graph LR
     T156["T-156 Specify dashboard hierarchy pagination and debounced-search acceptance tests"]:::done
     T157["T-157 Implement dashboard hierarchy result feedback and debounced search"]:::done
     T158["T-158 Verify dashboard layout and interaction regressions across desktop and mobile"]:::done
-    T164["T-164 Specify canonical poll-page sharing and owner-isolation acceptance tests"]:::todo
-    T165["T-165 Implement poll-page share controls and remove dashboard-owned share state"]:::blocked
-    T166["T-166 Verify publication sharing closed-poll sharing and link rotation in browser tests"]:::blocked
-    T167["T-167 Add integrated My polls improvement acceptance coverage"]:::blocked
+    T164["T-164 Specify canonical poll-page sharing and owner-isolation acceptance tests"]:::done
+    T165["T-165 Implement poll-page share controls and remove dashboard-owned share state"]:::done
+    T166["T-166 Verify publication sharing closed-poll sharing and link rotation in browser tests"]:::done
+    T167["T-167 Add integrated My polls improvement acceptance coverage"]:::todo
     T168["T-168 Document verification commands and execute the focused regression suite"]:::blocked
+    T169["T-169 Update My polls component regression selectors for explicit actions"]:::todo
+    T170["T-170 Correct closed-poll lifecycle summary regression expectations"]:::todo
+    T171["T-171 Repair E2E cleanup and runner harness evidence assertions"]:::todo
+    T172["T-172 Run and document the complete non-exhaustive regression suite"]:::blocked
     T153 --> T154
     T154 --> T155
     T154 --> T156
@@ -37,11 +42,15 @@ graph LR
     T165 --> T166
     T166 --> T167
     T167 --> T168
+    T169 --> T172
+    T170 --> T172
+    T171 --> T172
   end
   click S058 "../entities/S-058-render-compact-proposed-date-summaries-with-accessible-disclosure.md"
   click S059 "../entities/S-059-refine-my-polls-hierarchy-responsive-layout-and-result-feedback.md"
   click S060 "../entities/S-060-make-the-poll-management-page-the-canonical-public-link-surface.md"
   click S061 "../entities/S-061-verify-the-complete-my-polls-improvement-journey.md"
+  click S062 "../entities/S-062-restore-green-my-polls-regression-and-test-harness-suites.md"
   click T153 "../entities/T-153-specify-compact-date-summaries-and-disclosure-contracts-with-automated-tests.md"
   click T154 "../entities/T-154-implement-compact-date-summaries-and-accessible-disclosure-ui.md"
   click T155 "../entities/T-155-verify-long-date-accessibility-and-responsive-disclosure-behaviour-in-browser-tests.md"
@@ -53,3 +62,7 @@ graph LR
   click T166 "../entities/T-166-verify-publication-sharing-closed-poll-sharing-and-link-rotation-in-browser-tests.md"
   click T167 "../entities/T-167-add-integrated-my-polls-improvement-acceptance-coverage.md"
   click T168 "../entities/T-168-document-verification-commands-and-execute-the-focused-regression-suite.md"
+  click T169 "../entities/T-169-update-my-polls-component-regression-selectors-for-explicit-actions.md"
+  click T170 "../entities/T-170-correct-closed-poll-lifecycle-summary-regression-expectations.md"
+  click T171 "../entities/T-171-repair-e2e-cleanup-and-runner-harness-evidence-assertions.md"
+  click T172 "../entities/T-172-run-and-document-the-complete-non-exhaustive-regression-suite.md"

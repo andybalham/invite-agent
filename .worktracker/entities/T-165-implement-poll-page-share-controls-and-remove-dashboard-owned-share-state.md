@@ -3,13 +3,13 @@ id: T-165
 type: task
 title: Implement poll-page share controls and remove dashboard-owned share state
 parent: S-060
-status: todo
+status: done
 dependsOn: [T-164]
 estimate: 2
 tags: [frontend, security, sharing]
 archived: false
 created: 2026-10-11T07:56:50.563Z
-updated: 2026-10-11T07:56:50.563Z
+updated: 2026-10-11T11:24:49.976Z
 ---
 Make the poll-management page the only owner-facing public-link surface.
 

@@ -3,13 +3,13 @@ id: T-166
 type: task
 title: Verify publication sharing closed-poll sharing and link rotation in browser tests
 parent: S-060
-status: todo
+status: done
 dependsOn: [T-165]
 estimate: 2
 tags: [browser-tests, security, sharing]
 archived: false
 created: 2026-10-11T07:56:50.639Z
-updated: 2026-10-11T07:56:50.639Z
+updated: 2026-10-11T11:33:01.508Z
 ---
 Extend end-to-end coverage for the canonical share workflow.
 
